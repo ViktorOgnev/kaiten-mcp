@@ -13,6 +13,10 @@ from kaiten_mcp.client import KaitenClient, KaitenApiError
 from kaiten_mcp.tools import (
     spaces, boards, columns, lanes, cards, tags,
     card_types, custom_properties, comments, members, time_logs,
+    checklists, blockers, card_relations, external_links,
+    documents, webhooks, automations, projects,
+    roles_and_groups, audit_and_analytics, subscribers,
+    service_desk, utilities,
 )
 
 load_dotenv()
@@ -35,6 +39,10 @@ def get_client() -> KaitenClient:
 TOOL_MODULES = [
     spaces, boards, columns, lanes, cards, tags,
     card_types, custom_properties, comments, members, time_logs,
+    checklists, blockers, card_relations, external_links,
+    documents, webhooks, automations, projects,
+    roles_and_groups, audit_and_analytics, subscribers,
+    service_desk, utilities,
 ]
 
 
