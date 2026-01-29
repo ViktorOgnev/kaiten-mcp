@@ -1,0 +1,9 @@
+services:
+  kaiten-mcp:
+    build: .
+    env_file:
+      - .env
+    stdin_open: true
+    environment:
+      - KAITEN_DOMAIN=${KAITEN_DOMAIN}
+      - KAITEN_TOKEN=${KAITEN_TOKEN}
