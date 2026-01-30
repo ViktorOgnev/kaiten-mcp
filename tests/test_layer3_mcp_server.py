@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 from mcp.types import CallToolResult, TextContent, Tool
 
 from kaiten_mcp.client import KaitenClient, KaitenApiError
-from kaiten_mcp.server import call_tool, list_tools, ALL_TOOLS
+from kaiten_mcp.server import call_tool, list_tools, get_client, ALL_TOOLS
 
 
 BASE_URL = "https://test-company.kaiten.ru/api/latest"
@@ -210,6 +210,22 @@ async def test_list_tools_names_match_all_tools():
 
 
 # ── 10. Parametrized: one tool per module via respx ─────────────────────────
+
+
+# ── 10.5. get_client() ─────────────────────────────────────────────────────
+
+
+def test_get_client_creates_kaiten_client():
+    """get_client() creates a KaitenClient when _client is None."""
+    import kaiten_mcp.server as srv
+    original = srv._client
+    try:
+        srv._client = None
+        c = get_client()
+        assert isinstance(c, KaitenClient)
+        assert c is get_client()  # cached
+    finally:
+        srv._client = original
 
 
 _PARAMETRIZED_TOOLS = [

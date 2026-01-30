@@ -227,7 +227,7 @@ class TestUpdateSavedFilter:
 class TestDeleteSavedFilter:
     async def test_delete_saved_filter_required_only(self, client, mock_api):
         route = mock_api.delete("/saved-filters/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_saved_filter"]["handler"](
             client, {"filter_id": 1}

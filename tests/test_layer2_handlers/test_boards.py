@@ -89,7 +89,7 @@ class TestUpdateBoard:
 class TestDeleteBoard:
     async def test_required_only(self, client, mock_api):
         route = mock_api.delete("/spaces/1/boards/10").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_board"]["handler"](
             client, {"space_id": 1, "board_id": 10}

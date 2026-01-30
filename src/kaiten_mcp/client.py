@@ -101,6 +101,9 @@ class KaitenClient:
                     raise KaitenApiError(0, f"Connection error: {e}")
                 await asyncio.sleep(RETRY_DELAY)
 
+        # All retries exhausted (e.g. repeated 429)
+        raise KaitenApiError(429, "Rate limit retries exhausted")
+
     async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         return await self._request("GET", path, params=params)
 

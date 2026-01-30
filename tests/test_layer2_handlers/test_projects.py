@@ -95,7 +95,7 @@ class TestUpdateProject:
 class TestDeleteProject:
     async def test_delete_project_required_only(self, client, mock_api):
         route = mock_api.delete("/projects/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_project"]["handler"](client, {"project_id": 1})
         assert route.called
@@ -129,7 +129,7 @@ class TestAddProjectCard:
 class TestRemoveProjectCard:
     async def test_remove_project_card_required_only(self, client, mock_api):
         route = mock_api.delete("/projects/1/cards/99").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_remove_project_card"]["handler"](
             client, {"project_id": 1, "card_id": 99}
@@ -242,7 +242,7 @@ class TestUpdateSprint:
 class TestDeleteSprint:
     async def test_delete_sprint_required_only(self, client, mock_api):
         route = mock_api.delete("/sprints/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_sprint"]["handler"](client, {"sprint_id": 1})
         assert route.called

@@ -132,7 +132,7 @@ class TestUpdateCustomProperty:
 class TestDeleteCustomProperty:
     async def test_delete_custom_property_required_only(self, client, mock_api):
         route = mock_api.delete("/company/custom-properties/5").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_custom_property"]["handler"](
             client, {"property_id": 5}

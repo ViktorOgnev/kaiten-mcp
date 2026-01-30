@@ -72,7 +72,7 @@ class TestUpdateLane:
 class TestDeleteLane:
     async def test_required_only(self, client, mock_api):
         route = mock_api.delete("/boards/10/lanes/3").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_lane"]["handler"](
             client, {"board_id": 10, "lane_id": 3}

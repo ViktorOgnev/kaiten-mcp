@@ -95,7 +95,7 @@ class TestUpdateColumn:
 class TestDeleteColumn:
     async def test_required_only(self, client, mock_api):
         route = mock_api.delete("/boards/10/columns/5").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_column"]["handler"](
             client, {"board_id": 10, "column_id": 5}

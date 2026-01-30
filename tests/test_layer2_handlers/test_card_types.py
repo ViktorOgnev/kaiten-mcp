@@ -109,7 +109,7 @@ class TestUpdateCardType:
 class TestDeleteCardType:
     async def test_delete_card_type_required_only(self, client, mock_api):
         route = mock_api.delete("/card-types/10").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_card_type"]["handler"](client, {"type_id": 10})
         assert route.called

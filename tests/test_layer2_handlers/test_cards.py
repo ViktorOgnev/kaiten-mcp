@@ -207,7 +207,7 @@ class TestUpdateCard:
 class TestDeleteCard:
     async def test_required_only(self, client, mock_api):
         route = mock_api.delete("/cards/100").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_card"]["handler"](
             client, {"card_id": 100}
@@ -216,7 +216,7 @@ class TestDeleteCard:
 
     async def test_with_string_key(self, client, mock_api):
         route = mock_api.delete("/cards/PROJ-789").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_card"]["handler"](
             client, {"card_id": "PROJ-789"}

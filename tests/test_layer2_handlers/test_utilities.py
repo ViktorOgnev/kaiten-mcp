@@ -39,7 +39,7 @@ class TestCreateApiKey:
 class TestDeleteApiKey:
     async def test_delete_api_key_required_only(self, client, mock_api):
         route = mock_api.delete("/api-keys/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_api_key"]["handler"](client, {"key_id": 1})
         assert route.called
@@ -112,7 +112,7 @@ class TestUpdateUserTimer:
 class TestDeleteUserTimer:
     async def test_delete_user_timer_required_only(self, client, mock_api):
         route = mock_api.delete("/user-timers/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_user_timer"]["handler"](client, {"timer_id": 1})
         assert route.called

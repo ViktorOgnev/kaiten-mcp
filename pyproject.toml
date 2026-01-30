@@ -27,5 +27,16 @@ test = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.coverage.run]
+source = ["kaiten_mcp"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__",
+    "def main",
+    "asyncio.run",
+    "pragma: no cover",
+]
+
 [project.scripts]
 kaiten-mcp = "kaiten_mcp.server:main"

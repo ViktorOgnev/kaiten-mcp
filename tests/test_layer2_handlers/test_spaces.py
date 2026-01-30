@@ -103,7 +103,7 @@ class TestUpdateSpace:
 class TestDeleteSpace:
     async def test_required_only(self, client, mock_api):
         route = mock_api.delete("/spaces/7").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         result = await TOOLS["kaiten_delete_space"]["handler"](
             client, {"space_id": 7}

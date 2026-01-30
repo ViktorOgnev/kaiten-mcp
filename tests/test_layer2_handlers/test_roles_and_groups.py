@@ -73,7 +73,7 @@ class TestUpdateSpaceUser:
 class TestRemoveSpaceUser:
     async def test_remove_space_user_required_only(self, client, mock_api):
         route = mock_api.delete("/spaces/1/users/42").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_remove_space_user"]["handler"](
             client, {"space_id": 1, "user_id": 42}
@@ -170,7 +170,7 @@ class TestUpdateCompanyGroup:
 class TestDeleteCompanyGroup:
     async def test_delete_company_group_required_only(self, client, mock_api):
         route = mock_api.delete("/company/groups/g1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_company_group"]["handler"](
             client, {"group_uid": "g1"}
@@ -206,7 +206,7 @@ class TestAddGroupUser:
 class TestRemoveGroupUser:
     async def test_remove_group_user_required_only(self, client, mock_api):
         route = mock_api.delete("/company/groups/g1/users/7").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_remove_group_user"]["handler"](
             client, {"group_uid": "g1", "user_id": 7}

@@ -117,7 +117,7 @@ class TestUpdateSdRequest:
 class TestDeleteSdRequest:
     async def test_delete_sd_request_required_only(self, client, mock_api):
         route = mock_api.delete("/service-desk/requests/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_sd_request"]["handler"](
             client, {"request_id": 1}
@@ -253,7 +253,7 @@ class TestUpdateSdOrganization:
 class TestDeleteSdOrganization:
     async def test_delete_sd_organization_required_only(self, client, mock_api):
         route = mock_api.delete("/service-desk/organizations/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_sd_organization"]["handler"](
             client, {"organization_id": 1}

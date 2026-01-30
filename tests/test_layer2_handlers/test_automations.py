@@ -118,7 +118,7 @@ class TestUpdateAutomation:
 class TestDeleteAutomation:
     async def test_delete_automation_required_only(self, client, mock_api):
         route = mock_api.delete("/spaces/1/automations/5").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_automation"]["handler"](
             client, {"space_id": 1, "automation_id": 5}
@@ -215,7 +215,7 @@ class TestUpdateWorkflow:
 class TestDeleteWorkflow:
     async def test_delete_workflow_required_only(self, client, mock_api):
         route = mock_api.delete("/company/workflows/1").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_workflow"]["handler"](client, {"workflow_id": 1})
         assert route.called

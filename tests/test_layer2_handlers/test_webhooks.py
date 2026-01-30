@@ -102,7 +102,7 @@ class TestUpdateWebhook:
 class TestDeleteWebhook:
     async def test_delete_webhook_required_only(self, client, mock_api):
         route = mock_api.delete("/spaces/1/webhooks/10").mock(
-            return_value=Response(200, json=None)
+            return_value=Response(204)
         )
         await TOOLS["kaiten_delete_webhook"]["handler"](
             client, {"space_id": 1, "webhook_id": 10}
