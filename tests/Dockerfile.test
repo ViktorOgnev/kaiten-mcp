@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY pyproject.toml .
+COPY src/ src/
+
+RUN pip install --no-cache-dir ".[test]"
+
+COPY tests/ tests/
+
+ENV PYTHONUNBUFFERED=1
+ENV KAITEN_DOMAIN=test-company
+ENV KAITEN_TOKEN=test-token-12345
+
+ENTRYPOINT ["pytest"]
+CMD ["tests/", "-v", "--tb=short", "--cov=kaiten_mcp", "--cov-report=term-missing", "--cov-report=html:/app/coverage_html", "--cov-fail-under=100", "--timeout=60"]
