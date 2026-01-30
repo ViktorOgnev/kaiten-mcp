@@ -36,8 +36,9 @@ async def _create_automation(client, args: dict) -> Any:
         "trigger": args["trigger"],
         "actions": args["actions"],
     }
-    if args.get("conditions") is not None:
-        body["conditions"] = args["conditions"]
+    for key in ("conditions", "type"):
+        if args.get(key) is not None:
+            body[key] = args[key]
     return await client.post(f"/spaces/{args['space_id']}/automations", json=body)
 
 
@@ -56,6 +57,11 @@ _tool(
                 "description": "List of action configurations [{type, data}]",
             },
             "conditions": {"type": "object", "description": "Conditions configuration"},
+            "type": {
+                "type": "string",
+                "enum": ["on_action", "on_date", "on_demand", "on_workflow"],
+                "description": "Automation type. Default: on_action",
+            },
         },
         "required": ["space_id", "name", "trigger", "actions"],
     },
@@ -71,7 +77,7 @@ async def _get_automation(client, args: dict) -> Any:
 
 _tool(
     "kaiten_get_automation",
-    "Get a specific automation in a Kaiten space.",
+    "Get a specific automation in a Kaiten space. Note: GET by ID may return 405; use kaiten_list_automations and filter client-side.",
     {
         "type": "object",
         "properties": {
@@ -86,7 +92,7 @@ _tool(
 
 async def _update_automation(client, args: dict) -> Any:
     body: dict[str, Any] = {}
-    for key in ("name", "trigger", "actions", "conditions"):
+    for key in ("name", "trigger", "actions", "conditions", "status"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(
@@ -110,6 +116,11 @@ _tool(
                 "description": "New action configurations",
             },
             "conditions": {"type": "object", "description": "New conditions configuration"},
+            "status": {
+                "type": "string",
+                "enum": ["active", "disabled"],
+                "description": "Automation status (active or disabled)",
+            },
         },
         "required": ["space_id", "automation_id"],
     },

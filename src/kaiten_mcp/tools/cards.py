@@ -93,6 +93,7 @@ async def _create_card(client, args: dict) -> Any:
         "column_id", "lane_id", "description", "due_date", "asap",
         "size_text", "owner_id", "type_id", "external_id",
         "sort_order", "position", "properties", "tags",
+        "sprint_id", "planned_start", "planned_end",
     ]
     for key in opt_keys:
         if args.get(key) is not None:
@@ -121,6 +122,9 @@ _tool(
             "position": {"type": "integer", "enum": [1, 2], "description": "1=first, 2=last in cell"},
             "properties": {"type": "object", "description": "Custom properties as {id_N: value}"},
             "tags": {"type": "array", "description": "Tags to attach"},
+            "sprint_id": {"type": "integer", "description": "Sprint ID to assign card to"},
+            "planned_start": {"type": ["string", "null"], "description": "Planned start date (ISO 8601)"},
+            "planned_end": {"type": ["string", "null"], "description": "Planned end date (ISO 8601)"},
         },
         "required": ["title", "board_id"],
     },
@@ -136,6 +140,7 @@ async def _update_card(client, args: dict) -> Any:
         "title", "description", "board_id", "column_id", "lane_id",
         "sort_order", "owner_id", "type_id", "condition", "due_date",
         "asap", "size_text", "blocked", "external_id", "properties",
+        "sprint_id", "planned_start", "planned_end",
     ]
     for key in opt_keys:
         if key in args and key != "card_id":
@@ -165,6 +170,9 @@ _tool(
             "blocked": {"type": "boolean", "description": "Set to false to unblock"},
             "external_id": {"type": ["string", "null"], "description": "External ID"},
             "properties": {"type": "object", "description": "Custom properties as {id_N: value}"},
+            "sprint_id": {"type": ["integer", "null"], "description": "Sprint ID (null to remove)"},
+            "planned_start": {"type": ["string", "null"], "description": "Planned start date (ISO 8601)"},
+            "planned_end": {"type": ["string", "null"], "description": "Planned end date (ISO 8601)"},
         },
         "required": ["card_id"],
     },

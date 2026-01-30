@@ -148,11 +148,11 @@ class TestCreateDocumentGroup:
             return_value=Response(200, json={"uid": "g1", "title": "Grp"})
         )
         result = await TOOLS["kaiten_create_document_group"]["handler"](
-            client, {"title": "Grp"}
+            client, {"title": "Grp", "sort_order": 1}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Grp"}
+        assert body == {"title": "Grp", "sort_order": 1}
 
     async def test_create_document_group_all_args(self, client, mock_api):
         route = mock_api.post("/document-groups").mock(

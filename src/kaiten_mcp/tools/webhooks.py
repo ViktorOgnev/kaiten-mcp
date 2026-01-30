@@ -56,7 +56,7 @@ async def _get_webhook(client, args: dict) -> Any:
 
 _tool(
     "kaiten_get_webhook",
-    "Get a specific external webhook for a Kaiten space.",
+    "Get a specific external webhook for a Kaiten space. Note: GET by ID may return 405; use kaiten_list_webhooks instead.",
     {
         "type": "object",
         "properties": {
@@ -105,7 +105,7 @@ async def _delete_webhook(client, args: dict) -> Any:
 
 _tool(
     "kaiten_delete_webhook",
-    "Delete an external webhook from a Kaiten space.",
+    "Delete an external webhook from a Kaiten space. Note: DELETE may return 405; webhook removal may not be supported via API.",
     {
         "type": "object",
         "properties": {

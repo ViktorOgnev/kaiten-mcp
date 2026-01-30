@@ -157,15 +157,15 @@ async def _create_document_group(client, args: dict) -> Any:
 
 _tool(
     "kaiten_create_document_group",
-    "Create a new Kaiten document group.",
+    "Create a new Kaiten document group. sort_order is required by the API.",
     {
         "type": "object",
         "properties": {
             "title": {"type": "string", "description": "Group title"},
             "parent_entity_uid": {"type": "string", "description": "Parent group UID for nesting"},
-            "sort_order": {"type": "integer", "description": "Sort order"},
+            "sort_order": {"type": "integer", "description": "Sort order (required)"},
         },
-        "required": ["title"],
+        "required": ["title", "sort_order"],
     },
     _create_document_group,
 )

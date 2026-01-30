@@ -160,7 +160,7 @@ async def _list_removed_cards(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_removed_cards",
-    "List removed (deleted) cards from the recycle bin.",
+    "List removed (deleted) cards from the recycle bin. Note: may return 405; the recycle bin listing endpoint may not be available.",
     {
         "type": "object",
         "properties": {

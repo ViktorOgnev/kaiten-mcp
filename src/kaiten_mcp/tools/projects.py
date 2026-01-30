@@ -71,6 +71,8 @@ async def _update_project(client, args: dict) -> Any:
         body["name"] = args["title"]
     if args.get("description") is not None:
         body["description"] = args["description"]
+    if args.get("condition") is not None:
+        body["condition"] = args["condition"]
     return await client.patch(f"/projects/{args['project_id']}", json=body)
 
 
@@ -83,6 +85,11 @@ _tool(
             "project_id": {"type": "integer", "description": "Project ID"},
             "title": {"type": "string", "description": "Project title"},
             "description": {"type": "string", "description": "Project description"},
+            "condition": {
+                "type": "string",
+                "enum": ["active", "inactive"],
+                "description": "Project condition (active or inactive)",
+            },
         },
         "required": ["project_id"],
     },
@@ -269,7 +276,7 @@ async def _delete_sprint(client, args: dict) -> Any:
 
 _tool(
     "kaiten_delete_sprint",
-    "Delete a Kaiten sprint.",
+    "Delete a Kaiten sprint. Note: may return 405; sprint deletion may not be supported (sprints can only be completed).",
     {
         "type": "object",
         "properties": {

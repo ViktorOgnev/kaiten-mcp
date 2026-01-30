@@ -55,6 +55,7 @@ class TestCreateAutomation:
                 "trigger": trigger,
                 "actions": actions,
                 "conditions": conditions,
+                "type": "on_action",
             },
         )
         body = json.loads(route.calls[0].request.content)
@@ -63,6 +64,7 @@ class TestCreateAutomation:
             "trigger": trigger,
             "actions": actions,
             "conditions": conditions,
+            "type": "on_action",
         }
 
 
@@ -106,6 +108,7 @@ class TestUpdateAutomation:
                 "trigger": new_trigger,
                 "actions": new_actions,
                 "conditions": new_conditions,
+                "status": "disabled",
             },
         )
         body = json.loads(route.calls[0].request.content)
@@ -114,6 +117,7 @@ class TestUpdateAutomation:
             "trigger": new_trigger,
             "actions": new_actions,
             "conditions": new_conditions,
+            "status": "disabled",
         }
 
 

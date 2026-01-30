@@ -43,7 +43,7 @@ async def _create_sd_request(client, args: dict) -> Any:
 
 _tool(
     "kaiten_create_sd_request",
-    "Create a new Service Desk request.",
+    "Create a new Service Desk request. Note: may return 405; request creation may only be available via the Service Desk portal.",
     {
         "type": "object",
         "properties": {
@@ -64,7 +64,7 @@ async def _get_sd_request(client, args: dict) -> Any:
 
 _tool(
     "kaiten_get_sd_request",
-    "Get a Service Desk request by ID.",
+    "Get a Service Desk request by ID. Note: may return 405; use kaiten_list_sd_requests and filter client-side.",
     {
         "type": "object",
         "properties": {
@@ -86,7 +86,7 @@ async def _update_sd_request(client, args: dict) -> Any:
 
 _tool(
     "kaiten_update_sd_request",
-    "Update a Service Desk request.",
+    "Update a Service Desk request. Note: may return 405; request updates may only be available via the Service Desk portal.",
     {
         "type": "object",
         "properties": {
@@ -107,7 +107,7 @@ async def _delete_sd_request(client, args: dict) -> Any:
 
 _tool(
     "kaiten_delete_sd_request",
-    "Delete a Service Desk request.",
+    "Delete a Service Desk request. Note: may return 405; request deletion may only be available via the Service Desk portal.",
     {
         "type": "object",
         "properties": {

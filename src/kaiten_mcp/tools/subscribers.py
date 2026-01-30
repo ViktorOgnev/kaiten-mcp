@@ -18,7 +18,7 @@ async def _list_card_subscribers(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_card_subscribers",
-    "List all subscribers (watchers) of a Kaiten card.",
+    "List all subscribers (watchers) of a Kaiten card. Note: may return 405; subscriber listing may not be available.",
     {
         "type": "object",
         "properties": {
@@ -82,7 +82,7 @@ async def _list_column_subscribers(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_column_subscribers",
-    "List all subscribers of a Kaiten column.",
+    "List all subscribers of a Kaiten column. Note: may return 405; subscriber listing may not be available.",
     {
         "type": "object",
         "properties": {

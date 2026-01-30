@@ -82,10 +82,10 @@ class TestUpdateProject:
         )
         await TOOLS["kaiten_update_project"]["handler"](
             client,
-            {"project_id": 1, "title": "Beta", "description": "Updated desc"},
+            {"project_id": 1, "title": "Beta", "description": "Updated desc", "condition": "inactive"},
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Beta", "description": "Updated desc"}
+        assert body == {"name": "Beta", "description": "Updated desc", "condition": "inactive"}
 
 
 class TestDeleteProject:

@@ -116,6 +116,9 @@ class TestCreateCard:
             "position": 1,
             "properties": {"id_1": "value1"},
             "tags": [{"name": "urgent"}],
+            "sprint_id": 42,
+            "planned_start": "2024-01-15T00:00:00Z",
+            "planned_end": "2024-02-15T00:00:00Z",
         }
         result = await TOOLS["kaiten_create_card"]["handler"](client, all_args)
         assert route.called
@@ -135,6 +138,9 @@ class TestCreateCard:
         assert body["position"] == 1
         assert body["properties"] == {"id_1": "value1"}
         assert body["tags"] == [{"name": "urgent"}]
+        assert body["sprint_id"] == 42
+        assert body["planned_start"] == "2024-01-15T00:00:00Z"
+        assert body["planned_end"] == "2024-02-15T00:00:00Z"
 
 
 class TestUpdateCard:
@@ -170,6 +176,9 @@ class TestUpdateCard:
             "blocked": True,
             "external_id": "EXT-UPD",
             "properties": {"id_2": "val2"},
+            "sprint_id": 99,
+            "planned_start": "2025-01-01T00:00:00Z",
+            "planned_end": "2025-03-01T00:00:00Z",
         }
         result = await TOOLS["kaiten_update_card"]["handler"](client, all_args)
         assert route.called
@@ -189,6 +198,9 @@ class TestUpdateCard:
         assert body["blocked"] is True
         assert body["external_id"] == "EXT-UPD"
         assert body["properties"] == {"id_2": "val2"}
+        assert body["sprint_id"] == 99
+        assert body["planned_start"] == "2025-01-01T00:00:00Z"
+        assert body["planned_end"] == "2025-03-01T00:00:00Z"
         # card_id must NOT be in the body
         assert "card_id" not in body
 
