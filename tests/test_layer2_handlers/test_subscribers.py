@@ -77,7 +77,7 @@ class TestAddColumnSubscriber:
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"user_id": 7}
+        assert body == {"user_id": 7, "type": 1}
         assert result == {"id": 7}
 
 

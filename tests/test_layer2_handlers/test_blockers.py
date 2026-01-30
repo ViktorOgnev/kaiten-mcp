@@ -46,8 +46,12 @@ class TestCreateCardBlocker:
 
 class TestGetCardBlocker:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.get("/cards/1/blockers/3").mock(
-            return_value=Response(200, json={"id": 3, "reason": "Waiting"})
+        """Handler fetches list endpoint and filters by blocker_id client-side."""
+        route = mock_api.get("/cards/1/blockers").mock(
+            return_value=Response(200, json=[
+                {"id": 2, "reason": "Other"},
+                {"id": 3, "reason": "Waiting"},
+            ])
         )
         result = await TOOLS["kaiten_get_card_blocker"]["handler"](
             client, {"card_id": 1, "blocker_id": 3}

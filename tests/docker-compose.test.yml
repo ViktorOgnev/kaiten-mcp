@@ -7,6 +7,9 @@ services:
       - ../.env
     environment:
       - KAITEN_E2E=1
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: >
       tests/test_e2e_scenario.py -v
       --tb=long
@@ -18,6 +21,9 @@ services:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: >
       tests/ -v
       --tb=short
@@ -33,34 +39,52 @@ services:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer1_registration.py -v --tb=short --timeout=30
 
   test-handlers-core:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer2_handlers/ -v --tb=short --timeout=60 -k "spaces or boards or columns or lanes or cards"
 
   test-handlers-card-resources:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer2_handlers/ -v --tb=short --timeout=60 -k "comments or checklists or blockers or relations or external_links or members or time_logs or tags or subscribers"
 
   test-handlers-company:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer2_handlers/ -v --tb=short --timeout=60 -k "documents or webhooks or automations or projects or roles or audit or service_desk or utilities or custom_properties or card_types"
 
   test-mcp-server:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer3_mcp_server.py -v --tb=short --timeout=60
 
   test-client-behavior:
     build:
       context: ..
       dockerfile: tests/Dockerfile.test
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
     command: tests/test_layer4_client.py -v --tb=short --timeout=60
