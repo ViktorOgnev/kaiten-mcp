@@ -182,7 +182,7 @@ async def _list_removed_boards(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_removed_boards",
-    "List removed (deleted) boards from the recycle bin.",
+    "List removed (deleted) boards from the recycle bin. Note: may return 405; the recycle bin listing endpoint may not be available.",
     {
         "type": "object",
         "properties": {
@@ -228,7 +228,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "calendar_id": {"type": "integer", "description": "Calendar ID"},
+            "calendar_id": {"type": "string", "description": "Calendar ID (UUID)"},
         },
         "required": ["calendar_id"],
     },

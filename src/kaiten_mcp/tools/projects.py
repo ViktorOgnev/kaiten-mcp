@@ -57,7 +57,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
         },
         "required": ["project_id"],
     },
@@ -82,7 +82,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
             "title": {"type": "string", "description": "Project title"},
             "description": {"type": "string", "description": "Project description"},
             "condition": {
@@ -107,7 +107,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
         },
         "required": ["project_id"],
     },
@@ -125,7 +125,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
         },
         "required": ["project_id"],
     },
@@ -145,7 +145,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
             "card_id": {"type": "integer", "description": "Card ID to add"},
         },
         "required": ["project_id", "card_id"],
@@ -166,7 +166,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "project_id": {"type": "integer", "description": "Project ID"},
+            "project_id": {"type": "string", "description": "Project ID (UUID)"},
             "card_id": {"type": "integer", "description": "Card ID to remove"},
         },
         "required": ["project_id", "card_id"],

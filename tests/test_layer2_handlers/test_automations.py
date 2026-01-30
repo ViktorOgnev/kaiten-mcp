@@ -70,11 +70,11 @@ class TestCreateAutomation:
 
 class TestGetAutomation:
     async def test_get_automation_required_only(self, client, mock_api):
-        route = mock_api.get("/spaces/1/automations/5").mock(
+        route = mock_api.get("/spaces/1/automations/auto-uuid-5").mock(
             return_value=Response(200, json={"id": 5})
         )
         result = await TOOLS["kaiten_get_automation"]["handler"](
-            client, {"space_id": 1, "automation_id": 5}
+            client, {"space_id": 1, "automation_id": "auto-uuid-5"}
         )
         assert route.called
         assert result == {"id": 5}
@@ -82,18 +82,18 @@ class TestGetAutomation:
 
 class TestUpdateAutomation:
     async def test_update_automation_required_only(self, client, mock_api):
-        route = mock_api.patch("/spaces/1/automations/5").mock(
+        route = mock_api.patch("/spaces/1/automations/auto-uuid-5").mock(
             return_value=Response(200, json={"id": 5})
         )
         result = await TOOLS["kaiten_update_automation"]["handler"](
-            client, {"space_id": 1, "automation_id": 5}
+            client, {"space_id": 1, "automation_id": "auto-uuid-5"}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_update_automation_all_args(self, client, mock_api):
-        route = mock_api.patch("/spaces/1/automations/5").mock(
+        route = mock_api.patch("/spaces/1/automations/auto-uuid-5").mock(
             return_value=Response(200, json={"id": 5})
         )
         new_trigger = {"type": "card_updated"}
@@ -103,7 +103,7 @@ class TestUpdateAutomation:
             client,
             {
                 "space_id": 1,
-                "automation_id": 5,
+                "automation_id": "auto-uuid-5",
                 "name": "Renamed",
                 "trigger": new_trigger,
                 "actions": new_actions,
@@ -123,11 +123,11 @@ class TestUpdateAutomation:
 
 class TestDeleteAutomation:
     async def test_delete_automation_required_only(self, client, mock_api):
-        route = mock_api.delete("/spaces/1/automations/5").mock(
+        route = mock_api.delete("/spaces/1/automations/auto-uuid-5").mock(
             return_value=Response(204)
         )
         await TOOLS["kaiten_delete_automation"]["handler"](
-            client, {"space_id": 1, "automation_id": 5}
+            client, {"space_id": 1, "automation_id": "auto-uuid-5"}
         )
         assert route.called
 
@@ -199,11 +199,11 @@ class TestCreateWorkflow:
 
 class TestGetWorkflow:
     async def test_get_workflow_required_only(self, client, mock_api):
-        route = mock_api.get("/company/workflows/1").mock(
+        route = mock_api.get("/company/workflows/wf-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         result = await TOOLS["kaiten_get_workflow"]["handler"](
-            client, {"workflow_id": 1}
+            client, {"workflow_id": "wf-uuid-1"}
         )
         assert route.called
         assert result == {"id": 1}
@@ -211,18 +211,18 @@ class TestGetWorkflow:
 
 class TestUpdateWorkflow:
     async def test_update_workflow_required_only(self, client, mock_api):
-        route = mock_api.patch("/company/workflows/1").mock(
+        route = mock_api.patch("/company/workflows/wf-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         result = await TOOLS["kaiten_update_workflow"]["handler"](
-            client, {"workflow_id": 1}
+            client, {"workflow_id": "wf-uuid-1"}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_update_workflow_all_args(self, client, mock_api):
-        route = mock_api.patch("/company/workflows/1").mock(
+        route = mock_api.patch("/company/workflows/wf-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         stages = [{"id": "s1", "name": "Queue", "type": "queue"}]
@@ -230,7 +230,7 @@ class TestUpdateWorkflow:
         await TOOLS["kaiten_update_workflow"]["handler"](
             client,
             {
-                "workflow_id": 1,
+                "workflow_id": "wf-uuid-1",
                 "name": "Renamed",
                 "stages": stages,
                 "transitions": transitions,
@@ -246,8 +246,8 @@ class TestUpdateWorkflow:
 
 class TestDeleteWorkflow:
     async def test_delete_workflow_required_only(self, client, mock_api):
-        route = mock_api.delete("/company/workflows/1").mock(
+        route = mock_api.delete("/company/workflows/wf-uuid-1").mock(
             return_value=Response(204)
         )
-        await TOOLS["kaiten_delete_workflow"]["handler"](client, {"workflow_id": 1})
+        await TOOLS["kaiten_delete_workflow"]["handler"](client, {"workflow_id": "wf-uuid-1"})
         assert route.called

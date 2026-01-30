@@ -150,7 +150,7 @@ _tool(
 
 
 async def _create_saved_filter(client, args: dict) -> Any:
-    body = {"name": args["name"], "filter": args["filter"]}
+    body = {"title": args["name"], "filter": args["filter"]}
     if args.get("shared") is not None:
         body["shared"] = args["shared"]
     return await client.post("/saved-filters", json=body)
@@ -192,7 +192,9 @@ _tool(
 
 async def _update_saved_filter(client, args: dict) -> Any:
     body = {}
-    for key in ("name", "filter", "shared"):
+    if args.get("name") is not None:
+        body["title"] = args["name"]
+    for key in ("filter", "shared"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/saved-filters/{args['filter_id']}", json=body)

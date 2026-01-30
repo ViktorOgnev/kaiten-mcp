@@ -54,11 +54,11 @@ class TestCreateProject:
 
 class TestGetProject:
     async def test_get_project_required_only(self, client, mock_api):
-        route = mock_api.get("/projects/1").mock(
+        route = mock_api.get("/projects/proj-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         result = await TOOLS["kaiten_get_project"]["handler"](
-            client, {"project_id": 1}
+            client, {"project_id": "proj-uuid-1"}
         )
         assert route.called
         assert result == {"id": 1}
@@ -66,23 +66,23 @@ class TestGetProject:
 
 class TestUpdateProject:
     async def test_update_project_required_only(self, client, mock_api):
-        route = mock_api.patch("/projects/1").mock(
+        route = mock_api.patch("/projects/proj-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         result = await TOOLS["kaiten_update_project"]["handler"](
-            client, {"project_id": 1}
+            client, {"project_id": "proj-uuid-1"}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_update_project_all_args(self, client, mock_api):
-        route = mock_api.patch("/projects/1").mock(
+        route = mock_api.patch("/projects/proj-uuid-1").mock(
             return_value=Response(200, json={"id": 1})
         )
         await TOOLS["kaiten_update_project"]["handler"](
             client,
-            {"project_id": 1, "title": "Beta", "description": "Updated desc", "condition": "inactive"},
+            {"project_id": "proj-uuid-1", "title": "Beta", "description": "Updated desc", "condition": "inactive"},
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {"name": "Beta", "description": "Updated desc", "condition": "inactive"}
@@ -90,20 +90,20 @@ class TestUpdateProject:
 
 class TestDeleteProject:
     async def test_delete_project_required_only(self, client, mock_api):
-        route = mock_api.delete("/projects/1").mock(
+        route = mock_api.delete("/projects/proj-uuid-1").mock(
             return_value=Response(204)
         )
-        await TOOLS["kaiten_delete_project"]["handler"](client, {"project_id": 1})
+        await TOOLS["kaiten_delete_project"]["handler"](client, {"project_id": "proj-uuid-1"})
         assert route.called
 
 
 class TestListProjectCards:
     async def test_list_project_cards_required_only(self, client, mock_api):
-        route = mock_api.get("/projects/1/cards").mock(
+        route = mock_api.get("/projects/proj-uuid-1/cards").mock(
             return_value=Response(200, json=[])
         )
         result = await TOOLS["kaiten_list_project_cards"]["handler"](
-            client, {"project_id": 1}
+            client, {"project_id": "proj-uuid-1"}
         )
         assert route.called
         assert result == []
@@ -111,11 +111,11 @@ class TestListProjectCards:
 
 class TestAddProjectCard:
     async def test_add_project_card_required_only(self, client, mock_api):
-        route = mock_api.post("/projects/1/cards").mock(
-            return_value=Response(200, json={"project_id": 1, "card_id": 99})
+        route = mock_api.post("/projects/proj-uuid-1/cards").mock(
+            return_value=Response(200, json={"project_id": "proj-uuid-1", "card_id": 99})
         )
         result = await TOOLS["kaiten_add_project_card"]["handler"](
-            client, {"project_id": 1, "card_id": 99}
+            client, {"project_id": "proj-uuid-1", "card_id": 99}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
@@ -124,11 +124,11 @@ class TestAddProjectCard:
 
 class TestRemoveProjectCard:
     async def test_remove_project_card_required_only(self, client, mock_api):
-        route = mock_api.delete("/projects/1/cards/99").mock(
+        route = mock_api.delete("/projects/proj-uuid-1/cards/99").mock(
             return_value=Response(204)
         )
         await TOOLS["kaiten_remove_project_card"]["handler"](
-            client, {"project_id": 1, "card_id": 99}
+            client, {"project_id": "proj-uuid-1", "card_id": 99}
         )
         assert route.called
 

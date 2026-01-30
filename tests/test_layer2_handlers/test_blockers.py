@@ -59,6 +59,19 @@ class TestGetCardBlocker:
         assert route.called
         assert result == {"id": 3, "reason": "Waiting"}
 
+    async def test_not_found_returns_none(self, client, mock_api):
+        """Returns None when blocker_id is not in the list."""
+        route = mock_api.get("/cards/1/blockers").mock(
+            return_value=Response(200, json=[
+                {"id": 2, "reason": "Other"},
+            ])
+        )
+        result = await TOOLS["kaiten_get_card_blocker"]["handler"](
+            client, {"card_id": 1, "blocker_id": 999}
+        )
+        assert route.called
+        assert result is None
+
 
 class TestUpdateCardBlocker:
     async def test_required_only(self, client, mock_api):

@@ -307,7 +307,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "role_id": {"type": "integer", "description": "Role ID"},
+            "role_id": {"type": "string", "description": "Role ID (UUID)"},
         },
         "required": ["role_id"],
     },

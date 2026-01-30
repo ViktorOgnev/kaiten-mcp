@@ -160,7 +160,7 @@ class TestCreateSavedFilter:
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "My Filter", "filter": {"status": "open"}}
+        assert body == {"title": "My Filter", "filter": {"status": "open"}}
 
     async def test_create_saved_filter_all_args(self, client, mock_api):
         route = mock_api.post("/saved-filters").mock(
@@ -172,7 +172,7 @@ class TestCreateSavedFilter:
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
-            "name": "Shared Filter",
+            "title": "Shared Filter",
             "filter": {"status": "open", "assignee": 42},
             "shared": True,
         }
@@ -218,7 +218,7 @@ class TestUpdateSavedFilter:
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
-            "name": "Renamed",
+            "title": "Renamed",
             "filter": {"priority": "high"},
             "shared": False,
         }

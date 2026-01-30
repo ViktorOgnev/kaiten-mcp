@@ -143,6 +143,11 @@ class TestResponseHandling:
         respx.get(f"{BASE}/cards").respond(json={"id": 42})
         assert await client.get("/cards") == {"id": 42}
 
+    @respx.mock
+    async def test_200_empty_body_returns_none(self, client):
+        respx.get(f"{BASE}/cards").respond(200, content=b"")
+        assert await client.get("/cards") is None
+
 
 # ---------------------------------------------------------------------------
 # Error handling

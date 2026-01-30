@@ -17,6 +17,24 @@ services:
       --log-cli-level=INFO
       -x
 
+  test-e2e-expanded:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test
+    env_file:
+      - ../.env
+    environment:
+      - KAITEN_E2E=1
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+    command: >
+      tests/test_e2e_expanded.py -v
+      --tb=long
+      --timeout=600
+      --log-cli-level=INFO
+      -x
+
   test-overseer:
     build:
       context: ..

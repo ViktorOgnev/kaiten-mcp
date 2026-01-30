@@ -307,7 +307,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "sla_id": {"type": "integer", "description": "SLA ID"},
+            "sla_id": {"type": "string", "description": "SLA ID (UUID)"},
         },
         "required": ["sla_id"],
     },

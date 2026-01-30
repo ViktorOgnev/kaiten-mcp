@@ -80,6 +80,17 @@ class TestAddColumnSubscriber:
         assert body == {"user_id": 7, "type": 1}
         assert result == {"id": 7}
 
+    async def test_explicit_type(self, client, mock_api):
+        route = mock_api.post("/columns/10/subscribers").mock(
+            return_value=Response(200, json={"id": 7})
+        )
+        result = await TOOLS["kaiten_add_column_subscriber"]["handler"](
+            client, {"column_id": 10, "user_id": 7, "type": 2}
+        )
+        assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"user_id": 7, "type": 2}
+
 
 class TestRemoveColumnSubscriber:
     async def test_required_only(self, client, mock_api):

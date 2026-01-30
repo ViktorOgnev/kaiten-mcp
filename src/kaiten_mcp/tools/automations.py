@@ -82,7 +82,7 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "automation_id": {"type": "integer", "description": "Automation ID"},
+            "automation_id": {"type": "string", "description": "Automation ID (UUID)"},
         },
         "required": ["space_id", "automation_id"],
     },
@@ -107,7 +107,7 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "automation_id": {"type": "integer", "description": "Automation ID"},
+            "automation_id": {"type": "string", "description": "Automation ID (UUID)"},
             "name": {"type": "string", "description": "New automation name"},
             "trigger": {"type": "object", "description": "New trigger configuration"},
             "actions": {
@@ -141,7 +141,7 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "automation_id": {"type": "integer", "description": "Automation ID"},
+            "automation_id": {"type": "string", "description": "Automation ID (UUID)"},
         },
         "required": ["space_id", "automation_id"],
     },
@@ -218,7 +218,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "workflow_id": {"type": "integer", "description": "Workflow ID"},
+            "workflow_id": {"type": "string", "description": "Workflow ID (UUID)"},
         },
         "required": ["workflow_id"],
     },
@@ -240,7 +240,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "workflow_id": {"type": "integer", "description": "Workflow ID"},
+            "workflow_id": {"type": "string", "description": "Workflow ID (UUID)"},
             "name": {"type": "string", "description": "New workflow name"},
             "stages": {
                 "type": "array",
@@ -269,7 +269,7 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "workflow_id": {"type": "integer", "description": "Workflow ID"},
+            "workflow_id": {"type": "string", "description": "Workflow ID (UUID)"},
         },
         "required": ["workflow_id"],
     },

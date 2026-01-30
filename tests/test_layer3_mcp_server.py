@@ -296,7 +296,7 @@ _PARAMETRIZED_TOOLS = [
         "kaiten_list_webhooks",
         {"space_id": 2},
         "GET",
-        "/spaces/2/webhooks",
+        "/spaces/2/external-webhooks",
         [{"id": 9, "url": "https://example.com/hook"}],
         id="webhooks",
     ),
