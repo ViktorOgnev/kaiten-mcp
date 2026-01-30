@@ -30,14 +30,14 @@ class TestCreateAutomation:
             return_value=Response(200, json={"id": 5, "name": "Auto-assign"})
         )
         trigger = {"type": "card_created"}
-        action = {"type": "assign_user", "user_id": 99}
+        actions = [{"type": "assign_user", "data": {"user_id": 99}}]
         result = await TOOLS["kaiten_create_automation"]["handler"](
             client,
-            {"space_id": 1, "name": "Auto-assign", "trigger": trigger, "action": action},
+            {"space_id": 1, "name": "Auto-assign", "trigger": trigger, "actions": actions},
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Auto-assign", "trigger": trigger, "action": action}
+        assert body == {"name": "Auto-assign", "trigger": trigger, "actions": actions}
         assert result["name"] == "Auto-assign"
 
     async def test_create_automation_all_args(self, client, mock_api):
@@ -45,23 +45,24 @@ class TestCreateAutomation:
             return_value=Response(200, json={"id": 5})
         )
         trigger = {"type": "card_moved"}
-        action = {"type": "notify"}
+        actions = [{"type": "notify"}]
+        conditions = {"clause": "and", "conditions": []}
         await TOOLS["kaiten_create_automation"]["handler"](
             client,
             {
                 "space_id": 1,
                 "name": "Notify on move",
                 "trigger": trigger,
-                "action": action,
-                "active": False,
+                "actions": actions,
+                "conditions": conditions,
             },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
             "name": "Notify on move",
             "trigger": trigger,
-            "action": action,
-            "active": False,
+            "actions": actions,
+            "conditions": conditions,
         }
 
 
@@ -94,7 +95,8 @@ class TestUpdateAutomation:
             return_value=Response(200, json={"id": 5})
         )
         new_trigger = {"type": "card_updated"}
-        new_action = {"type": "send_email"}
+        new_actions = [{"type": "send_email"}]
+        new_conditions = {"clause": "or", "conditions": []}
         await TOOLS["kaiten_update_automation"]["handler"](
             client,
             {
@@ -102,16 +104,16 @@ class TestUpdateAutomation:
                 "automation_id": 5,
                 "name": "Renamed",
                 "trigger": new_trigger,
-                "action": new_action,
-                "active": True,
+                "actions": new_actions,
+                "conditions": new_conditions,
             },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
             "name": "Renamed",
             "trigger": new_trigger,
-            "action": new_action,
-            "active": True,
+            "actions": new_actions,
+            "conditions": new_conditions,
         }
 
 
@@ -145,10 +147,9 @@ class TestListWorkflows:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_list_workflows"]["handler"](
-            client, {"query": "dev", "limit": 5, "offset": 10}
+            client, {"limit": 5, "offset": 10}
         )
         url = str(route.calls[0].request.url)
-        assert "query=dev" in url
         assert "limit=5" in url
         assert "offset=10" in url
 
@@ -158,22 +159,38 @@ class TestCreateWorkflow:
         route = mock_api.post("/company/workflows").mock(
             return_value=Response(200, json={"id": 1, "name": "Dev Pipeline"})
         )
+        stages = [{"id": "s1", "name": "Queue", "type": "queue"}]
+        transitions = [{"id": "t1", "prev_stage_id": "s1", "next_stage_id": "s2"}]
         result = await TOOLS["kaiten_create_workflow"]["handler"](
-            client, {"name": "Dev Pipeline"}
+            client, {"name": "Dev Pipeline", "stages": stages, "transitions": transitions}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Dev Pipeline"}
+        assert body == {"name": "Dev Pipeline", "stages": stages, "transitions": transitions}
 
     async def test_create_workflow_all_args(self, client, mock_api):
+        """Company workflows accept: name, stages, transitions. No card_type_uids."""
         route = mock_api.post("/company/workflows").mock(
             return_value=Response(200, json={"id": 1})
         )
+        stages = [
+            {"id": "s1", "name": "Queue", "type": "queue"},
+            {"id": "s2", "name": "Done", "type": "done"},
+        ]
+        transitions = [{"id": "t1", "prev_stage_id": "s1", "next_stage_id": "s2"}]
         await TOOLS["kaiten_create_workflow"]["handler"](
-            client, {"name": "Dev Pipeline", "description": "Main dev workflow"}
+            client, {
+                "name": "Dev Pipeline",
+                "stages": stages,
+                "transitions": transitions,
+            }
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Dev Pipeline", "description": "Main dev workflow"}
+        assert body == {
+            "name": "Dev Pipeline",
+            "stages": stages,
+            "transitions": transitions,
+        }
 
 
 class TestGetWorkflow:
@@ -204,12 +221,23 @@ class TestUpdateWorkflow:
         route = mock_api.patch("/company/workflows/1").mock(
             return_value=Response(200, json={"id": 1})
         )
+        stages = [{"id": "s1", "name": "Queue", "type": "queue"}]
+        transitions = [{"id": "t1", "prev_stage_id": "s1", "next_stage_id": "s2"}]
         await TOOLS["kaiten_update_workflow"]["handler"](
             client,
-            {"workflow_id": 1, "name": "Renamed", "description": "Updated desc"},
+            {
+                "workflow_id": 1,
+                "name": "Renamed",
+                "stages": stages,
+                "transitions": transitions,
+            },
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Renamed", "description": "Updated desc"}
+        assert body == {
+            "name": "Renamed",
+            "stages": stages,
+            "transitions": transitions,
+        }
 
 
 class TestDeleteWorkflow:

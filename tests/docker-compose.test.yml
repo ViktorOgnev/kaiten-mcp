@@ -1,4 +1,19 @@
 services:
+  test-e2e:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test
+    env_file:
+      - ../.env
+    environment:
+      - KAITEN_E2E=1
+    command: >
+      tests/test_e2e_scenario.py -v
+      --tb=long
+      --timeout=600
+      --log-cli-level=INFO
+      -x
+
   test-overseer:
     build:
       context: ..

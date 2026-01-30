@@ -105,6 +105,8 @@ class KaitenClient:
                     raise KaitenApiError(response.status_code, msg, body)
                 if response.status_code == 204:
                     return None
+                if not response.content:
+                    return None
                 return response.json()
             except httpx.HTTPError as e:
                 if attempt == MAX_RETRIES - 1:

@@ -19,31 +19,27 @@ class TestListProjects:
         assert route.called
         assert result == []
 
-    async def test_list_projects_all_args(self, client, mock_api):
+    async def test_list_projects_returns_list(self, client, mock_api):
         route = mock_api.get("/projects").mock(
             return_value=Response(200, json=[{"id": 1}])
         )
-        await TOOLS["kaiten_list_projects"]["handler"](
-            client, {"query": "backend", "limit": 10, "offset": 5}
-        )
-        url = str(route.calls[0].request.url)
-        assert "query=backend" in url
-        assert "limit=10" in url
-        assert "offset=5" in url
+        result = await TOOLS["kaiten_list_projects"]["handler"](client, {})
+        assert route.called
+        assert result == [{"id": 1}]
 
 
 class TestCreateProject:
     async def test_create_project_required_only(self, client, mock_api):
         route = mock_api.post("/projects").mock(
-            return_value=Response(200, json={"id": 1, "title": "Alpha"})
+            return_value=Response(200, json={"id": 1, "name": "Alpha"})
         )
         result = await TOOLS["kaiten_create_project"]["handler"](
             client, {"title": "Alpha"}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Alpha"}
-        assert result["title"] == "Alpha"
+        assert body == {"name": "Alpha"}
+        assert result["name"] == "Alpha"
 
     async def test_create_project_all_args(self, client, mock_api):
         route = mock_api.post("/projects").mock(
@@ -53,7 +49,7 @@ class TestCreateProject:
             client, {"title": "Alpha", "description": "Main project"}
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Alpha", "description": "Main project"}
+        assert body == {"name": "Alpha", "description": "Main project"}
 
 
 class TestGetProject:
@@ -89,7 +85,7 @@ class TestUpdateProject:
             {"project_id": 1, "title": "Beta", "description": "Updated desc"},
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Beta", "description": "Updated desc"}
+        assert body == {"name": "Beta", "description": "Updated desc"}
 
 
 class TestDeleteProject:
@@ -154,10 +150,10 @@ class TestListSprints:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_list_sprints"]["handler"](
-            client, {"query": "q1", "limit": 5, "offset": 0}
+            client, {"active": True, "limit": 5, "offset": 0}
         )
         url = str(route.calls[0].request.url)
-        assert "query=q1" in url
+        assert "active=true" in url.lower() or "active=True" in url
         assert "limit=5" in url
         assert "offset=0" in url
 
@@ -168,11 +164,11 @@ class TestCreateSprint:
             return_value=Response(200, json={"id": 1, "title": "Sprint 1"})
         )
         result = await TOOLS["kaiten_create_sprint"]["handler"](
-            client, {"title": "Sprint 1"}
+            client, {"title": "Sprint 1", "board_id": 10}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Sprint 1"}
+        assert body == {"title": "Sprint 1", "board_id": 10}
 
     async def test_create_sprint_all_args(self, client, mock_api):
         route = mock_api.post("/sprints").mock(
@@ -182,15 +178,19 @@ class TestCreateSprint:
             client,
             {
                 "title": "Sprint 1",
+                "board_id": 10,
+                "goal": "Deliver MVP",
                 "start_date": "2025-01-01",
-                "end_date": "2025-01-14",
+                "finish_date": "2025-01-14",
             },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
             "title": "Sprint 1",
+            "board_id": 10,
+            "goal": "Deliver MVP",
             "start_date": "2025-01-01",
-            "end_date": "2025-01-14",
+            "finish_date": "2025-01-14",
         }
 
 
@@ -227,15 +227,17 @@ class TestUpdateSprint:
             {
                 "sprint_id": 1,
                 "title": "Sprint 1 (revised)",
+                "goal": "Updated goal",
                 "start_date": "2025-01-02",
-                "end_date": "2025-01-15",
+                "finish_date": "2025-01-15",
             },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
             "title": "Sprint 1 (revised)",
+            "goal": "Updated goal",
             "start_date": "2025-01-02",
-            "end_date": "2025-01-15",
+            "finish_date": "2025-01-15",
         }
 
 

@@ -34,10 +34,10 @@ async def _create_automation(client, args: dict) -> Any:
     body: dict[str, Any] = {
         "name": args["name"],
         "trigger": args["trigger"],
-        "action": args["action"],
+        "actions": args["actions"],
     }
-    if args.get("active") is not None:
-        body["active"] = args["active"]
+    if args.get("conditions") is not None:
+        body["conditions"] = args["conditions"]
     return await client.post(f"/spaces/{args['space_id']}/automations", json=body)
 
 
@@ -49,11 +49,15 @@ _tool(
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
             "name": {"type": "string", "description": "Automation name"},
-            "trigger": {"type": "object", "description": "Trigger configuration"},
-            "action": {"type": "object", "description": "Action configuration"},
-            "active": {"type": "boolean", "description": "Whether the automation is active"},
+            "trigger": {"type": "object", "description": "Trigger configuration {type, data}"},
+            "actions": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "List of action configurations [{type, data}]",
+            },
+            "conditions": {"type": "object", "description": "Conditions configuration"},
         },
-        "required": ["space_id", "name", "trigger", "action"],
+        "required": ["space_id", "name", "trigger", "actions"],
     },
     _create_automation,
 )
@@ -82,7 +86,7 @@ _tool(
 
 async def _update_automation(client, args: dict) -> Any:
     body: dict[str, Any] = {}
-    for key in ("name", "trigger", "action", "active"):
+    for key in ("name", "trigger", "actions", "conditions"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(
@@ -100,8 +104,12 @@ _tool(
             "automation_id": {"type": "integer", "description": "Automation ID"},
             "name": {"type": "string", "description": "New automation name"},
             "trigger": {"type": "object", "description": "New trigger configuration"},
-            "action": {"type": "object", "description": "New action configuration"},
-            "active": {"type": "boolean", "description": "Whether the automation is active"},
+            "actions": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "New action configurations",
+            },
+            "conditions": {"type": "object", "description": "New conditions configuration"},
         },
         "required": ["space_id", "automation_id"],
     },
@@ -136,7 +144,7 @@ _tool(
 
 async def _list_workflows(client, args: dict) -> Any:
     params: dict[str, Any] = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("limit", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
     return await client.get("/company/workflows", params=params or None)
@@ -144,11 +152,10 @@ async def _list_workflows(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_workflows",
-    "List company workflows. Supports search and pagination.",
+    "List company workflows. Supports pagination.",
     {
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search query string"},
             "limit": {"type": "integer", "description": "Maximum number of results"},
             "offset": {"type": "integer", "description": "Offset for pagination"},
         },
@@ -158,22 +165,33 @@ _tool(
 
 
 async def _create_workflow(client, args: dict) -> Any:
-    body: dict[str, Any] = {"name": args["name"]}
-    if args.get("description") is not None:
-        body["description"] = args["description"]
+    body: dict[str, Any] = {
+        "name": args["name"],
+        "stages": args["stages"],
+        "transitions": args["transitions"],
+    }
     return await client.post("/company/workflows", json=body)
 
 
 _tool(
     "kaiten_create_workflow",
-    "Create a new company workflow.",
+    "Create a new company workflow. Requires at least 2 stages and 1 transition.",
     {
         "type": "object",
         "properties": {
-            "name": {"type": "string", "description": "Workflow name"},
-            "description": {"type": "string", "description": "Workflow description"},
+            "name": {"type": "string", "description": "Workflow name (max 128 chars)"},
+            "stages": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "Workflow stages (min 2). Each: {id (uuid), name, type (queue/in_progress/done), position_data: {x, y}}",
+            },
+            "transitions": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "Stage transitions (min 1). Each: {id (uuid), prev_stage_id, next_stage_id, position_data: {sourceHandle, targetHandle}}",
+            },
         },
-        "required": ["name"],
+        "required": ["name", "stages", "transitions"],
     },
     _create_workflow,
 )
@@ -199,7 +217,7 @@ _tool(
 
 async def _update_workflow(client, args: dict) -> Any:
     body: dict[str, Any] = {}
-    for key in ("name", "description"):
+    for key in ("name", "stages", "transitions"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/company/workflows/{args['workflow_id']}", json=body)
@@ -213,7 +231,16 @@ _tool(
         "properties": {
             "workflow_id": {"type": "integer", "description": "Workflow ID"},
             "name": {"type": "string", "description": "New workflow name"},
-            "description": {"type": "string", "description": "New workflow description"},
+            "stages": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "Updated stages array",
+            },
+            "transitions": {
+                "type": "array",
+                "items": {"type": "object"},
+                "description": "Updated transitions array",
+            },
         },
         "required": ["workflow_id"],
     },

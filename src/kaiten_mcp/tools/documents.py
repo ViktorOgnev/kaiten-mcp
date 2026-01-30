@@ -34,8 +34,8 @@ _tool(
 
 
 async def _create_document(client, args: dict) -> Any:
-    body = {"title": args["title"]}
-    for key in ("text", "space_id", "folder_uid"):
+    body: dict[str, Any] = {"title": args["title"]}
+    for key in ("parent_entity_uid", "sort_order", "key"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.post("/documents", json=body)
@@ -48,9 +48,9 @@ _tool(
         "type": "object",
         "properties": {
             "title": {"type": "string", "description": "Document title"},
-            "text": {"type": "string", "description": "Document text content"},
-            "space_id": {"type": "integer", "description": "Space ID to place the document in"},
-            "folder_uid": {"type": "string", "description": "Folder UID to place the document in"},
+            "parent_entity_uid": {"type": "string", "description": "Parent document group UID"},
+            "sort_order": {"type": "integer", "description": "Sort order"},
+            "key": {"type": "string", "description": "Unique key identifier"},
         },
         "required": ["title"],
     },
@@ -77,8 +77,8 @@ _tool(
 
 
 async def _update_document(client, args: dict) -> Any:
-    body = {}
-    for key in ("title", "text"):
+    body: dict[str, Any] = {}
+    for key in ("title", "data", "parent_entity_uid", "sort_order", "key"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/documents/{args['document_uid']}", json=body)
@@ -92,7 +92,10 @@ _tool(
         "properties": {
             "document_uid": {"type": "string", "description": "Document UID"},
             "title": {"type": "string", "description": "New document title"},
-            "text": {"type": "string", "description": "New document text content"},
+            "data": {"type": "object", "description": "Document content (ProseMirror JSON)"},
+            "parent_entity_uid": {"type": "string", "description": "New parent group UID"},
+            "sort_order": {"type": "integer", "description": "Sort order"},
+            "key": {"type": "string", "description": "Unique key identifier"},
         },
         "required": ["document_uid"],
     },
@@ -144,9 +147,11 @@ _tool(
 
 
 async def _create_document_group(client, args: dict) -> Any:
-    body = {"title": args["title"]}
-    if args.get("parent_uid") is not None:
-        body["parent_uid"] = args["parent_uid"]
+    body: dict[str, Any] = {"title": args["title"]}
+    if args.get("parent_entity_uid") is not None:
+        body["parent_entity_uid"] = args["parent_entity_uid"]
+    if args.get("sort_order") is not None:
+        body["sort_order"] = args["sort_order"]
     return await client.post("/document-groups", json=body)
 
 
@@ -157,7 +162,8 @@ _tool(
         "type": "object",
         "properties": {
             "title": {"type": "string", "description": "Group title"},
-            "parent_uid": {"type": "string", "description": "Parent group UID for nesting"},
+            "parent_entity_uid": {"type": "string", "description": "Parent group UID for nesting"},
+            "sort_order": {"type": "integer", "description": "Sort order"},
         },
         "required": ["title"],
     },

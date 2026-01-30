@@ -95,8 +95,13 @@ _tool(
 
 
 async def _add_column_subscriber(client, args: dict) -> Any:
+    body = {"user_id": args["user_id"]}
+    if args.get("type") is not None:
+        body["type"] = args["type"]
+    else:
+        body["type"] = 1  # default: all notifications
     return await client.post(
-        f"/columns/{args['column_id']}/subscribers", json={"user_id": args["user_id"]}
+        f"/columns/{args['column_id']}/subscribers", json=body
     )
 
 
@@ -108,6 +113,7 @@ _tool(
         "properties": {
             "column_id": {"type": "integer", "description": "Column ID"},
             "user_id": {"type": "integer", "description": "User ID to subscribe"},
+            "type": {"type": "integer", "description": "Subscription type (1=all, 2=mentions only). Default: 1"},
         },
         "required": ["column_id", "user_id"],
     },

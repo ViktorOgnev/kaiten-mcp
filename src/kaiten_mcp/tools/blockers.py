@@ -92,7 +92,13 @@ _tool(
 async def _get_card_blocker(client, args: dict) -> Any:
     card_id = args["card_id"]
     blocker_id = args["blocker_id"]
-    return await client.get(f"/cards/{card_id}/blockers/{blocker_id}")
+    # The Kaiten API does not support GET /cards/{id}/blockers/{blocker_id}.
+    # Fetch the full list and filter client-side.
+    blockers = await client.get(f"/cards/{card_id}/blockers")
+    for b in blockers:
+        if b.get("id") == blocker_id:
+            return b
+    return None
 
 
 _tool(

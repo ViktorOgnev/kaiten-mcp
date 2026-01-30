@@ -34,7 +34,7 @@ class TestAddCardChild:
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"child_card_id": 10}
+        assert body == {"card_id": 10}
         assert result == {"id": 10}
 
 
@@ -77,7 +77,7 @@ class TestAddCardParent:
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"parent_card_id": 2}
+        assert body == {"card_id": 2}
         assert result == {"id": 2}
 
 

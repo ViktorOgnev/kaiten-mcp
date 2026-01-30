@@ -11,30 +11,22 @@ def _tool(name: str, description: str, schema: dict, handler):
 # --- Projects ---
 
 async def _list_projects(client, args: dict) -> Any:
-    params = {}
-    for key in ("query", "limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/projects", params=params or None)
+    return await client.get("/projects")
 
 
 _tool(
     "kaiten_list_projects",
-    "List Kaiten projects.",
+    "List all Kaiten projects in the company.",
     {
         "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "Search filter"},
-            "limit": {"type": "integer", "description": "Max results"},
-            "offset": {"type": "integer", "description": "Pagination offset"},
-        },
+        "properties": {},
     },
     _list_projects,
 )
 
 
 async def _create_project(client, args: dict) -> Any:
-    body = {"title": args["title"]}
+    body = {"name": args["title"]}
     if args.get("description") is not None:
         body["description"] = args["description"]
     return await client.post("/projects", json=body)
@@ -75,9 +67,10 @@ _tool(
 
 async def _update_project(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "description"):
-        if args.get(key) is not None:
-            body[key] = args[key]
+    if args.get("title") is not None:
+        body["name"] = args["title"]
+    if args.get("description") is not None:
+        body["description"] = args["description"]
     return await client.patch(f"/projects/{args['project_id']}", json=body)
 
 
@@ -179,7 +172,7 @@ _tool(
 
 async def _list_sprints(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("active", "limit", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
     return await client.get("/sprints", params=params or None)
@@ -191,8 +184,8 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search filter"},
-            "limit": {"type": "integer", "description": "Max results"},
+            "active": {"type": "boolean", "description": "Filter by active/inactive"},
+            "limit": {"type": "integer", "description": "Max results (max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
     },
@@ -201,8 +194,8 @@ _tool(
 
 
 async def _create_sprint(client, args: dict) -> Any:
-    body = {"title": args["title"]}
-    for key in ("start_date", "end_date"):
+    body = {"title": args["title"], "board_id": args["board_id"]}
+    for key in ("goal", "start_date", "finish_date"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.post("/sprints", json=body)
@@ -215,10 +208,12 @@ _tool(
         "type": "object",
         "properties": {
             "title": {"type": "string", "description": "Sprint title"},
+            "board_id": {"type": "integer", "description": "Board ID for the sprint"},
+            "goal": {"type": "string", "description": "Sprint goal"},
             "start_date": {"type": "string", "description": "Start date (ISO 8601)"},
-            "end_date": {"type": "string", "description": "End date (ISO 8601)"},
+            "finish_date": {"type": "string", "description": "Finish date (ISO 8601)"},
         },
-        "required": ["title"],
+        "required": ["title", "board_id"],
     },
     _create_sprint,
 )
@@ -244,7 +239,7 @@ _tool(
 
 async def _update_sprint(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "start_date", "end_date"):
+    for key in ("title", "goal", "start_date", "finish_date"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/sprints/{args['sprint_id']}", json=body)
@@ -258,8 +253,9 @@ _tool(
         "properties": {
             "sprint_id": {"type": "integer", "description": "Sprint ID"},
             "title": {"type": "string", "description": "Sprint title"},
+            "goal": {"type": "string", "description": "Sprint goal"},
             "start_date": {"type": "string", "description": "Start date (ISO 8601)"},
-            "end_date": {"type": "string", "description": "End date (ISO 8601)"},
+            "finish_date": {"type": "string", "description": "Finish date (ISO 8601)"},
         },
         "required": ["sprint_id"],
     },

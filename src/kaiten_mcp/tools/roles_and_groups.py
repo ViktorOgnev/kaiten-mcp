@@ -131,8 +131,6 @@ _tool(
 
 async def _create_company_group(client, args: dict) -> Any:
     body: dict[str, Any] = {"name": args["name"]}
-    if args.get("description") is not None:
-        body["description"] = args["description"]
     return await client.post("/company/groups", json=body)
 
 
@@ -143,7 +141,6 @@ _tool(
         "type": "object",
         "properties": {
             "name": {"type": "string", "description": "Group name"},
-            "description": {"type": "string", "description": "Group description"},
         },
         "required": ["name"],
     },
@@ -173,8 +170,6 @@ async def _update_company_group(client, args: dict) -> Any:
     body: dict[str, Any] = {}
     if args.get("name") is not None:
         body["name"] = args["name"]
-    if args.get("description") is not None:
-        body["description"] = args["description"]
     return await client.patch(f"/company/groups/{args['group_uid']}", json=body)
 
 
@@ -186,7 +181,6 @@ _tool(
         "properties": {
             "group_uid": {"type": "string", "description": "Group UID"},
             "name": {"type": "string", "description": "New group name"},
-            "description": {"type": "string", "description": "New group description"},
         },
         "required": ["group_uid"],
     },
@@ -213,7 +207,7 @@ _tool(
 
 
 async def _list_group_users(client, args: dict) -> Any:
-    return await client.get(f"/company/groups/{args['group_uid']}/users")
+    return await client.get(f"/groups/{args['group_uid']}/users")
 
 
 _tool(
@@ -233,7 +227,7 @@ _tool(
 async def _add_group_user(client, args: dict) -> Any:
     body: dict[str, Any] = {"user_id": args["user_id"]}
     return await client.post(
-        f"/company/groups/{args['group_uid']}/users", json=body
+        f"/groups/{args['group_uid']}/users", json=body
     )
 
 
@@ -254,7 +248,7 @@ _tool(
 
 async def _remove_group_user(client, args: dict) -> Any:
     return await client.delete(
-        f"/company/groups/{args['group_uid']}/users/{args['user_id']}"
+        f"/groups/{args['group_uid']}/users/{args['user_id']}"
     )
 
 

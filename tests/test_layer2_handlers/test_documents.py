@@ -54,17 +54,17 @@ class TestCreateDocument:
             client,
             {
                 "title": "Doc",
-                "text": "Content here",
-                "space_id": 7,
-                "folder_uid": "folder-123",
+                "parent_entity_uid": "folder-123",
+                "sort_order": 1,
+                "key": "doc-key",
             },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
             "title": "Doc",
-            "text": "Content here",
-            "space_id": 7,
-            "folder_uid": "folder-123",
+            "parent_entity_uid": "folder-123",
+            "sort_order": 1,
+            "key": "doc-key",
         }
 
 
@@ -98,10 +98,10 @@ class TestUpdateDocument:
         )
         await TOOLS["kaiten_update_document"]["handler"](
             client,
-            {"document_uid": "abc-uid", "title": "New Title", "text": "New text"},
+            {"document_uid": "abc-uid", "title": "New Title", "data": {"type": "doc", "content": []}},
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "New Title", "text": "New text"}
+        assert body == {"title": "New Title", "data": {"type": "doc", "content": []}}
 
 
 class TestDeleteDocument:
@@ -159,10 +159,10 @@ class TestCreateDocumentGroup:
             return_value=Response(200, json={"uid": "g1"})
         )
         await TOOLS["kaiten_create_document_group"]["handler"](
-            client, {"title": "Grp", "parent_uid": "parent-1"}
+            client, {"title": "Grp", "parent_entity_uid": "parent-1", "sort_order": 2}
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Grp", "parent_uid": "parent-1"}
+        assert body == {"title": "Grp", "parent_entity_uid": "parent-1", "sort_order": 2}
 
 
 class TestGetDocumentGroup:

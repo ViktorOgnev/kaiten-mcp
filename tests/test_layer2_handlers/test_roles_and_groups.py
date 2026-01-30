@@ -121,14 +121,15 @@ class TestCreateCompanyGroup:
         assert body == {"name": "Engineering"}
 
     async def test_create_company_group_all_args(self, client, mock_api):
+        """Company group create only accepts 'name' — no other fields."""
         route = mock_api.post("/company/groups").mock(
             return_value=Response(200, json={"uid": "g1"})
         )
         await TOOLS["kaiten_create_company_group"]["handler"](
-            client, {"name": "Engineering", "description": "Dev team"}
+            client, {"name": "Engineering"}
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Engineering", "description": "Dev team"}
+        assert body == {"name": "Engineering"}
 
 
 class TestGetCompanyGroup:
@@ -161,10 +162,10 @@ class TestUpdateCompanyGroup:
         )
         await TOOLS["kaiten_update_company_group"]["handler"](
             client,
-            {"group_uid": "g1", "name": "Platform", "description": "Platform team"},
+            {"group_uid": "g1", "name": "Platform"},
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Platform", "description": "Platform team"}
+        assert body == {"name": "Platform"}
 
 
 class TestDeleteCompanyGroup:
@@ -180,7 +181,7 @@ class TestDeleteCompanyGroup:
 
 class TestListGroupUsers:
     async def test_list_group_users_required_only(self, client, mock_api):
-        route = mock_api.get("/company/groups/g1/users").mock(
+        route = mock_api.get("/groups/g1/users").mock(
             return_value=Response(200, json=[])
         )
         result = await TOOLS["kaiten_list_group_users"]["handler"](
@@ -192,7 +193,7 @@ class TestListGroupUsers:
 
 class TestAddGroupUser:
     async def test_add_group_user_required_only(self, client, mock_api):
-        route = mock_api.post("/company/groups/g1/users").mock(
+        route = mock_api.post("/groups/g1/users").mock(
             return_value=Response(200, json={"user_id": 7})
         )
         result = await TOOLS["kaiten_add_group_user"]["handler"](
@@ -205,7 +206,7 @@ class TestAddGroupUser:
 
 class TestRemoveGroupUser:
     async def test_remove_group_user_required_only(self, client, mock_api):
-        route = mock_api.delete("/company/groups/g1/users/7").mock(
+        route = mock_api.delete("/groups/g1/users/7").mock(
             return_value=Response(204)
         )
         await TOOLS["kaiten_remove_group_user"]["handler"](

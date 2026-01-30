@@ -49,7 +49,7 @@ _tool(
 
 async def _add_card_child(client, args: dict) -> Any:
     card_id = args["card_id"]
-    body: dict[str, Any] = {"child_card_id": args["child_card_id"]}
+    body: dict[str, Any] = {"card_id": args["child_card_id"]}
     return await client.post(f"/cards/{card_id}/children", json=body)
 
 
@@ -140,7 +140,7 @@ _tool(
 
 async def _add_card_parent(client, args: dict) -> Any:
     card_id = args["card_id"]
-    body: dict[str, Any] = {"parent_card_id": args["parent_card_id"]}
+    body: dict[str, Any] = {"card_id": args["parent_card_id"]}
     return await client.post(f"/cards/{card_id}/parents", json=body)
 
 
