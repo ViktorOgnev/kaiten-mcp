@@ -126,6 +126,7 @@ async def test_call_tool_kaiten_api_error():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {"space_id": 999})
     assert _text(result) == "Kaiten API Error 404: Space not found"
+    assert result.isError is True
 
 
 async def test_call_tool_kaiten_api_error_rate_limit():
@@ -134,6 +135,7 @@ async def test_call_tool_kaiten_api_error_rate_limit():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {})
     assert _text(result) == "Kaiten API Error 429: Rate limit exceeded"
+    assert result.isError is True
 
 
 async def test_call_tool_kaiten_api_error_server():
@@ -142,6 +144,7 @@ async def test_call_tool_kaiten_api_error_server():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {})
     assert _text(result) == "Kaiten API Error 500: Internal Server Error"
+    assert result.isError is True
 
 
 # ── 7. Generic exception ────────────────────────────────────────────────────
@@ -153,6 +156,7 @@ async def test_call_tool_generic_exception():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {"space_id": 1})
     assert _text(result) == "Error: ValueError: bad value"
+    assert result.isError is True
 
 
 async def test_call_tool_runtime_error():
@@ -161,6 +165,7 @@ async def test_call_tool_runtime_error():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {"space_id": 1})
     assert _text(result) == "Error: RuntimeError: connection lost"
+    assert result.isError is True
 
 
 async def test_call_tool_key_error():
@@ -169,6 +174,7 @@ async def test_call_tool_key_error():
     with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": handler}}):
         result = await call_tool(tool_name, {"space_id": 1})
     assert "Error: KeyError:" in _text(result)
+    assert result.isError is True
 
 
 # ── 8. list_tools returns correct count ─────────────────────────────────────

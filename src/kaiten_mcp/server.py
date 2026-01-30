@@ -88,19 +88,25 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
         return CallToolResult(content=[TextContent(type="text", text=text)])
     except KaitenApiError as e:
         return CallToolResult(
-            content=[TextContent(type="text", text=f"Kaiten API Error {e.status_code}: {e.message}")]
+            content=[TextContent(type="text", text=f"Kaiten API Error {e.status_code}: {e.message}")],
+            isError=True,
         )
     except Exception as e:
         logger.exception("Tool execution error")
         return CallToolResult(
-            content=[TextContent(type="text", text=f"Error: {type(e).__name__}: {e}")]
+            content=[TextContent(type="text", text=f"Error: {type(e).__name__}: {e}")],
+            isError=True,
         )
 
 
 def main():
     async def run():
-        async with stdio_server() as (read_stream, write_stream):
-            await app.run(read_stream, write_stream, app.create_initialization_options())
+        try:
+            async with stdio_server() as (read_stream, write_stream):
+                await app.run(read_stream, write_stream, app.create_initialization_options())
+        finally:
+            if _client is not None:
+                await _client.close()
 
     asyncio.run(run())
 

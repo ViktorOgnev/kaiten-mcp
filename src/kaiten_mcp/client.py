@@ -37,6 +37,7 @@ class KaitenClient:
         self.base_url = f"https://{self.domain}.kaiten.ru/api/{API_VERSION}"
         self._client: httpx.AsyncClient | None = None
         self._last_request_time = 0.0
+        self._rate_lock = asyncio.Lock()
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -52,11 +53,12 @@ class KaitenClient:
         return self._client
 
     async def _rate_limit(self) -> None:
-        now = asyncio.get_event_loop().time()
-        elapsed = now - self._last_request_time
-        if elapsed < RATE_LIMIT_DELAY:
-            await asyncio.sleep(RATE_LIMIT_DELAY - elapsed)
-        self._last_request_time = asyncio.get_event_loop().time()
+        async with self._rate_lock:
+            now = asyncio.get_running_loop().time()
+            elapsed = now - self._last_request_time
+            if elapsed < RATE_LIMIT_DELAY:
+                await asyncio.sleep(RATE_LIMIT_DELAY - elapsed)
+            self._last_request_time = asyncio.get_running_loop().time()
 
     async def _request(
         self,
@@ -78,8 +80,16 @@ class KaitenClient:
                     method, path, params=params, json=json
                 )
                 if response.status_code == 429:
-                    logger.warning("Rate limited, retrying after delay")
-                    await asyncio.sleep(RETRY_DELAY * (attempt + 1))
+                    retry_after = response.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            delay = float(retry_after)
+                        except ValueError:
+                            delay = RETRY_DELAY * (attempt + 1)
+                    else:
+                        delay = RETRY_DELAY * (attempt + 1)
+                    logger.warning("Rate limited, retrying after %.1fs", delay)
+                    await asyncio.sleep(delay)
                     continue
                 if response.status_code >= 400:
                     body = None

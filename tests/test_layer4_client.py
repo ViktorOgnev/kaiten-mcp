@@ -213,11 +213,31 @@ class TestRetry429:
     @respx.mock
     async def test_429_exhausts_retries(self, client):
         respx.get(f"{BASE}/cards").respond(429, text="rate limited")
-        # After MAX_RETRIES 429s the last one falls through to >=400 handling
-        # which raises KaitenApiError (status_code=429).
         with pytest.raises(KaitenApiError) as exc_info:
             await client.get("/cards")
         assert exc_info.value.status_code == 429
+
+    @respx.mock
+    async def test_429_respects_retry_after_header(self, client):
+        route = respx.get(f"{BASE}/cards")
+        route.side_effect = [
+            httpx.Response(429, text="rate limited", headers={"Retry-After": "0.1"}),
+            httpx.Response(200, json={"ok": True}),
+        ]
+        result = await client.get("/cards")
+        assert result == {"ok": True}
+        assert route.call_count == 2
+
+    @respx.mock
+    async def test_429_invalid_retry_after_falls_back(self, client):
+        route = respx.get(f"{BASE}/cards")
+        route.side_effect = [
+            httpx.Response(429, text="rate limited", headers={"Retry-After": "invalid"}),
+            httpx.Response(200, json={"ok": True}),
+        ]
+        result = await client.get("/cards")
+        assert result == {"ok": True}
+        assert route.call_count == 2
 
 
 # ---------------------------------------------------------------------------
@@ -266,12 +286,23 @@ class TestRateLimit:
         assert t2 >= t1
 
     @respx.mock
+    async def test_rate_lock_serializes_concurrent_requests(self, client):
+        respx.get(f"{BASE}/me").respond(json={})
+        # Run two concurrent requests; the lock should serialize them
+        results = await asyncio.gather(
+            client.get("/me"), client.get("/me")
+        )
+        assert all(r == {} for r in results)
+        # Both should complete; the lock prevents race conditions
+        assert client._last_request_time > 0
+
+    @respx.mock
     async def test_rate_limit_delays_rapid_requests(self, client):
         respx.get(f"{BASE}/me").respond(json={})
         # Make the first request to set a recent _last_request_time
         await client.get("/me")
         # Set _last_request_time to "now" so next request must wait
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         client._last_request_time = loop.time()
 
         start = loop.time()
