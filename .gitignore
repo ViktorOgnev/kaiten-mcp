@@ -24,7 +24,7 @@ venv/
 .claude-flow/
 .swarm/
 .mcp.json
-CLAUDE.md
+/CLAUDE.md
 
 # Docker
 .docker/
