@@ -34,51 +34,83 @@ MCP-сервер для [Kaiten](https://kaiten.ru) — предоставляе
 
 ## Требования
 
-- Python >= 3.11
+- Docker **или** Python >= 3.11
 - Аккаунт Kaiten с API-токеном
 
-## Установка и запуск
+## Переменные окружения
 
-### Docker Compose (рекомендуется)
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `KAITEN_DOMAIN` | Да | Поддомен компании (`yourcompany` для `yourcompany.kaiten.ru`) |
+| `KAITEN_TOKEN` | Да | API-токен из настроек пользователя Kaiten |
 
-1. Скопируйте `.env.example` в `.env` и заполните:
+## Подключение к Claude Code
 
-```bash
-cp .env.example .env
-```
+### Способ 1: Docker (рекомендуется)
 
-```env
-KAITEN_DOMAIN=yourcompany
-KAITEN_TOKEN=your-api-token
-```
-
-`KAITEN_DOMAIN` — поддомен вашей компании (`yourcompany` для `yourcompany.kaiten.ru`).
-
-2. Запустите:
+Собрать образ (однократно):
 
 ```bash
-docker compose up --build
+docker build -t kaiten-mcp .
 ```
 
-### Локально
+Зарегистрировать MCP-сервер:
 
 ```bash
-pip install -e .
-kaiten-mcp
+claude mcp add kaiten \
+  -e KAITEN_DOMAIN=yourcompany \
+  -e KAITEN_TOKEN=your-api-token \
+  -- docker run --rm -i -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp
 ```
 
-Переменные окружения `KAITEN_DOMAIN` и `KAITEN_TOKEN` должны быть установлены.
+Перезапустить Claude Code (`/exit` и запустить заново) — 178 инструментов Kaiten станут доступны.
+
+### Способ 2: Python (venv)
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e .
+claude mcp add kaiten \
+  -e KAITEN_DOMAIN=yourcompany \
+  -e KAITEN_TOKEN=your-api-token \
+  -- .venv/bin/kaiten-mcp
+```
+
+Перезапустить Claude Code.
+
+### Способ 3: Docker Compose
+
+```bash
+claude mcp add kaiten \
+  -e KAITEN_DOMAIN=yourcompany \
+  -e KAITEN_TOKEN=your-api-token \
+  -- docker compose --project-directory /path/to/kaiten-mcp run --rm -T kaiten-mcp
+```
+
+Замените `/path/to/kaiten-mcp` на абсолютный путь к репозиторию.
+
+> **Важно:** Используйте `--project-directory`, а не `-f`. Флаг `-f` задаёт только путь к yml-файлу, но build context и `.env` всё равно ищутся относительно CWD. Флаг `-T` обязателен — без него Docker выделяет pseudo-TTY, что ломает JSON-RPC протокол MCP.
+
+### Проверка
+
+```bash
+claude mcp list
+```
+
+Сервер `kaiten` должен быть со статусом `connected`.
 
 ## Подключение к Claude Desktop
 
 Добавьте в `claude_desktop_config.json`:
+
+**Docker:**
 
 ```json
 {
   "mcpServers": {
     "kaiten": {
       "command": "docker",
-      "args": ["compose", "-f", "/path/to/kaiten-mcp/docker-compose.yml", "run", "--rm", "kaiten-mcp"],
+      "args": ["run", "--rm", "-i", "-e", "KAITEN_DOMAIN", "-e", "KAITEN_TOKEN", "kaiten-mcp"],
       "env": {
         "KAITEN_DOMAIN": "yourcompany",
         "KAITEN_TOKEN": "your-api-token"
@@ -88,13 +120,13 @@ kaiten-mcp
 }
 ```
 
-Или без Docker:
+**Python:**
 
 ```json
 {
   "mcpServers": {
     "kaiten": {
-      "command": "kaiten-mcp",
+      "command": "/path/to/kaiten-mcp/.venv/bin/kaiten-mcp",
       "env": {
         "KAITEN_DOMAIN": "yourcompany",
         "KAITEN_TOKEN": "your-api-token"
@@ -104,17 +136,14 @@ kaiten-mcp
 }
 ```
 
-## Подключение к Claude Code
+## Важные замечания о Docker и MCP
 
-```bash
-claude mcp add kaiten -- kaiten-mcp
-```
+MCP использует stdio transport (JSON-RPC через stdin/stdout). При запуске через Docker:
 
-Или с Docker:
-
-```bash
-claude mcp add kaiten -- docker compose -f /path/to/kaiten-mcp/docker-compose.yml run --rm kaiten-mcp
-```
+- Флаг `-i` (`--interactive`) — **обязателен**, держит stdin открытым.
+- Флаг `-t` (`--tty`) — **запрещён**, TTY-символы ломают протокол.
+- Для `docker compose run` — используйте `-T` (отключает TTY).
+- `.env` файл **не нужен** — переменные передаются через `-e` флаги.
 
 ## Структура проекта
 
@@ -156,6 +185,18 @@ src/kaiten_mcp/
 - Авторизация: `Bearer` токен
 - Rate limiting: 4.5 запросов/сек (серверный лимит — 5 req/s)
 - Автоматический retry при HTTP 429 с exponential backoff (до 3 попыток)
+
+## Тесты
+
+Тесты запускаются **только в Docker**:
+
+```bash
+# Все тесты с проверкой 100% покрытия
+docker compose -f tests/docker-compose.test.yml up --build test-overseer
+
+# E2E-тесты (нужен .env с KAITEN_DOMAIN и KAITEN_TOKEN)
+docker compose -f tests/docker-compose.test.yml up --build test-e2e-expanded
+```
 
 ## Лицензия
 
