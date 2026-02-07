@@ -74,37 +74,38 @@ Two-step process. See [PROSEMIRROR.md](PROSEMIRROR.md) for content format.
 
 1. Create document group (optional folder):
    ```
-   kaiten_create_document_group: title, sort_order (REQUIRED)
+   kaiten_create_document_group: title
    ```
+   Note: `sort_order` is auto-generated if not provided.
+
 2. Create document:
    ```
-   kaiten_create_document: title, parent_entity_uid, sort_order (REQUIRED)
+   kaiten_create_document: title, parent_entity_uid
    ```
+   Note: `sort_order` is auto-generated if not provided.
+
 3. Update with content:
    ```
    kaiten_update_document: document_uid, data (ProseMirror JSON object)
    ```
+   Note: `bullet_list` and `ordered_list` nodes are automatically converted to safe paragraphs.
 
 ## Handling large responses
 
-List operations (cards, users, spaces) return verbose JSON with base64 avatars. When responses exceed context limits, they are saved to disk files.
+Use `compact=true` parameter for list operations to reduce response size:
 
-**Strategy**: Write a Python parsing script to `/tmp/` and run it on the saved file:
-
-```python
-import json, sys
-with open(sys.argv[1], 'r') as f:
-    data = json.load(f)
-# Find the text content in MCP response
-text = None
-for item in data:
-    if item.get('type') == 'text':
-        text = item['text']
-        break
-items = json.loads(text)
-for item in items:
-    print(f"[{item['id']}] {item.get('title', '?')}")
 ```
+kaiten_list_cards: board_id=123, compact=true
+kaiten_list_users: compact=true
+kaiten_list_spaces: compact=true
+```
+
+**What compact mode does:**
+- Removes base64-encoded `avatar_url` fields (can be 10-50KB each)
+- Simplifies user objects (`owner`, `responsible`, `author`) to `{id, full_name}`
+- Simplifies user lists (`members`, `responsibles`) to `[{id, full_name}, ...]`
+
+**Default limit:** All list operations default to 50 items when `limit` is not specified. Use `limit` parameter to override.
 
 ## Bulk operations
 
@@ -112,11 +113,10 @@ For creating 10+ cards or links, use background agents to avoid context bloat. P
 
 ## Gotchas
 
-- `sort_order` is required for documents and document groups (schema says optional, API says otherwise)
-- ProseMirror `bullet_list`/`list_item` nodes cause HTTP 500. Use `paragraph` with bullet characters instead
 - `kaiten_list_cards` accepts `space_id` to filter by space
 - Rate limit: 4.5 req/s. The MCP server handles retries automatically
 - Card `state` is derived from column type, not set directly
+- Default limit is 50 for all list operations
 
 ## Reference
 

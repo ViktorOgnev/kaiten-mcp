@@ -7,14 +7,13 @@ Progress:
 - [ ] Get current user
 - [ ] List all spaces
 - [ ] List cards (filter by space if needed)
-- [ ] Parse and present results
+- [ ] Present summary
 ```
 
 1. Load tools: `ToolSearch query: "+kaiten list spaces"` and `select:mcp__kaiten__kaiten_get_current_user`
 2. Call `kaiten_get_current_user` → note `id`, `full_name`
-3. Call `kaiten_list_spaces` → note space IDs and names
-4. Call `kaiten_list_cards` with `space_id` filter for each space of interest
-5. If response is too large, save to file and parse with Python script
+3. Call `kaiten_list_spaces(compact=true)` → note space IDs and names
+4. Call `kaiten_list_cards(space_id=X, compact=true)` for each space of interest
 
 ## Workflow 2: Three-level project setup (Epic → Story → Task)
 
@@ -52,39 +51,15 @@ Progress:
 Progress:
 - [ ] List spaces to find target
 - [ ] List boards in space
-- [ ] List cards in space
-- [ ] Parse card data (state, column, owner, dates, tags)
+- [ ] List cards in space (compact mode)
 - [ ] Present summary by board/status
 ```
 
-**Parsing large card lists**: Write a reusable script:
+1. `kaiten_list_spaces(compact=true)` → find space_id
+2. `kaiten_list_boards(space_id=X, compact=true)` → find board_id
+3. `kaiten_list_cards(space_id=X, compact=true)` → get cards
 
-```python
-import json, sys
-
-with open(sys.argv[1], 'r') as f:
-    data = json.load(f)
-
-text = None
-for item in data:
-    if item.get('type') == 'text':
-        text = item['text']
-        break
-
-cards = json.loads(text)
-state_map = {1: 'Queue', 2: 'In Progress', 3: 'Done'}
-
-for c in cards:
-    state = state_map.get(c.get('state'), '?')
-    title = c.get('title', 'No title')
-    card_id = c.get('id')
-    board = c.get('board', {}).get('title', '?') if c.get('board') else '?'
-    column = c.get('column', {}).get('title', '?') if c.get('column') else '?'
-    owner = c.get('owner', {}).get('full_name', '-') if c.get('owner') else '-'
-    print(f'[{card_id}] {title} | {state} | {column} | {owner}')
-```
-
-Save to `/tmp/parse_cards.py`, run: `python3 /tmp/parse_cards.py <response_file>`
+Results with `compact=true` contain only essential fields: `id`, `title`, `state`, simplified `owner`, `column` info.
 
 ## Workflow 4: Bulk card operations
 
@@ -115,7 +90,7 @@ Progress:
 - [ ] Update document with content
 ```
 
-See [PROSEMIRROR.md](PROSEMIRROR.md) for format details and known limitations.
+Note: `sort_order` is auto-generated if not provided. See [PROSEMIRROR.md](PROSEMIRROR.md) for format details. Lists (`bullet_list`, `ordered_list`) are automatically converted to safe paragraphs.
 
 ## Common ToolSearch queries
 
@@ -132,3 +107,10 @@ See [PROSEMIRROR.md](PROSEMIRROR.md) for format details and known limitations.
 | Tags | `+kaiten tags` |
 | Time logs | `+kaiten time log` |
 | Projects & sprints | `+kaiten project sprint` |
+
+## Tips for efficiency
+
+1. **Use compact mode** for all list operations: `compact=true` reduces response size by 80-95%
+2. **Default limit is 50** — if you need more, specify `limit` explicitly
+3. **Batch operations** — for 10+ items, use background agents
+4. **Check user first** — always start with `kaiten_get_current_user` to get user_id for assignments

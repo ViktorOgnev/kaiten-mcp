@@ -41,22 +41,33 @@ These are confirmed to work without errors:
 }
 ```
 
-## Nodes that cause HTTP 500 errors
+## Lists (bullet_list / ordered_list)
 
-Do NOT use these — they crash the Kaiten API:
-
-- `bullet_list` with `list_item` children
-- `ordered_list` with `list_item` children
-- `horizontal_rule`
-
-**Workaround for lists**: Use paragraph nodes with bullet characters:
+The MCP server **automatically converts** `bullet_list` and `ordered_list` nodes to safe paragraph equivalents before sending to the API. You can use standard ProseMirror list syntax:
 
 ```json
 {
-  "type": "paragraph",
-  "content": [{"type": "text", "text": "\u2022 First item"}]
+  "type": "bullet_list",
+  "content": [
+    {"type": "list_item", "content": [{"type": "text", "text": "First item"}]},
+    {"type": "list_item", "content": [{"type": "text", "text": "Second item"}]}
+  ]
 }
 ```
+
+This will be automatically transformed to:
+```json
+{
+  "type": "paragraph",
+  "content": [{"type": "text", "text": "• First item"}]
+},
+{
+  "type": "paragraph",
+  "content": [{"type": "text", "text": "• Second item"}]
+}
+```
+
+Ordered lists are converted with numbered prefixes (1., 2., 3., etc.).
 
 ## Size limits
 
@@ -65,6 +76,7 @@ Large documents (30+ nodes) in a single update may cause HTTP 500. Keep document
 ## Two-step creation
 
 1. `kaiten_create_document` — creates empty document, returns `uid`
+   - `sort_order` is auto-generated if not provided
 2. `kaiten_update_document` — sets content via `data` parameter (ProseMirror JSON object, NOT a string)
 
 The `data` parameter must be a JSON **object**, not a JSON string. The MCP server handles serialization.
@@ -75,20 +87,18 @@ Kaiten documents live in document groups (folders), not directly in spaces. To a
 
 1. Create a document group with a matching name (e.g., "IT Department")
 2. Create the document with `parent_entity_uid` set to the group's UID
-3. Both require `sort_order` (integer) — this field is mandatory despite the schema
+3. `sort_order` is auto-generated if not provided
 
 ## Example: Complete document creation
 
 ```
 Step 1: kaiten_create_document_group
   title: "Project Documentation"
-  sort_order: 1
   → returns uid: "abc-123"
 
 Step 2: kaiten_create_document
   title: "Project Plan"
   parent_entity_uid: "abc-123"
-  sort_order: 1
   → returns uid: "def-456"
 
 Step 3: kaiten_update_document
@@ -97,7 +107,13 @@ Step 3: kaiten_update_document
     "type": "doc",
     "content": [
       {"type": "heading", "attrs": {"level": 1}, "content": [{"type": "text", "text": "Project Plan"}]},
-      {"type": "paragraph", "content": [{"type": "text", "text": "Overview of the project..."}]}
+      {"type": "paragraph", "content": [{"type": "text", "text": "Overview of the project..."}]},
+      {"type": "bullet_list", "content": [
+        {"type": "list_item", "content": [{"type": "text", "text": "Goal 1"}]},
+        {"type": "list_item", "content": [{"type": "text", "text": "Goal 2"}]}
+      ]}
     ]
   }
 ```
+
+The bullet_list will be automatically converted to safe paragraphs.

@@ -2,10 +2,21 @@
 
 All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 
+## Response optimization
+
+**Default limit**: All list operations default to **50 items**. Use `limit` parameter to override (max 100).
+
+**Compact mode**: Use `compact=true` on list operations to reduce response size by 80-95%:
+- Removes base64-encoded `avatar_url` fields (10-50KB each)
+- Simplifies user objects to `{id, full_name}`
+- Simplifies user lists (members, responsibles) to `[{id, full_name}, ...]`
+
+Supported: `list_cards`, `list_users`, `list_spaces`, `list_boards`, `list_comments`
+
 ## Spaces
 | Tool | Description |
 |---|---|
-| list_spaces | List all spaces (supports `archived` filter) |
+| list_spaces | List all spaces (`compact=true` for lighter response) |
 | get_space | Get space by ID |
 | create_space | Create space (`title`, optional `parent_id` for nesting) |
 | update_space | Update space properties |
@@ -14,7 +25,7 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 ## Boards
 | Tool | Description |
 |---|---|
-| list_boards | List boards (filter by `space_id`) |
+| list_boards | List boards (filter by `space_id`, `compact=true` available) |
 | get_board | Get board by ID |
 | create_board | Create board in a space |
 | update_board | Update board |
@@ -39,7 +50,7 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 ## Cards
 | Tool | Description |
 |---|---|
-| list_cards | List cards (filter: `space_id`, `board_id`, `condition`, `state`) |
+| list_cards | List cards (default limit=50, `compact=true` for lighter response) |
 | get_card | Get card by ID |
 | create_card | Create card (required: `title`, `board_id`, `column_id`) |
 | update_card | Update card fields |
@@ -82,7 +93,7 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 ## Members & Users
 | Tool | Description |
 |---|---|
-| list_users | List all users in company |
+| list_users | List all users (default limit=50, `compact=true` for lighter response) |
 | get_current_user | Get authenticated user info |
 | list_card_members | List members of a card |
 | add_card_member | Add member to card (`card_id`, `user_id`) |
@@ -100,7 +111,7 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 ## Comments
 | Tool | Description |
 |---|---|
-| list_comments | List comments on a card |
+| list_comments | List comments on a card (`compact=true` for lighter response) |
 | create_comment | Add comment to card |
 | update_comment | Update comment |
 | delete_comment | Delete comment |
@@ -120,13 +131,13 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 ## Documents & Groups
 | Tool | Description |
 |---|---|
-| list_documents | List documents |
-| create_document | Create document (`title`, `sort_order` REQUIRED) |
+| list_documents | List documents (default limit=50) |
+| create_document | Create document (`title` required, `sort_order` auto-generated) |
 | get_document | Get document by UID |
-| update_document | Update document (`document_uid`, `data` as ProseMirror JSON) |
+| update_document | Update document (`document_uid`, `data` as ProseMirror JSON). Lists auto-converted. |
 | delete_document | Delete document |
-| list_document_groups | List document groups (folders) |
-| create_document_group | Create group (`title`, `sort_order` REQUIRED) |
+| list_document_groups | List document groups (folders, default limit=50) |
+| create_document_group | Create group (`title` required, `sort_order` auto-generated) |
 | get_document_group | Get group by UID |
 | update_document_group | Update group |
 | delete_document_group | Delete group |
