@@ -1,6 +1,8 @@
 """Kaiten Boards MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -9,7 +11,9 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 async def _list_boards(client, args: dict) -> Any:
-    return await client.get(f"/spaces/{args['space_id']}/boards")
+    compact = args.get("compact", False)
+    result = await client.get(f"/spaces/{args['space_id']}/boards")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -19,6 +23,7 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
         },
         "required": ["space_id"],
     },

@@ -1,6 +1,8 @@
 """Kaiten Cards MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -20,13 +22,17 @@ async def _list_cards(client, args: dict) -> Any:
     ]
     int_keys = [
         "space_id", "board_id", "column_id", "lane_id", "condition",
-        "type_id", "owner_id", "responsible_id", "limit", "offset",
+        "type_id", "owner_id", "responsible_id", "offset",
     ]
     bool_keys = ["overdue", "asap", "archived"]
     for key in str_keys + int_keys + bool_keys:
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/cards", params=params or None)
+    # Apply default limit
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    compact = args.get("compact", False)
+    result = await client.get("/cards", params=params or None)
+    return compact_response(result, compact)
 
 
 _tool(
@@ -57,8 +63,9 @@ _tool(
             "overdue": {"type": "boolean", "description": "Filter overdue cards"},
             "asap": {"type": "boolean", "description": "Filter ASAP cards"},
             "archived": {"type": "boolean", "description": "Include archived"},
-            "limit": {"type": "integer", "description": "Max results (default 20, max 100)"},
+            "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
         },
     },
     _list_cards,

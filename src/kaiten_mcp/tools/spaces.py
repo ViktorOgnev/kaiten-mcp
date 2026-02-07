@@ -1,6 +1,8 @@
 """Kaiten Spaces MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -12,7 +14,9 @@ async def _list_spaces(client, args: dict) -> Any:
     params = {}
     if args.get("archived") is not None:
         params["archived"] = args["archived"]
-    return await client.get("/spaces", params=params or None)
+    compact = args.get("compact", False)
+    result = await client.get("/spaces", params=params or None)
+    return compact_response(result, compact)
 
 
 _tool(
@@ -22,6 +26,7 @@ _tool(
         "type": "object",
         "properties": {
             "archived": {"type": "boolean", "description": "Include archived spaces"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
         },
     },
     _list_spaces,

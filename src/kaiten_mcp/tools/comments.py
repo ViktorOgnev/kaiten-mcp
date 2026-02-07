@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response
 
 TOOLS: dict[str, dict] = {}
 
@@ -21,7 +22,9 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_comments(client, args: dict) -> Any:
     card_id = args["card_id"]
-    return await client.get(f"/cards/{card_id}/comments")
+    compact = args.get("compact", False)
+    result = await client.get(f"/cards/{card_id}/comments")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -33,6 +36,11 @@ _tool(
             "card_id": {
                 "type": "integer",
                 "description": "ID of the card whose comments to list.",
+            },
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
             },
         },
         "required": ["card_id"],

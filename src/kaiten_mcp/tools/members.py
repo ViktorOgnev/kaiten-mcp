@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
 
 TOOLS: dict[str, dict] = {}
 
@@ -21,7 +22,9 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_card_members(client, args: dict) -> Any:
     card_id = args["card_id"]
-    return await client.get(f"/cards/{card_id}/members")
+    compact = args.get("compact", False)
+    result = await client.get(f"/cards/{card_id}/members")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -33,6 +36,11 @@ _tool(
             "card_id": {
                 "type": "integer",
                 "description": "ID of the card.",
+            },
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, etc.).",
+                "default": False,
             },
         },
         "required": ["card_id"],
@@ -115,16 +123,17 @@ async def _list_users(client, args: dict) -> Any:
     query = args.get("query")
     if query is not None:
         params["query"] = query
-    limit = args.get("limit")
-    if limit is not None:
-        params["limit"] = limit
+    # Apply default limit
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
     offset = args.get("offset")
     if offset is not None:
         params["offset"] = offset
     include_inactive = args.get("include_inactive")
     if include_inactive is not None:
         params["include_inactive"] = include_inactive
-    return await client.get("/users", params=params if params else None)
+    compact = args.get("compact", False)
+    result = await client.get("/users", params=params if params else None)
+    return compact_response(result, compact)
 
 
 _tool(
@@ -142,7 +151,7 @@ _tool(
             },
             "limit": {
                 "type": "integer",
-                "description": "Maximum number of users to return.",
+                "description": "Maximum number of users to return (default 50).",
             },
             "offset": {
                 "type": "integer",
@@ -151,6 +160,11 @@ _tool(
             "include_inactive": {
                 "type": "boolean",
                 "description": "Include inactive (deactivated) users in results.",
+            },
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, etc.).",
+                "default": False,
             },
         },
         "required": [],

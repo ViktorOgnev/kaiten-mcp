@@ -4,6 +4,144 @@ import json
 from httpx import Response
 
 from kaiten_mcp.tools.cards import TOOLS
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
+
+class TestListCardsDefaultLimit:
+    """Tests for default limit behavior in list_cards."""
+
+    async def test_default_limit_50_when_not_specified(self, client, mock_api):
+        """Without explicit limit, should use DEFAULT_LIMIT (50)."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        await TOOLS["kaiten_list_cards"]["handler"](client, {})
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "limit=50" in url
+
+    async def test_explicit_limit_overrides_default(self, client, mock_api):
+        """Explicit limit should override the default."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        await TOOLS["kaiten_list_cards"]["handler"](client, {"limit": 25})
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "limit=25" in url
+        assert "limit=50" not in url
+
+    async def test_limit_100_is_respected(self, client, mock_api):
+        """Max limit of 100 should work."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        await TOOLS["kaiten_list_cards"]["handler"](client, {"limit": 100})
+        url = str(route.calls[0].request.url)
+        assert "limit=100" in url
+
+
+class TestListCardsCompact:
+    """Tests for compact mode in list_cards."""
+
+    async def test_compact_false_returns_full_response(self, client, mock_api):
+        """compact=False (default) should return the full response unchanged."""
+        full_response = [
+            {
+                "id": 1,
+                "title": "Card One",
+                "avatar_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+                "owner": {
+                    "id": 10,
+                    "full_name": "John Doe",
+                    "email": "john@example.com",
+                    "avatar_url": "data:image/png;base64,xxx",
+                },
+            }
+        ]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_response)
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": False})
+        assert route.called
+        # Full response should be unchanged
+        assert result == full_response
+
+    async def test_compact_strips_base64_avatars(self, client, mock_api):
+        """compact=True should remove base64 avatar_url fields."""
+        full_response = [
+            {
+                "id": 1,
+                "title": "Card One",
+                "avatar_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+            }
+        ]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_response)
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
+        assert route.called
+        assert "avatar_url" not in result[0]
+        assert result[0]["id"] == 1
+        assert result[0]["title"] == "Card One"
+
+    async def test_compact_simplifies_owner_object(self, client, mock_api):
+        """compact=True should simplify owner to {id, full_name}."""
+        full_response = [
+            {
+                "id": 1,
+                "owner": {
+                    "id": 10,
+                    "full_name": "John Doe",
+                    "email": "john@example.com",
+                    "avatar_url": "data:xxx",
+                    "username": "johnd",
+                },
+            }
+        ]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_response)
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
+        assert route.called
+        assert result[0]["owner"] == {"id": 10, "full_name": "John Doe"}
+
+    async def test_compact_simplifies_members_list(self, client, mock_api):
+        """compact=True should simplify members list."""
+        full_response = [
+            {
+                "id": 1,
+                "members": [
+                    {"id": 1, "full_name": "Alice", "email": "alice@x.com"},
+                    {"id": 2, "full_name": "Bob", "email": "bob@x.com"},
+                ],
+            }
+        ]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_response)
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
+        assert route.called
+        assert result[0]["members"] == [
+            {"id": 1, "full_name": "Alice"},
+            {"id": 2, "full_name": "Bob"},
+        ]
+
+    async def test_compact_default_is_false(self, client, mock_api):
+        """Without compact param, should behave as compact=False."""
+        full_response = [
+            {
+                "id": 1,
+                "avatar_url": "data:image/png;base64,xxx",
+            }
+        ]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_response)
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](client, {})
+        assert route.called
+        # Should keep the avatar_url since compact defaults to False
+        assert result[0]["avatar_url"] == "data:image/png;base64,xxx"
 
 
 class TestListCards:
