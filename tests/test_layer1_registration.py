@@ -19,7 +19,7 @@ class TestToolRegistration:
             assert isinstance(mod.TOOLS, dict)
 
     def test_total_tool_count(self):
-        assert len(ALL_TOOLS) == 178
+        assert len(ALL_TOOLS) == 181
 
     def test_no_duplicate_tool_names(self):
         names = []

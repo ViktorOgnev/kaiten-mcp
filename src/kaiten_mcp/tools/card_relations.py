@@ -195,3 +195,137 @@ _tool(
     },
     handler=_remove_card_parent,
 )
+
+
+# ---------------------------------------------------------------------------
+# kaiten_add_planned_relation  (Successor cards on Timeline/Gantt)
+# ---------------------------------------------------------------------------
+
+
+async def _add_planned_relation(client, args: dict) -> Any:
+    card_id = args["card_id"]
+    body: dict[str, Any] = {
+        "target_card_id": args["target_card_id"],
+        "type": args.get("type", "end-start"),
+    }
+    return await client.post(f"/cards/{card_id}/planned-relation", json=body)
+
+
+_tool(
+    name="kaiten_add_planned_relation",
+    description=(
+        "Create a planned relation (successor link) between two cards on "
+        "Timeline/Gantt. The source card (card_id) becomes a predecessor "
+        "and the target card becomes its successor. Both cards must have "
+        "planned_start and planned_end dates set."
+    ),
+    schema={
+        "type": "object",
+        "properties": {
+            "card_id": {
+                "type": "integer",
+                "description": "ID of the source (predecessor) card.",
+            },
+            "target_card_id": {
+                "type": "integer",
+                "description": "ID of the target (successor) card.",
+            },
+            "type": {
+                "type": "string",
+                "enum": ["end-start"],
+                "default": "end-start",
+                "description": "Relation type. Currently only 'end-start' (finish-to-start) is supported.",
+            },
+        },
+        "required": ["card_id", "target_card_id"],
+    },
+    handler=_add_planned_relation,
+)
+
+
+# ---------------------------------------------------------------------------
+# kaiten_update_planned_relation
+# ---------------------------------------------------------------------------
+
+
+async def _update_planned_relation(client, args: dict) -> Any:
+    card_id = args["card_id"]
+    target_card_id = args["target_card_id"]
+    body: dict[str, Any] = {
+        "gap": args["gap"],
+        "gap_type": args["gap_type"],
+    }
+    return await client.patch(
+        f"/cards/{card_id}/planned-relation/{target_card_id}", json=body,
+    )
+
+
+_tool(
+    name="kaiten_update_planned_relation",
+    description=(
+        "Update the gap (lag/lead) of a planned relation between two cards. "
+        "Gap defines the time distance between the predecessor's end and "
+        "the successor's start on the Timeline/Gantt."
+    ),
+    schema={
+        "type": "object",
+        "properties": {
+            "card_id": {
+                "type": "integer",
+                "description": "ID of the source (predecessor) card.",
+            },
+            "target_card_id": {
+                "type": "integer",
+                "description": "ID of the target (successor) card.",
+            },
+            "gap": {
+                "type": ["integer", "null"],
+                "description": "Distance between cards (-1000..1000). Positive = lag, negative = lead. null to clear.",
+            },
+            "gap_type": {
+                "type": ["string", "null"],
+                "enum": ["hours", "days", None],
+                "description": "Unit of the gap: 'hours', 'days', or null to clear.",
+            },
+        },
+        "required": ["card_id", "target_card_id", "gap", "gap_type"],
+    },
+    handler=_update_planned_relation,
+)
+
+
+# ---------------------------------------------------------------------------
+# kaiten_remove_planned_relation
+# ---------------------------------------------------------------------------
+
+
+async def _remove_planned_relation(client, args: dict) -> Any:
+    card_id = args["card_id"]
+    target_card_id = args["target_card_id"]
+    return await client.delete(
+        f"/cards/{card_id}/planned-relation/{target_card_id}",
+    )
+
+
+_tool(
+    name="kaiten_remove_planned_relation",
+    description=(
+        "Remove a planned relation (successor link) between two cards. "
+        "card_id is the predecessor, target_card_id is the successor."
+    ),
+    schema={
+        "type": "object",
+        "properties": {
+            "card_id": {
+                "type": "integer",
+                "description": "ID of the source (predecessor) card.",
+            },
+            "target_card_id": {
+                "type": "integer",
+                "description": "ID of the target (successor) card to unlink.",
+            },
+        },
+        "required": ["card_id", "target_card_id"],
+    },
+    handler=_remove_planned_relation,
+)
