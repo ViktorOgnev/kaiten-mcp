@@ -57,6 +57,9 @@ _tool(
 async def _create_comment(client, args: dict) -> Any:
     card_id = args["card_id"]
     body: dict[str, Any] = {"text": args["text"]}
+    fmt = args.get("format")
+    if fmt == "html":
+        body["type"] = 2
     internal = args.get("internal")
     if internal is not None:
         body["internal"] = internal
@@ -75,7 +78,12 @@ _tool(
             },
             "text": {
                 "type": "string",
-                "description": "Comment text.",
+                "description": "Comment text. For format=html send HTML content.",
+            },
+            "format": {
+                "type": "string",
+                "enum": ["markdown", "html"],
+                "description": "Comment format. 'markdown' (default) — stored as-is, rendered by frontend markdown parser. 'html' — rendered directly, supports h1-h6/p/strong/em/ul/ol/li/table/a/img tags. Use 'html' for complex formatting (tables, nested lists) to avoid rendering issues.",
             },
             "internal": {
                 "type": "boolean",
@@ -97,6 +105,11 @@ async def _update_comment(client, args: dict) -> Any:
     card_id = args["card_id"]
     comment_id = args["comment_id"]
     body: dict[str, Any] = {"text": args["text"]}
+    fmt = args.get("format")
+    if fmt == "html":
+        body["type"] = 2
+    elif fmt == "markdown":
+        body["type"] = 1
     return await client.patch(
         f"/cards/{card_id}/comments/{comment_id}", json=body
     )
@@ -118,7 +131,12 @@ _tool(
             },
             "text": {
                 "type": "string",
-                "description": "New comment text.",
+                "description": "New comment text. For format=html send HTML content.",
+            },
+            "format": {
+                "type": "string",
+                "enum": ["markdown", "html"],
+                "description": "Comment format. 'html' to switch comment to HTML rendering, 'markdown' to switch to markdown.",
             },
         },
         "required": ["card_id", "comment_id", "text"],
