@@ -1,10 +1,24 @@
 """Kaiten Documents MCP tools."""
+import re
 import time
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
 
 DEFAULT_LIMIT = 50
+
+_MARK_ALIASES = {
+    "bold": "strong",
+    "italic": "em",
+    "strikethrough": "strike",
+}
+
+_INLINE_PATTERNS = [
+    (re.compile(r'\*\*(.+?)\*\*'), "strong"),
+    (re.compile(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)'), "em"),
+    (re.compile(r'~~(.+?)~~'), "strike"),
+    (re.compile(r'`(.+?)`'), "code"),
+]
 
 
 def _tool(name: str, description: str, schema: dict, handler):
@@ -23,6 +37,93 @@ def _extract_text_from_node(node: dict) -> str:
     return "".join(texts)
 
 
+def _parse_inline(text: str) -> list[dict]:
+    """Parse inline markdown into ProseMirror text nodes with marks."""
+    if not text:
+        return []
+    nodes: list[dict] = []
+    pos = 0
+    while pos < len(text):
+        best_match = None
+        best_mark = None
+        for pattern, mark in _INLINE_PATTERNS:
+            m = pattern.search(text, pos)
+            if m and (best_match is None or m.start() < best_match.start()):
+                best_match = m
+                best_mark = mark
+        if best_match is None:
+            nodes.append({"type": "text", "text": text[pos:]})
+            break
+        if best_match.start() > pos:
+            nodes.append({"type": "text", "text": text[pos:best_match.start()]})
+        nodes.append({
+            "type": "text",
+            "text": best_match.group(1),
+            "marks": [{"type": best_mark}],
+        })
+        pos = best_match.end()
+    return nodes
+
+
+def _markdown_to_prosemirror(text: str) -> dict:
+    """Convert simple markdown text to ProseMirror JSON document.
+
+    Supports: # headings, **bold**, *italic*, ~~strike~~, `code`,
+    > blockquotes, --- horizontal rules, paragraph breaks (blank lines).
+    """
+    content: list[dict] = []
+    para_lines: list[str] = []
+
+    def flush_para():
+        if para_lines:
+            joined = " ".join(para_lines)
+            content.append({"type": "paragraph", "content": _parse_inline(joined)})
+            para_lines.clear()
+
+    for line in text.strip().split("\n"):
+        stripped = line.strip()
+
+        if not stripped:
+            flush_para()
+            continue
+
+        # Heading
+        m = re.match(r'^(#{1,6})\s+(.*)', stripped)
+        if m:
+            flush_para()
+            level = len(m.group(1))
+            content.append({
+                "type": "heading",
+                "attrs": {"level": level},
+                "content": _parse_inline(m.group(2)),
+            })
+            continue
+
+        # Horizontal rule
+        if re.match(r'^---+$', stripped):
+            flush_para()
+            content.append({"type": "horizontal_rule"})
+            continue
+
+        # Blockquote
+        if stripped.startswith("> "):
+            flush_para()
+            content.append({
+                "type": "blockquote",
+                "content": [{"type": "paragraph", "content": _parse_inline(stripped[2:])}],
+            })
+            continue
+
+        para_lines.append(stripped)
+
+    flush_para()
+
+    if not content:
+        content = [{"type": "paragraph", "content": []}]
+
+    return {"type": "doc", "content": content}
+
+
 def _sanitize_prosemirror(node: dict) -> dict | list:
     """
     Transform unsafe ProseMirror nodes that crash Kaiten API.
@@ -30,6 +131,7 @@ def _sanitize_prosemirror(node: dict) -> dict | list:
     Transforms:
     - bullet_list -> paragraphs with bullet prefix
     - ordered_list -> paragraphs with number prefix
+    - bold -> strong, italic -> em, strikethrough -> strike
     """
     if not isinstance(node, dict):
         return node
@@ -48,6 +150,15 @@ def _sanitize_prosemirror(node: dict) -> dict | list:
                     "content": [{"type": "text", "text": f"{prefix}{text}"}]
                 })
         return paragraphs if paragraphs else [{"type": "paragraph", "content": []}]
+
+    # Sanitize invalid mark names (bold→strong, italic→em, strikethrough→strike)
+    if "marks" in node:
+        new_marks = []
+        for mark in node["marks"]:
+            if isinstance(mark, dict) and mark.get("type") in _MARK_ALIASES:
+                mark = {**mark, "type": _MARK_ALIASES[mark["type"]]}
+            new_marks.append(mark)
+        node = {**node, "marks": new_marks}
 
     # Recursively process content
     if "content" in node:
@@ -98,16 +209,33 @@ async def _create_document(client, args: dict) -> Any:
     for key in ("parent_entity_uid", "key"):
         if args.get(key) is not None:
             body[key] = args[key]
+    if args.get("text"):
+        body["data"] = _markdown_to_prosemirror(args["text"])
+    elif args.get("data"):
+        sanitized = _sanitize_prosemirror(args["data"])
+        body["data"] = sanitized if isinstance(sanitized, dict) else args["data"]
     return await client.post("/documents", json=body)
 
 
 _tool(
     "kaiten_create_document",
-    "Create a new Kaiten document.",
+    "Create a new Kaiten document. Use 'text' for markdown content (auto-converted) "
+    "or 'data' for raw ProseMirror JSON.",
     {
         "type": "object",
         "properties": {
             "title": {"type": "string", "description": "Document title"},
+            "text": {
+                "type": "string",
+                "description": "Document content as markdown text. Converted to ProseMirror automatically. "
+                "Supports: # headings, **bold**, *italic*, ~~strike~~, `code`, > quotes, --- rules.",
+            },
+            "data": {
+                "type": "object",
+                "description": "Document content as raw ProseMirror JSON. "
+                "Valid marks: strong, em, underline, strike, code, link. "
+                "Do NOT use 'bold' or 'italic' — they cause API errors.",
+            },
             "parent_entity_uid": {"type": "string", "description": "Parent document group UID"},
             "sort_order": {"type": "integer", "description": "Sort order (auto-generated if not provided)"},
             "key": {"type": "string", "description": "Unique key identifier"},
@@ -141,8 +269,9 @@ async def _update_document(client, args: dict) -> Any:
     for key in ("title", "parent_entity_uid", "sort_order", "key"):
         if args.get(key) is not None:
             body[key] = args[key]
-    # Sanitize ProseMirror data to avoid API crashes on bullet_list/ordered_list
-    if args.get("data") is not None:
+    if args.get("text"):
+        body["data"] = _markdown_to_prosemirror(args["text"])
+    elif args.get("data") is not None:
         sanitized = _sanitize_prosemirror(args["data"])
         body["data"] = sanitized if isinstance(sanitized, dict) else args["data"]
     return await client.patch(f"/documents/{args['document_uid']}", json=body)
@@ -150,13 +279,24 @@ async def _update_document(client, args: dict) -> Any:
 
 _tool(
     "kaiten_update_document",
-    "Update a Kaiten document.",
+    "Update a Kaiten document. Use 'text' for markdown content (auto-converted) "
+    "or 'data' for raw ProseMirror JSON. If both provided, 'text' wins.",
     {
         "type": "object",
         "properties": {
             "document_uid": {"type": "string", "description": "Document UID"},
             "title": {"type": "string", "description": "New document title"},
-            "data": {"type": "object", "description": "Document content (ProseMirror JSON). Lists are auto-converted to paragraphs."},
+            "text": {
+                "type": "string",
+                "description": "Document content as markdown text. Converted to ProseMirror automatically. "
+                "Supports: # headings, **bold**, *italic*, ~~strike~~, `code`, > quotes, --- rules.",
+            },
+            "data": {
+                "type": "object",
+                "description": "Document content as raw ProseMirror JSON. Lists are auto-converted to paragraphs. "
+                "Valid marks: strong, em, underline, strike, code, link. "
+                "Do NOT use 'bold' or 'italic' — they cause API errors.",
+            },
             "parent_entity_uid": {"type": "string", "description": "New parent group UID"},
             "sort_order": {"type": "integer", "description": "Sort order"},
             "key": {"type": "string", "description": "Unique key identifier"},

@@ -337,6 +337,356 @@ class TestSanitizeProseMirrorUnit:
 
 
 # ---------------------------------------------------------------------------
+# Mark Sanitization Tests
+# ---------------------------------------------------------------------------
+
+
+class TestMarkSanitization:
+    """Tests for mark name sanitization in _sanitize_prosemirror."""
+
+    def test_bold_becomes_strong(self):
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        node = {"type": "text", "text": "hello", "marks": [{"type": "bold"}]}
+        result = _sanitize_prosemirror(node)
+        assert result["marks"] == [{"type": "strong"}]
+
+    def test_italic_becomes_em(self):
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        node = {"type": "text", "text": "hello", "marks": [{"type": "italic"}]}
+        result = _sanitize_prosemirror(node)
+        assert result["marks"] == [{"type": "em"}]
+
+    def test_strikethrough_becomes_strike(self):
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        node = {"type": "text", "text": "hello", "marks": [{"type": "strikethrough"}]}
+        result = _sanitize_prosemirror(node)
+        assert result["marks"] == [{"type": "strike"}]
+
+    def test_valid_marks_unchanged(self):
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        node = {"type": "text", "text": "hello", "marks": [{"type": "strong"}, {"type": "em"}]}
+        result = _sanitize_prosemirror(node)
+        assert result["marks"] == [{"type": "strong"}, {"type": "em"}]
+
+    def test_marks_sanitized_in_nested_content(self):
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        doc = {
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "hi", "marks": [{"type": "bold"}]}]
+            }]
+        }
+        result = _sanitize_prosemirror(doc)
+        assert result["content"][0]["content"][0]["marks"] == [{"type": "strong"}]
+
+    def test_mark_attrs_preserved(self):
+        """Mark attributes (e.g. link href) should be preserved during rename."""
+        from kaiten_mcp.tools.documents import _sanitize_prosemirror
+
+        node = {
+            "type": "text", "text": "hi",
+            "marks": [{"type": "bold", "attrs": {"custom": True}}],
+        }
+        result = _sanitize_prosemirror(node)
+        assert result["marks"] == [{"type": "strong", "attrs": {"custom": True}}]
+
+    async def test_update_sanitizes_marks_in_data(self, client, mock_api):
+        """Update with data containing bold marks should sanitize to strong."""
+        route = mock_api.patch("/documents/abc-uid").mock(
+            return_value=Response(200, json={"uid": "abc-uid"})
+        )
+        doc_data = {
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "important", "marks": [{"type": "bold"}]}]
+            }]
+        }
+        await TOOLS["kaiten_update_document"]["handler"](
+            client, {"document_uid": "abc-uid", "data": doc_data}
+        )
+        body = json.loads(route.calls[0].request.content)
+        text_node = body["data"]["content"][0]["content"][0]
+        assert text_node["marks"] == [{"type": "strong"}]
+
+
+# ---------------------------------------------------------------------------
+# Inline Markdown Parser Tests
+# ---------------------------------------------------------------------------
+
+
+class TestParseInline:
+    """Unit tests for _parse_inline function."""
+
+    def test_plain_text(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("hello world")
+        assert result == [{"type": "text", "text": "hello world"}]
+
+    def test_bold(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("**bold**")
+        assert result == [{"type": "text", "text": "bold", "marks": [{"type": "strong"}]}]
+
+    def test_italic(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("*italic*")
+        assert result == [{"type": "text", "text": "italic", "marks": [{"type": "em"}]}]
+
+    def test_strikethrough(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("~~deleted~~")
+        assert result == [{"type": "text", "text": "deleted", "marks": [{"type": "strike"}]}]
+
+    def test_inline_code(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("`code`")
+        assert result == [{"type": "text", "text": "code", "marks": [{"type": "code"}]}]
+
+    def test_mixed_text_and_bold(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("before **bold** after")
+        assert len(result) == 3
+        assert result[0] == {"type": "text", "text": "before "}
+        assert result[1] == {"type": "text", "text": "bold", "marks": [{"type": "strong"}]}
+        assert result[2] == {"type": "text", "text": " after"}
+
+    def test_empty_text(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        assert _parse_inline("") == []
+
+    def test_bold_not_confused_with_italic(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("**bold** and *italic*")
+        assert len(result) == 3
+        assert result[0]["marks"] == [{"type": "strong"}]
+        assert result[1] == {"type": "text", "text": " and "}
+        assert result[2]["marks"] == [{"type": "em"}]
+
+    def test_multiple_marks_in_sequence(self):
+        from kaiten_mcp.tools.documents import _parse_inline
+
+        result = _parse_inline("**a** *b* ~~c~~ `d`")
+        marks = [n.get("marks", [{}])[0].get("type") for n in result if "marks" in n]
+        assert marks == ["strong", "em", "strike", "code"]
+
+
+# ---------------------------------------------------------------------------
+# Markdown to ProseMirror Converter Tests
+# ---------------------------------------------------------------------------
+
+
+class TestMarkdownToProsemirror:
+    """Unit tests for _markdown_to_prosemirror function."""
+
+    def test_plain_paragraph(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("Hello world")
+        assert result == {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello world"}]}]
+        }
+
+    def test_heading_levels(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("# H1\n\n## H2\n\n### H3")
+        assert len(result["content"]) == 3
+        assert result["content"][0] == {
+            "type": "heading", "attrs": {"level": 1},
+            "content": [{"type": "text", "text": "H1"}]
+        }
+        assert result["content"][1]["attrs"]["level"] == 2
+        assert result["content"][2]["attrs"]["level"] == 3
+
+    def test_horizontal_rule(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("above\n\n---\n\nbelow")
+        assert len(result["content"]) == 3
+        assert result["content"][1] == {"type": "horizontal_rule"}
+
+    def test_blockquote(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("> quoted text")
+        assert result["content"][0] == {
+            "type": "blockquote",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "quoted text"}]}]
+        }
+
+    def test_double_newline_creates_paragraphs(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("first\n\nsecond")
+        assert len(result["content"]) == 2
+        assert result["content"][0]["type"] == "paragraph"
+        assert result["content"][1]["type"] == "paragraph"
+
+    def test_single_newline_joins_paragraph(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("line one\nline two")
+        assert len(result["content"]) == 1
+        assert result["content"][0]["content"][0]["text"] == "line one line two"
+
+    def test_inline_marks_in_paragraph(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("Text with **bold** word")
+        para = result["content"][0]
+        assert len(para["content"]) == 3
+        assert para["content"][1]["marks"] == [{"type": "strong"}]
+
+    def test_empty_text_produces_empty_paragraph(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("")
+        assert result == {"type": "doc", "content": [{"type": "paragraph", "content": []}]}
+
+    def test_whitespace_only_produces_empty_paragraph(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("   \n\n  ")
+        assert result == {"type": "doc", "content": [{"type": "paragraph", "content": []}]}
+
+    def test_complex_document(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        md = "## Title\n\nSome **bold** text.\n\n> A quote\n\n---\n\nFinal paragraph."
+        result = _markdown_to_prosemirror(md)
+        types = [n["type"] for n in result["content"]]
+        assert types == ["heading", "paragraph", "blockquote", "horizontal_rule", "paragraph"]
+
+    def test_heading_with_inline_marks(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("## A **bold** heading")
+        heading = result["content"][0]
+        assert heading["type"] == "heading"
+        assert heading["attrs"]["level"] == 2
+        assert len(heading["content"]) == 3
+        assert heading["content"][1]["marks"] == [{"type": "strong"}]
+
+    def test_blockquote_with_inline_marks(self):
+        from kaiten_mcp.tools.documents import _markdown_to_prosemirror
+
+        result = _markdown_to_prosemirror("> Text with *emphasis*")
+        bq = result["content"][0]
+        para = bq["content"][0]
+        assert para["content"][1]["marks"] == [{"type": "em"}]
+
+
+# ---------------------------------------------------------------------------
+# Text Parameter in Create/Update Tests
+# ---------------------------------------------------------------------------
+
+
+class TestCreateDocumentText:
+    """Tests for text parameter in create document."""
+
+    async def test_create_with_text_sends_prosemirror(self, client, mock_api):
+        route = mock_api.post("/documents").mock(
+            return_value=Response(200, json={"uid": "abc"})
+        )
+        await TOOLS["kaiten_create_document"]["handler"](
+            client, {"title": "Doc", "text": "## Hello\n\nWorld"}
+        )
+        body = json.loads(route.calls[0].request.content)
+        assert body["data"]["type"] == "doc"
+        assert body["data"]["content"][0]["type"] == "heading"
+        assert body["data"]["content"][1]["type"] == "paragraph"
+
+    async def test_create_with_data_sanitizes(self, client, mock_api):
+        route = mock_api.post("/documents").mock(
+            return_value=Response(200, json={"uid": "abc"})
+        )
+        doc_data = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "hi", "marks": [{"type": "bold"}]}
+            ]}]
+        }
+        await TOOLS["kaiten_create_document"]["handler"](
+            client, {"title": "Doc", "data": doc_data}
+        )
+        body = json.loads(route.calls[0].request.content)
+        assert body["data"]["content"][0]["content"][0]["marks"] == [{"type": "strong"}]
+
+    async def test_create_without_text_or_data(self, client, mock_api):
+        route = mock_api.post("/documents").mock(
+            return_value=Response(200, json={"uid": "abc"})
+        )
+        await TOOLS["kaiten_create_document"]["handler"](
+            client, {"title": "Doc"}
+        )
+        body = json.loads(route.calls[0].request.content)
+        assert "data" not in body
+
+    async def test_create_text_wins_over_data(self, client, mock_api):
+        route = mock_api.post("/documents").mock(
+            return_value=Response(200, json={"uid": "abc"})
+        )
+        await TOOLS["kaiten_create_document"]["handler"](
+            client, {
+                "title": "Doc",
+                "text": "From text",
+                "data": {"type": "doc", "content": []},
+            }
+        )
+        body = json.loads(route.calls[0].request.content)
+        # text should win — content generated from markdown
+        assert body["data"]["content"][0]["content"][0]["text"] == "From text"
+
+
+class TestUpdateDocumentText:
+    """Tests for text parameter in update document."""
+
+    async def test_update_with_text_sends_prosemirror(self, client, mock_api):
+        route = mock_api.patch("/documents/abc-uid").mock(
+            return_value=Response(200, json={"uid": "abc-uid"})
+        )
+        await TOOLS["kaiten_update_document"]["handler"](
+            client, {"document_uid": "abc-uid", "text": "**bold** text"}
+        )
+        body = json.loads(route.calls[0].request.content)
+        para = body["data"]["content"][0]
+        assert para["content"][0]["marks"] == [{"type": "strong"}]
+
+    async def test_text_wins_over_data(self, client, mock_api):
+        route = mock_api.patch("/documents/abc-uid").mock(
+            return_value=Response(200, json={"uid": "abc-uid"})
+        )
+        await TOOLS["kaiten_update_document"]["handler"](
+            client, {
+                "document_uid": "abc-uid",
+                "text": "From text",
+                "data": {"type": "doc", "content": [
+                    {"type": "paragraph", "content": [{"type": "text", "text": "From data"}]}
+                ]},
+            }
+        )
+        body = json.loads(route.calls[0].request.content)
+        # text should win
+        assert body["data"]["content"][0]["content"][0]["text"] == "From text"
+
+
+# ---------------------------------------------------------------------------
 # Documents
 # ---------------------------------------------------------------------------
 
