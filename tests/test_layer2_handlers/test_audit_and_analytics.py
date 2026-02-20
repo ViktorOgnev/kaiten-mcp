@@ -5,6 +5,7 @@ import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.audit_and_analytics import TOOLS
+from kaiten_mcp.tools.compact import compact_response
 
 
 # ---------------------------------------------------------------------------
@@ -330,3 +331,105 @@ class TestDeleteSavedFilter:
             client, {"filter_id": 1}
         )
         assert route.called
+
+
+# ---------------------------------------------------------------------------
+# Activity compact & fields parameters
+# ---------------------------------------------------------------------------
+
+
+class TestActivityCompactFields:
+    """Test compact and fields on activity tools."""
+
+    async def test_space_activity_compact(self, client, mock_api):
+        """compact=True should simplify author objects in space activity."""
+        mock_data = [
+            {
+                "id": 1,
+                "action": "card_move",
+                "author": {
+                    "id": 10,
+                    "full_name": "User",
+                    "avatar_url": "data:image/png;base64,xxx",
+                },
+            }
+        ]
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=mock_data)
+        )
+        result = await TOOLS["kaiten_get_space_activity"]["handler"](
+            client, {"space_id": 1, "compact": True}
+        )
+        assert route.called
+        assert result[0]["author"] == {"id": 10, "full_name": "User"}
+
+    async def test_space_activity_fields(self, client, mock_api):
+        """fields param should whitelist-filter space activity results."""
+        mock_data = [
+            {"id": 1, "action": "card_move", "card_id": 100, "extra": "data"}
+        ]
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=mock_data)
+        )
+        result = await TOOLS["kaiten_get_space_activity"]["handler"](
+            client, {"space_id": 1, "fields": "id,action,card_id"}
+        )
+        assert result == [{"id": 1, "action": "card_move", "card_id": 100}]
+
+    async def test_space_activity_compact_default_false(self, client, mock_api):
+        """Space activity compact should default to False."""
+        mock_data = [
+            {
+                "id": 1,
+                "author": {
+                    "id": 10,
+                    "full_name": "U",
+                    "avatar_url": "data:image/png;base64,xxx",
+                    "email": "u@example.com",
+                },
+            }
+        ]
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=mock_data)
+        )
+        result = await TOOLS["kaiten_get_space_activity"]["handler"](
+            client, {"space_id": 1}
+        )
+        # compact=False by default, so full author is kept
+        assert result[0]["author"]["email"] == "u@example.com"
+
+    async def test_company_activity_compact(self, client, mock_api):
+        """compact=True should simplify author in company activity."""
+        mock_data = [
+            {
+                "id": 1,
+                "action": "card_add",
+                "author": {
+                    "id": 5,
+                    "full_name": "Admin",
+                    "email": "admin@x.com",
+                    "avatar_url": "data:image/png;base64,yyy",
+                },
+            }
+        ]
+        route = mock_api.get("/company/activity").mock(
+            return_value=Response(200, json=mock_data)
+        )
+        result = await TOOLS["kaiten_get_company_activity"]["handler"](
+            client, {"compact": True}
+        )
+        assert route.called
+        assert result[0]["author"] == {"id": 5, "full_name": "Admin"}
+
+    async def test_company_activity_fields(self, client, mock_api):
+        """fields param should whitelist-filter company activity results."""
+        mock_data = [
+            {"id": 1, "action": "card_add", "card_id": 50, "board_id": 10}
+        ]
+        route = mock_api.get("/company/activity").mock(
+            return_value=Response(200, json=mock_data)
+        )
+        result = await TOOLS["kaiten_get_company_activity"]["handler"](
+            client, {"fields": "id,card_id"}
+        )
+        assert result == [{"id": 1, "card_id": 50}]

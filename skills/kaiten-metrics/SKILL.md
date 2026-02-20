@@ -19,6 +19,48 @@ This skill teaches efficient collection of Kanban metrics (Lead Time, Cycle Time
 
 The anti-pattern approach (per-card history calls) results in 539+ API calls taking 42+ minutes. The correct MCP approach uses 5-15 API calls and completes in under 1 minute.
 
+## Efficient Data Fetching (CRITICAL)
+
+Bulk card endpoints return full card objects (~20KB each). Without optimization, 100 cards = 2MB+ which overflows the LLM context window. **Always** use these parameters:
+
+### Recommended call pattern for metrics
+
+```
+kaiten_list_all_cards(
+  space_id=X,
+  condition=2,
+  relations="none",
+  fields="id,title,type_id,created,first_moved_to_in_progress_at,last_moved_to_done_at,time_spent_sum,time_blocked_sum,state,condition,due_date,column_id,lane_id,board_id"
+)
+```
+
+### Parameter guide
+
+| Parameter | Effect | When to use |
+|---|---|---|
+| `relations="none"` | Excludes members, files, comments, checklists, properties, tags (~90% size reduction) | **Always** for bulk card fetching |
+| `fields="id,title,..."` | Returns only listed fields per card (~99% size reduction) | **Always** for metrics — request only timing fields |
+| `compact=true` | Strips descriptions, simplifies user objects (default for bulk) | Automatic, no action needed |
+
+### Response sizes
+
+| Configuration | Per card | 500 cards |
+|---|---|---|
+| No optimization | ~20KB | 10MB+ (OVERFLOW) |
+| `relations="none"` | ~2KB | ~1MB |
+| `relations="none"` + `compact` | ~500B | ~250KB |
+| `relations="none"` + `fields` | ~200B | **~100KB** (optimal) |
+
+### For Space Activity
+
+```
+kaiten_get_all_space_activity(
+  space_id=X,
+  actions="card_add,card_move,card_archive",
+  fields="id,action,card_id,board_id,column_id,lane_id,changed"
+)
+```
+
 ## Quick Metrics (from card fields only)
 
 Card objects returned by `kaiten_list_all_cards` already contain all the timing fields needed for standard metrics. No additional API calls are required.
@@ -26,8 +68,14 @@ Card objects returned by `kaiten_list_all_cards` already contain all the timing 
 ### Step-by-step
 
 ```
-Step 1: kaiten_list_all_cards(space_id=X, condition=1)  -- active cards
-Step 2: kaiten_list_all_cards(space_id=X, condition=2)  -- archived/done cards
+Step 1: kaiten_list_all_cards(space_id=X, condition=1, relations="none",
+          fields="id,title,type_id,state,column_id,lane_id,board_id,time_spent_sum,time_blocked_sum")
+        -- active cards (for WIP)
+
+Step 2: kaiten_list_all_cards(space_id=X, condition=2, relations="none",
+          fields="id,title,type_id,created,first_moved_to_in_progress_at,last_moved_to_done_at,time_spent_sum,time_blocked_sum,state,condition,due_date,column_id,lane_id,board_id")
+        -- archived/done cards (for SLT, Cycle Time, Throughput)
+
 Step 3: Compute metrics from the card fields directly (no further API calls)
 ```
 
@@ -100,10 +148,12 @@ Step 2: kaiten_list_columns(board_id=Y)
 
 Step 3: kaiten_get_all_space_activity(
           space_id=X,
-          actions='card_add,card_move,card_archive,card_join_board,card_revive'
+          actions='card_add,card_move,card_archive,card_join_board,card_revive',
+          fields='id,action,card_id,board_id,column_id,lane_id,changed'
         )
         -- returns ALL location events for ALL cards in the space
         -- auto-paginates (~5-10 requests instead of 539 individual calls)
+        -- fields parameter keeps only needed data (small response)
 
 Step 4: Group activity records by card_id
         -- reconstruct per-card column transition timeline
@@ -185,8 +235,10 @@ ToolSearch query: "+kaiten board column"          --> kaiten_list_boards, kaiten
 
 ## Tips
 
-1. **Start with Quick Metrics** -- card fields cover 80% of metrics needs with zero extra API calls beyond the bulk fetch.
-2. **Use `condition` filtering** -- pass `condition=1` for active cards, `condition=2` for archived. This avoids fetching unnecessary data.
-3. **Prefer charts for presentation** -- if you need a chart image or pre-aggregated data, use the `kaiten_chart_*` tools. They compute everything server-side.
-4. **Space Activity is the bulk alternative** -- when you need per-column timing, `kaiten_get_all_space_activity` replaces hundreds of individual history calls.
-5. **Auto-pagination is built in** -- `kaiten_list_all_cards` handles pagination automatically (up to 5000 cards). No manual offset management needed.
+1. **Always use `relations="none"` and `fields`** -- without these, 100 cards = 2MB+ which overflows the LLM context. With them, 500 cards = ~100KB.
+2. **Start with Quick Metrics** -- card fields cover 80% of metrics needs with zero extra API calls beyond the bulk fetch.
+3. **Use `condition` filtering** -- pass `condition=1` for active cards, `condition=2` for archived. This avoids fetching unnecessary data.
+4. **Prefer charts for presentation** -- if you need a chart image or pre-aggregated data, use the `kaiten_chart_*` tools. They compute everything server-side.
+5. **Space Activity is the bulk alternative** -- when you need per-column timing, `kaiten_get_all_space_activity` replaces hundreds of individual history calls.
+6. **Auto-pagination is built in** -- `kaiten_list_all_cards` handles pagination automatically (up to 5000 cards). No manual offset management needed.
+7. **Never read full JSON into LLM** -- if a file was saved to disk due to size, extract only the needed fields before processing.

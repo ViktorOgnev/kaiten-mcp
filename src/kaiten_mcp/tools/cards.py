@@ -1,7 +1,7 @@
 """Kaiten Cards MCP tools."""
 from typing import Any
 
-from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
+from kaiten_mcp.tools.compact import compact_response, select_fields, DEFAULT_LIMIT
 
 TOOLS: dict[str, dict] = {}
 
@@ -28,11 +28,14 @@ async def _list_cards(client, args: dict) -> Any:
     for key in str_keys + int_keys + bool_keys:
         if args.get(key) is not None:
             params[key] = args[key]
+    if args.get("relations") is not None:
+        params["relations"] = args["relations"]
     # Apply default limit
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
     compact = args.get("compact", False)
     result = await client.get("/cards", params=params or None)
-    return compact_response(result, compact)
+    result = compact_response(result, compact)
+    return select_fields(result, args.get("fields"))
 
 
 _tool(
@@ -66,6 +69,8 @@ _tool(
             "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
             "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
+            "relations": {"type": "string", "description": "Comma-separated relations to include (members,type,custom_properties,...) or 'none' to exclude all. Default: include all."},
+            "fields": {"type": "string", "description": "Comma-separated field names to return per card. Strips everything else. Example: 'id,title,created,last_moved_to_done_at'"},
         },
     },
     _list_cards,
@@ -292,6 +297,9 @@ async def _list_all_cards(client, args: dict) -> Any:
 
     # Build filter params (same as _list_cards)
     params: dict[str, Any] = {}
+    relations = args.get("relations", "none")
+    if relations:
+        params["relations"] = relations
     str_keys = [
         "query", "tag_ids", "member_ids", "owner_ids", "responsible_ids",
         "states", "column_ids", "type_ids", "external_id",
@@ -318,7 +326,8 @@ async def _list_all_cards(client, args: dict) -> Any:
         if len(result) < page_size:
             break
 
-    return compact_response(all_cards, compact)
+    result = compact_response(all_cards, compact)
+    return select_fields(result, args.get("fields"))
 
 
 _tool(
@@ -363,6 +372,8 @@ _tool(
             "page_size": {"type": "integer", "description": "Cards per page (default 100, max 100)"},
             "max_pages": {"type": "integer", "description": "Safety limit on pages to fetch (default 50, max 5000 cards)"},
             "compact": {"type": "boolean", "description": "Return compact response without heavy fields (default true for bulk)", "default": True},
+            "relations": {"type": "string", "description": "Relations to include or 'none' to exclude all nested objects (default 'none' for bulk). Dramatically reduces response size.", "default": "none"},
+            "fields": {"type": "string", "description": "Comma-separated field names to return per card. For metrics: 'id,title,type_id,created,first_moved_to_in_progress_at,last_moved_to_done_at,time_spent_sum,time_blocked_sum,state,condition,due_date,column_id,lane_id,board_id'"},
         },
     },
     _list_all_cards,

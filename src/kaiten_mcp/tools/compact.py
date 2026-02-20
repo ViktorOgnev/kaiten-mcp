@@ -10,6 +10,9 @@ SIMPLIFY_FIELDS = {"owner", "responsible", "author", "user", "created_by", "upda
 # Fields containing user lists to simplify
 SIMPLIFY_LIST_FIELDS = {"members", "responsibles", "owners", "subscribers", "participants"}
 
+# Fields to strip entirely in compact mode (heavy text blobs)
+STRIP_FIELDS = {"description"}
+
 
 def _is_base64_avatar(value: Any) -> bool:
     """Check if a value is a base64 data URI (heavy avatar)."""
@@ -34,6 +37,9 @@ def _compact_dict(data: dict) -> dict:
     """Apply compact transformation to a dictionary."""
     result = {}
     for key, value in data.items():
+        # Strip heavy text fields
+        if key in STRIP_FIELDS:
+            continue
         # Skip base64 avatars
         if key == "avatar_url" and _is_base64_avatar(value):
             continue
@@ -100,3 +106,25 @@ def compact_response(data: Any, compact: bool = False) -> Any:
         return _compact_list(data)
     else:
         return data
+
+
+def select_fields(data: Any, fields_str: str | None) -> Any:
+    """Keep only specified fields from each item in a list.
+
+    Args:
+        data: API response (list of dicts, or single dict)
+        fields_str: Comma-separated field names, or None (no filtering)
+
+    Returns:
+        Filtered data with only requested fields
+    """
+    if not fields_str:
+        return data
+
+    keys = {f.strip() for f in fields_str.split(",")}
+
+    if isinstance(data, list):
+        return [{k: v for k, v in item.items() if k in keys} for item in data if isinstance(item, dict)]
+    elif isinstance(data, dict):
+        return {k: v for k, v in data.items() if k in keys}
+    return data

@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+from datetime import datetime
 
 from dotenv import load_dotenv
 from mcp.server import Server
@@ -23,6 +24,10 @@ load_dotenv()
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
+
+# Response size thresholds
+COMPACT_JSON_THRESHOLD = 10_000   # 10KB: switch to compact JSON (no indent)
+FILE_OUTPUT_THRESHOLD = 200_000   # 200KB: save to file if output dir configured
 
 app = Server("kaiten-mcp")
 
@@ -83,6 +88,26 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
         result = await handler(client, arguments)
         if isinstance(result, (dict, list)):
             text = json.dumps(result, ensure_ascii=False, indent=2, default=str)
+            if len(text) > COMPACT_JSON_THRESHOLD:
+                text = json.dumps(result, ensure_ascii=False, separators=(',', ':'), default=str)
+            # File-based output for oversized responses
+            output_dir = os.environ.get("KAITEN_MCP_OUTPUT_DIR")
+            if len(text) > FILE_OUTPUT_THRESHOLD and output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = os.path.join(output_dir, f"{name}_{ts}.json")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(text)
+                count = len(result) if isinstance(result, list) else 1
+                sample = result[:3] if isinstance(result, list) else result
+                summary = json.dumps({
+                    "saved_to": file_path,
+                    "total_items": count,
+                    "size_bytes": len(text),
+                    "sample": sample,
+                    "tip": "Read the saved file to process data. Use 'fields' parameter to reduce response size.",
+                }, ensure_ascii=False, separators=(',', ':'), default=str)
+                text = summary
         else:
             text = str(result) if result is not None else "OK"
         return CallToolResult(content=[TextContent(type="text", text=text)])

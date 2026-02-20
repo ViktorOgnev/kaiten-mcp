@@ -6,12 +6,28 @@ All tools use prefix `mcp__kaiten__kaiten_`. Load via `ToolSearch` before use.
 
 **Default limit**: All list operations default to **50 items**. Use `limit` parameter to override (max 100).
 
-**Compact mode**: Use `compact=true` on list operations to reduce response size by 80-95%:
+**Compact mode** (`compact=true`): Reduces response size by 80-95%:
 - Removes base64-encoded `avatar_url` fields (10-50KB each)
+- Strips `description` field (up to 32KB per card)
 - Simplifies user objects to `{id, full_name}`
 - Simplifies user lists (members, responsibles) to `[{id, full_name}, ...]`
 
-Supported: `list_cards`, `list_all_cards`, `list_users`, `list_spaces`, `list_boards`, `list_comments`, `list_card_members`, `list_card_subscribers`, `list_column_subscribers`, `list_space_users`, `list_group_users`, `list_project_cards`
+Supported: `list_cards`, `list_all_cards`, `list_users`, `list_spaces`, `list_boards`, `list_comments`, `list_card_members`, `list_card_subscribers`, `list_column_subscribers`, `list_space_users`, `list_group_users`, `list_project_cards`, `get_space_activity`, `get_company_activity`, `get_all_space_activity`
+
+**Relations control** (`relations` parameter): Controls nested objects at the API level.
+- `relations="none"` — excludes members, files, comments, checklists, properties, tags, type (~90% size reduction)
+- `relations="member,type"` — includes only listed relations
+- Default for `list_all_cards`: `"none"` (lightweight for bulk)
+
+Supported: `list_cards`, `list_all_cards`
+
+**Field selection** (`fields` parameter): Returns only listed fields per item.
+- `fields="id,title,created,state"` — whitelist of field names
+- Applied client-side after API response
+
+Supported: `list_cards`, `list_all_cards`, `get_space_activity`, `get_company_activity`, `get_all_space_activity`
+
+**File-based output**: When `KAITEN_MCP_OUTPUT_DIR` is configured and response exceeds 200KB, data is saved to a file and a summary is returned instead. See `kaiten-heavy-data` skill for setup.
 
 ---
 
@@ -61,14 +77,14 @@ Supported: `list_cards`, `list_all_cards`, `list_users`, `list_spaces`, `list_bo
 
 | Tool | Description | Key params |
 |---|---|---|
-| `kaiten_list_cards` | Search/list cards with filtering (default limit=50) | `query`, `board_id`, `space_id`, `compact` |
+| `kaiten_list_cards` | Search/list cards with filtering (default limit=50) | `query`, `board_id`, `space_id`, `compact`, `relations`, `fields` |
 | `kaiten_get_card` | Get card by ID or key (e.g. PROJ-123) | **`card_id`** |
 | `kaiten_create_card` | Create a card (title max 1024, description max 32768) | **`title`**, **`board_id`**, `column_id`, `lane_id` |
 | `kaiten_update_card` | Update card fields; use condition=2 to archive | **`card_id`** |
 | `kaiten_delete_card` | Soft-delete a card (cards with time logs cannot be deleted) | **`card_id`** |
 | `kaiten_archive_card` | Archive a card (sets condition=2) | **`card_id`** |
 | `kaiten_move_card` | Move card to different board/column/lane | **`card_id`**, `board_id`, `column_id`, `lane_id` |
-| `kaiten_list_all_cards` | Fetch ALL cards with auto-pagination (max 5000) | `board_id`, `space_id`, `compact`, `page_size`, `max_pages` |
+| `kaiten_list_all_cards` | Fetch ALL cards with auto-pagination (max 5000). Default: relations=none, compact=true | `board_id`, `space_id`, `relations`, `fields`, `compact`, `page_size`, `max_pages` |
 
 ## Tags (6 tools)
 
@@ -326,10 +342,10 @@ Supported: `list_cards`, `list_all_cards`, `list_users`, `list_spaces`, `list_bo
 |---|---|---|
 | `kaiten_list_audit_logs` | List company audit logs | `categories`, `actions`, `from`, `to` |
 | `kaiten_get_card_activity` | Get card activity feed | **`card_id`** |
-| `kaiten_get_space_activity` | Get space activity feed (filter by actions, dates) | **`space_id`**, `actions`, `created_after` |
-| `kaiten_get_company_activity` | Get company-wide activity (cursor pagination) | `actions`, `cursor_created`, `cursor_id` |
+| `kaiten_get_space_activity` | Get space activity feed (filter by actions, dates) | **`space_id`**, `actions`, `created_after`, `compact`, `fields` |
+| `kaiten_get_company_activity` | Get company-wide activity (cursor pagination) | `actions`, `cursor_created`, `cursor_id`, `compact`, `fields` |
 | `kaiten_get_card_location_history` | Get card movement history (column/lane moves) | **`card_id`** |
-| `kaiten_get_all_space_activity` | Fetch ALL space activity with auto-pagination (max 5000) | **`space_id`**, `actions`, `page_size`, `max_pages` |
+| `kaiten_get_all_space_activity` | Fetch ALL space activity with auto-pagination (max 5000). Default: compact=true | **`space_id`**, `actions`, `compact`, `fields`, `page_size`, `max_pages` |
 
 ### Saved Filters
 

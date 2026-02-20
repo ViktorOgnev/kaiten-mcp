@@ -531,3 +531,76 @@ class TestListAllCards:
         )
         assert route.call_count == 1
         assert result == []
+
+
+class TestListCardsRelationsFields:
+    """Test relations and fields parameters on card list tools."""
+
+    async def test_list_cards_with_relations_none(self, client, mock_api):
+        """relations='none' should be passed as query parameter."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[{"id": 1, "title": "A"}])
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](
+            client, {"space_id": 1, "relations": "none"}
+        )
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "relations=none" in url
+
+    async def test_list_cards_with_relations_selective(self, client, mock_api):
+        """Selective relations should be passed as query parameter."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[{"id": 1}])
+        )
+        await TOOLS["kaiten_list_cards"]["handler"](
+            client, {"space_id": 1, "relations": "member,type"}
+        )
+        url = str(route.calls[0].request.url)
+        assert "relations=member" in url
+
+    async def test_list_cards_with_fields_filter(self, client, mock_api):
+        """fields param should whitelist-filter the returned data."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[
+                {"id": 1, "title": "A", "description": "D", "state": 3},
+            ])
+        )
+        result = await TOOLS["kaiten_list_cards"]["handler"](
+            client, {"space_id": 1, "fields": "id,title"}
+        )
+        assert result == [{"id": 1, "title": "A"}]
+
+    async def test_list_all_cards_default_relations_none(self, client, mock_api):
+        """list_all_cards should default relations to 'none'."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"space_id": 1}
+        )
+        url = str(route.calls[0].request.url)
+        assert "relations=none" in url
+
+    async def test_list_all_cards_override_relations(self, client, mock_api):
+        """list_all_cards should allow overriding relations."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"space_id": 1, "relations": "member"}
+        )
+        url = str(route.calls[0].request.url)
+        assert "relations=member" in url
+
+    async def test_list_all_cards_with_fields(self, client, mock_api):
+        """list_all_cards fields param should whitelist-filter the result."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[
+                {"id": 1, "title": "A", "description": "D", "created": "2025-01-01"},
+            ])
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"space_id": 1, "fields": "id,created"}
+        )
+        assert result == [{"id": 1, "created": "2025-01-01"}]

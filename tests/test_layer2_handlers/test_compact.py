@@ -3,7 +3,9 @@ import pytest
 
 from kaiten_mcp.tools.compact import (
     DEFAULT_LIMIT,
+    STRIP_FIELDS,
     compact_response,
+    select_fields,
     _is_base64_avatar,
     _simplify_user,
 )
@@ -203,18 +205,16 @@ class TestCompactResponse:
         assert compact_response(None, compact=True) is None
 
     def test_compact_preserves_other_fields(self):
-        """compact=True should preserve non-heavy fields."""
+        """compact=True should preserve non-heavy, non-stripped fields."""
         data = {
             "id": 1,
             "title": "My Card",
-            "description": "Description text",
             "created_at": "2024-01-01T00:00:00Z",
             "owner": {"id": 10, "full_name": "Owner", "extra": "data"},
         }
         result = compact_response(data, compact=True)
         assert result["id"] == 1
         assert result["title"] == "My Card"
-        assert result["description"] == "Description text"
         assert result["created_at"] == "2024-01-01T00:00:00Z"
 
     def test_compact_handles_nested_lists_in_dict(self):
@@ -265,3 +265,96 @@ class TestCompactResponse:
         assert result[2] == {"id": 1}  # avatar stripped
         assert result[3] == [1, 2, 3]
         assert result[4] is None
+
+
+class TestStripFields:
+    """Test STRIP_FIELDS behavior in compact mode."""
+
+    def test_strip_fields_contains_description(self):
+        """STRIP_FIELDS should contain 'description'."""
+        assert "description" in STRIP_FIELDS
+
+    def test_description_stripped_in_compact_mode(self):
+        """compact=True should strip description field."""
+        data = {"id": 1, "title": "Test", "description": "Long text..."}
+        result = compact_response(data, compact=True)
+        assert "description" not in result
+        assert result["id"] == 1
+        assert result["title"] == "Test"
+
+    def test_description_kept_when_not_compact(self):
+        """compact=False should keep description field."""
+        data = {"id": 1, "description": "Long text..."}
+        result = compact_response(data, compact=False)
+        assert result["description"] == "Long text..."
+
+    def test_description_stripped_in_list(self):
+        """compact=True should strip description from each item in a list."""
+        data = [
+            {"id": 1, "description": "Desc 1"},
+            {"id": 2, "description": "Desc 2"},
+        ]
+        result = compact_response(data, compact=True)
+        assert len(result) == 2
+        assert "description" not in result[0]
+        assert "description" not in result[1]
+
+    def test_nested_description_stripped(self):
+        """compact=True should strip description from nested objects."""
+        data = {"id": 1, "nested": {"description": "Nested desc"}}
+        result = compact_response(data, compact=True)
+        assert "description" not in result["nested"]
+
+
+class TestSelectFields:
+    """Test select_fields() whitelist filtering."""
+
+    def test_select_fields_from_list(self):
+        """select_fields should pick only named keys from list items."""
+        data = [
+            {"id": 1, "title": "A", "description": "D", "state": 3},
+            {"id": 2, "title": "B", "description": "E", "state": 1},
+        ]
+        result = select_fields(data, "id,title")
+        assert result == [{"id": 1, "title": "A"}, {"id": 2, "title": "B"}]
+
+    def test_select_fields_from_dict(self):
+        """select_fields should pick only named keys from a single dict."""
+        data = {"id": 1, "title": "A", "extra": "X"}
+        result = select_fields(data, "id,title")
+        assert result == {"id": 1, "title": "A"}
+
+    def test_select_fields_none_returns_original(self):
+        """select_fields with None should return data unchanged."""
+        data = [{"id": 1, "extra": "X"}]
+        result = select_fields(data, None)
+        assert result == data
+
+    def test_select_fields_empty_string_returns_original(self):
+        """select_fields with empty string should return data unchanged."""
+        data = [{"id": 1}]
+        result = select_fields(data, "")
+        assert result == data
+
+    def test_select_fields_with_spaces(self):
+        """select_fields should handle spaces around field names."""
+        data = [{"id": 1, "title": "A", "state": 3}]
+        result = select_fields(data, "id, title, state")
+        assert result == [{"id": 1, "title": "A", "state": 3}]
+
+    def test_select_fields_missing_keys_ignored(self):
+        """select_fields should ignore requested keys that are absent."""
+        data = [{"id": 1, "title": "A"}]
+        result = select_fields(data, "id,title,nonexistent")
+        assert result == [{"id": 1, "title": "A"}]
+
+    def test_select_fields_non_dict_items_skipped(self):
+        """select_fields should skip non-dict items in a list."""
+        data = [{"id": 1}, "not a dict", {"id": 2}]
+        result = select_fields(data, "id")
+        assert result == [{"id": 1}, {"id": 2}]
+
+    def test_select_fields_primitive_passthrough(self):
+        """select_fields should pass through primitive values unchanged."""
+        assert select_fields("hello", "id") == "hello"
+        assert select_fields(42, "id") == 42

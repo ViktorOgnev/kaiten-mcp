@@ -1,7 +1,7 @@
 """Kaiten Audit, Activity & Analytics MCP tools."""
 from typing import Any
 
-from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.compact import compact_response, select_fields, DEFAULT_LIMIT
 
 TOOLS: dict[str, dict] = {}
 
@@ -110,7 +110,9 @@ async def _get_space_activity(client, args: dict) -> Any:
         if args.get(key) is not None:
             params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
-    return await client.get(f"/spaces/{args['space_id']}/activity", params=params)
+    result = await client.get(f"/spaces/{args['space_id']}/activity", params=params)
+    result = compact_response(result, args.get("compact", False))
+    return select_fields(result, args.get("fields"))
 
 
 _tool(
@@ -148,6 +150,8 @@ _tool(
             },
             "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
+            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
+            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
         },
         "required": ["space_id"],
     },
@@ -164,7 +168,9 @@ async def _get_company_activity(client, args: dict) -> Any:
         if args.get(key) is not None:
             params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
-    return await client.get("/company/activity", params=params)
+    result = await client.get("/company/activity", params=params)
+    result = compact_response(result, args.get("compact", False))
+    return select_fields(result, args.get("fields"))
 
 
 _tool(
@@ -206,6 +212,8 @@ _tool(
             },
             "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
+            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
+            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
         },
     },
     _get_company_activity,
@@ -238,6 +246,7 @@ async def _get_all_space_activity(client, args: dict) -> Any:
     """Fetch all space activity with automatic pagination."""
     page_size = min(args.get("page_size", 100), 100)
     max_pages = args.get("max_pages", 50)
+    compact = args.get("compact", True)  # Default compact for bulk
 
     params: dict[str, Any] = {}
     for key in ("actions", "created_after", "created_before", "author_id"):
@@ -257,7 +266,8 @@ async def _get_all_space_activity(client, args: dict) -> Any:
         if len(result) < page_size:
             break
 
-    return all_activity
+    result = compact_response(all_activity, compact)
+    return select_fields(result, args.get("fields"))
 
 
 _tool(
@@ -302,6 +312,8 @@ _tool(
                 "type": "integer",
                 "description": "Safety limit on pages to fetch (default 50, max 5000 events)",
             },
+            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
+            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
         },
         "required": ["space_id"],
     },
