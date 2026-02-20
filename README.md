@@ -1,36 +1,39 @@
 # kaiten-mcp
 
-MCP-сервер для [Kaiten](https://kaiten.ru) — предоставляет 178 инструментов для работы с Kaiten API через протокол [Model Context Protocol](https://modelcontextprotocol.io).
+MCP-сервер для [Kaiten](https://kaiten.ru) — предоставляет 246 инструментов для работы с Kaiten API через протокол [Model Context Protocol](https://modelcontextprotocol.io).
 
 ## Возможности
 
 | Область | Модуль | Кол-во |
 |---------|--------|--------|
-| Карточки | `cards` | 7 |
+| Карточки | `cards` | 8 |
 | Комментарии | `comments` | 4 |
 | Участники карточек | `members` | 5 |
 | Логи времени | `time_logs` | 4 |
-| Теги | `tags` | 5 |
+| Теги | `tags` | 6 |
 | Чеклисты | `checklists` | 8 |
 | Блокировки | `blockers` | 5 |
-| Связи карточек | `card_relations` | 6 |
+| Связи карточек | `card_relations` | 9 |
 | Внешние ссылки | `external_links` | 4 |
-| Подписчики | `subscribers` | 10 |
+| Файлы карточек | `files` | 4 |
+| Подписчики | `subscribers` | 6 |
 | Пространства | `spaces` | 5 |
 | Доски | `boards` | 5 |
-| Колонки | `columns` | 4 |
+| Колонки и подколонки | `columns` | 8 |
 | Дорожки | `lanes` | 4 |
 | Типы карточек | `card_types` | 5 |
-| Кастомные свойства | `custom_properties` | 7 |
+| Кастомные свойства | `custom_properties` | 10 |
 | Документы | `documents` | 10 |
-| Вебхуки | `webhooks` | 5 |
-| Автоматизации и воркфлоу | `automations` | 10 |
+| Вебхуки | `webhooks` | 9 |
+| Автоматизации и воркфлоу | `automations` | 11 |
 | Проекты и спринты | `projects` | 13 |
 | Роли и группы | `roles_and_groups` | 14 |
-| Аудит и аналитика | `audit_and_analytics` | 10 |
-| Service Desk | `service_desk` | 14 |
+| Аудит и аналитика | `audit_and_analytics` | 11 |
+| Service Desk | `service_desk` | 47 |
+| Графики и аналитика | `charts` | 15 |
+| Дерево сущностей | `tree` | 2 |
 | Утилиты | `utilities` | 14 |
-| **Итого** | **24 модуля** | **178** |
+| **Итого** | **27 модулей** | **246** |
 
 ## Требования
 
@@ -63,7 +66,7 @@ claude mcp add kaiten \
   -- docker run --rm -i -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp
 ```
 
-Перезапустить Claude Code (`/exit` и запустить заново) — 178 инструментов Kaiten станут доступны.
+Перезапустить Claude Code (`/exit` и запустить заново) — 246 инструментов Kaiten станут доступны.
 
 ### Способ 2: Python (venv)
 
@@ -153,11 +156,12 @@ src/kaiten_mcp/
   client.py              # HTTP-клиент Kaiten API (httpx, rate limiting)
   models.py              # Доменные перечисления
   tools/
+    compact.py           # Компактификация ответов (аватары, лимиты)
     spaces.py            # Пространства
     boards.py            # Доски
-    columns.py           # Колонки
+    columns.py           # Колонки и подколонки
     lanes.py             # Дорожки (swimlanes)
-    cards.py             # Карточки
+    cards.py             # Карточки (включая bulk-листинг с авто-пагинацией)
     comments.py          # Комментарии
     members.py           # Участники и пользователи
     time_logs.py         # Логи времени
@@ -166,16 +170,19 @@ src/kaiten_mcp/
     custom_properties.py # Кастомные свойства
     checklists.py        # Чеклисты и элементы
     blockers.py          # Блокировки карточек
-    card_relations.py    # Связи parent/child
+    card_relations.py    # Связи parent/child/planned
     external_links.py    # Внешние ссылки
-    subscribers.py       # Подписчики + подколонки
+    files.py             # Файлы карточек (загрузка, скачивание, удаление)
+    subscribers.py       # Подписчики карточек
     documents.py         # Документы и группы документов
     webhooks.py          # Вебхуки пространств
     automations.py       # Автоматизации и воркфлоу
     projects.py          # Проекты и спринты
     roles_and_groups.py  # Роли, группы, участники пространств
     audit_and_analytics.py # Аудит, активность, сохранённые фильтры
-    service_desk.py      # Service Desk
+    service_desk.py      # Service Desk (SLA, пользователи, статистика)
+    charts.py            # Графики (CFD, control, cycle/lead time, throughput)
+    tree.py              # Навигация по дереву сущностей
     utilities.py         # API-ключи, таймеры, календари, корзина
 ```
 
