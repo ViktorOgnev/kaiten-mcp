@@ -1,5 +1,4 @@
 """Kaiten Card Relations MCP tools."""
-from __future__ import annotations
 
 from typing import Any
 

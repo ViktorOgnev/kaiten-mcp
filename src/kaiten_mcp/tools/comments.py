@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
@@ -167,7 +165,6 @@ _tool(
                 "default": False,
             },
         },
-        "required": [],
     },
     handler=_list_users,
 )
@@ -188,7 +185,6 @@ _tool(
     schema={
         "type": "object",
         "properties": {},
-        "required": [],
     },
     handler=_get_current_user,
 )
