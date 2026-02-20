@@ -1,6 +1,8 @@
 """Kaiten Audit, Activity & Analytics MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -12,10 +14,11 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_audit_logs(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/audit-logs", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/audit-logs", params=params)
 
 
 _tool(
@@ -37,10 +40,10 @@ _tool(
 
 async def _get_card_activity(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get(f"/cards/{args['card_id']}/activity", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get(f"/cards/{args['card_id']}/activity", params=params)
 
 
 _tool(
@@ -61,10 +64,10 @@ _tool(
 
 async def _get_space_activity(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get(f"/spaces/{args['space_id']}/activity", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get(f"/spaces/{args['space_id']}/activity", params=params)
 
 
 _tool(
@@ -85,10 +88,10 @@ _tool(
 
 async def _get_company_activity(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/company/activity", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/company/activity", params=params)
 
 
 _tool(
@@ -129,10 +132,10 @@ _tool(
 
 async def _list_saved_filters(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/saved-filters", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/saved-filters", params=params)
 
 
 _tool(

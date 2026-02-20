@@ -1,6 +1,8 @@
 """Kaiten Roles, Groups & Space Users MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -13,7 +15,9 @@ def _tool(name: str, description: str, schema: dict, handler):
 # ---------------------------------------------------------------------------
 
 async def _list_space_users(client, args: dict) -> Any:
-    return await client.get(f"/spaces/{args['space_id']}/users")
+    compact = args.get("compact", False)
+    result = await client.get(f"/spaces/{args['space_id']}/users")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -23,6 +27,7 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
         },
         "required": ["space_id"],
     },
@@ -107,11 +112,10 @@ async def _list_company_groups(client, args: dict) -> Any:
     params: dict[str, Any] = {}
     if args.get("query") is not None:
         params["query"] = args["query"]
-    if args.get("limit") is not None:
-        params["limit"] = args["limit"]
     if args.get("offset") is not None:
         params["offset"] = args["offset"]
-    return await client.get("/company/groups", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/company/groups", params=params)
 
 
 _tool(
@@ -207,7 +211,9 @@ _tool(
 
 
 async def _list_group_users(client, args: dict) -> Any:
-    return await client.get(f"/groups/{args['group_uid']}/users")
+    compact = args.get("compact", False)
+    result = await client.get(f"/groups/{args['group_uid']}/users")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -217,6 +223,7 @@ _tool(
         "type": "object",
         "properties": {
             "group_uid": {"type": "string", "description": "Group UID"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
         },
         "required": ["group_uid"],
     },
@@ -275,11 +282,10 @@ async def _list_roles(client, args: dict) -> Any:
     params: dict[str, Any] = {}
     if args.get("query") is not None:
         params["query"] = args["query"]
-    if args.get("limit") is not None:
-        params["limit"] = args["limit"]
     if args.get("offset") is not None:
         params["offset"] = args["offset"]
-    return await client.get("/tree-entity-roles", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/tree-entity-roles", params=params)
 
 
 _tool(

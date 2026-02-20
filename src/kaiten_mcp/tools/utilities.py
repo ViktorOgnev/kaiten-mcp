@@ -1,6 +1,8 @@
 """Kaiten Utilities MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -152,10 +154,10 @@ _tool(
 
 async def _list_removed_cards(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/removed/cards", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/removed/cards", params=params)
 
 
 _tool(
@@ -174,10 +176,10 @@ _tool(
 
 async def _list_removed_boards(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/removed/boards", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/removed/boards", params=params)
 
 
 _tool(
@@ -198,10 +200,10 @@ _tool(
 
 async def _list_calendars(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/calendars", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/calendars", params=params)
 
 
 _tool(

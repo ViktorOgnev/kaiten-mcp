@@ -1,6 +1,8 @@
 """Kaiten Projects & Sprints MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -116,7 +118,9 @@ _tool(
 
 
 async def _list_project_cards(client, args: dict) -> Any:
-    return await client.get(f"/projects/{args['project_id']}/cards")
+    compact = args.get("compact", False)
+    result = await client.get(f"/projects/{args['project_id']}/cards")
+    return compact_response(result, compact)
 
 
 _tool(
@@ -126,6 +130,7 @@ _tool(
         "type": "object",
         "properties": {
             "project_id": {"type": "string", "description": "Project ID (UUID)"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
         },
         "required": ["project_id"],
     },
@@ -179,10 +184,11 @@ _tool(
 
 async def _list_sprints(client, args: dict) -> Any:
     params = {}
-    for key in ("active", "limit", "offset"):
+    for key in ("active", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/sprints", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/sprints", params=params)
 
 
 _tool(

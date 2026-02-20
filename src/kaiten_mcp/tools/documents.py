@@ -3,9 +3,9 @@ import re
 import time
 from typing import Any
 
-TOOLS: dict[str, dict] = {}
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
 
-DEFAULT_LIMIT = 50
+TOOLS: dict[str, dict] = {}
 
 _MARK_ALIASES = {
     "bold": "strong",

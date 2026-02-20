@@ -1,6 +1,8 @@
 """Kaiten Tags MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -10,10 +12,11 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_tags(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/tags", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/tags", params=params)
 
 
 _tool(

@@ -1,6 +1,8 @@
 """Kaiten Automations & Workflows MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -155,10 +157,10 @@ _tool(
 
 async def _list_workflows(client, args: dict) -> Any:
     params: dict[str, Any] = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/company/workflows", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/company/workflows", params=params)
 
 
 _tool(

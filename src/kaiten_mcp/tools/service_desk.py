@@ -1,6 +1,8 @@
 """Kaiten Service Desk MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -12,10 +14,11 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_sd_requests(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/service-desk/requests", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/service-desk/requests", params=params)
 
 
 _tool(
@@ -123,10 +126,11 @@ _tool(
 
 async def _list_sd_services(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/service-desk/services", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/service-desk/services", params=params)
 
 
 _tool(
@@ -166,10 +170,11 @@ _tool(
 
 async def _list_sd_organizations(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/service-desk/organizations", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/service-desk/organizations", params=params)
 
 
 _tool(
@@ -277,10 +282,10 @@ _tool(
 
 async def _list_sd_sla(client, args: dict) -> Any:
     params = {}
-    for key in ("limit", "offset"):
-        if args.get(key) is not None:
-            params[key] = args[key]
-    return await client.get("/service-desk/sla", params=params or None)
+    if args.get("offset") is not None:
+        params["offset"] = args["offset"]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/service-desk/sla", params=params)
 
 
 _tool(

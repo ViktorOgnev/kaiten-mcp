@@ -1,6 +1,8 @@
 """Kaiten Custom Properties MCP tools."""
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -10,10 +12,11 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_custom_properties(client, args: dict) -> Any:
     params = {}
-    for key in ("include_values", "types", "query", "limit", "offset"):
+    for key in ("include_values", "types", "query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
-    return await client.get("/company/custom-properties", params=params or None)
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
+    return await client.get("/company/custom-properties", params=params)
 
 
 _tool(
@@ -136,12 +139,13 @@ _tool(
 
 async def _list_select_values(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "limit", "offset"):
+    for key in ("query", "offset"):
         if args.get(key) is not None:
             params[key] = args[key]
+    params["limit"] = args.get("limit", DEFAULT_LIMIT)
     return await client.get(
         f"/company/custom-properties/{args['property_id']}/select-values",
-        params=params or None,
+        params=params,
     )
 
 
