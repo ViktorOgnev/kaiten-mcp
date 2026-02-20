@@ -283,7 +283,7 @@ _tool(
             },
             "gap_type": {
                 "type": ["string", "null"],
-                "enum": ["hours", "days", None],
+                "enum": ["hours", "days"],
                 "description": "Unit of the gap: 'hours', 'days', or null to clear.",
             },
         },

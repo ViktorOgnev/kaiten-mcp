@@ -132,6 +132,21 @@ class TestDeleteAutomation:
         assert route.called
 
 
+class TestCopyAutomation:
+    async def test_copy_automation_required_only(self, client, mock_api):
+        route = mock_api.post("/spaces/1/automations/auto-uuid-5/copy").mock(
+            return_value=Response(200, json={"id": "new-uuid", "name": "Copy"})
+        )
+        result = await TOOLS["kaiten_copy_automation"]["handler"](
+            client,
+            {"space_id": 1, "automation_id": "auto-uuid-5", "target_space_id": 2},
+        )
+        assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"targetSpaceId": 2}
+        assert result["id"] == "new-uuid"
+
+
 # ---------------------------------------------------------------------------
 # Company Workflows
 # ---------------------------------------------------------------------------

@@ -13,8 +13,8 @@ def _tool(name: str, description: str, schema: dict, handler):
 # --- Audit Logs ---
 
 async def _list_audit_logs(client, args: dict) -> Any:
-    params = {}
-    for key in ("query", "offset"):
+    params: dict[str, Any] = {}
+    for key in ("offset", "categories", "actions", "from", "to"):
         if args.get(key) is not None:
             params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
@@ -23,13 +23,52 @@ async def _list_audit_logs(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_audit_logs",
-    "List Kaiten audit logs.",
+    "List Kaiten audit logs for the company. Supports filtering by category, action, and date range.",
     {
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search query"},
-            "limit": {"type": "integer", "description": "Max results"},
-            "offset": {"type": "integer", "description": "Pagination offset"},
+            "categories": {
+                "type": "string",
+                "description": (
+                    "Comma-separated list of log categories to filter by. "
+                    "Values: app, auth, user_management, group_management, "
+                    "user_profile, service_desk, publication, import, company_profile"
+                ),
+            },
+            "actions": {
+                "type": "string",
+                "description": (
+                    "Comma-separated list of actions to filter by. "
+                    "Values: start, stop, sign_in, sign_in_fail, sign_out, "
+                    "request_auth_pin, invite, invite_fail, change_password, "
+                    "request_change_email, change_email, activate, deactivate, "
+                    "change_permissions, change_apps_permissions, grant_access, "
+                    "revoke_access, transfer_ownership, create, delete, add_user, "
+                    "add_admin, admin_add_user, delete_user, delete_admin, "
+                    "admin_delete_user, set_sd_password, "
+                    "change_temporary_sd_password, group_activate, "
+                    "group_deactivate, publish_document, publish_document_group, "
+                    "publish_card, unpublish_document, unpublish_document_group, "
+                    "unpublish_card, share_entity, unshare_entity, public_link, "
+                    "extend_trial"
+                ),
+            },
+            "from": {
+                "type": "string",
+                "description": "Start of date range filter (ISO 8601 datetime, e.g. '2025-01-01T00:00:00Z').",
+            },
+            "to": {
+                "type": "string",
+                "description": "End of date range filter (ISO 8601 datetime, e.g. '2025-12-31T23:59:59Z').",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max results (default 100, max 100).",
+            },
+            "offset": {
+                "type": "integer",
+                "description": "Pagination offset.",
+            },
         },
     },
     _list_audit_logs,

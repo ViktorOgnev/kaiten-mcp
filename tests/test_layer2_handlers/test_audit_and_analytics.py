@@ -26,10 +26,10 @@ class TestListAuditLogs:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_list_audit_logs"]["handler"](
-            client, {"query": "login", "limit": 50, "offset": 10}
+            client, {"categories": "auth,app", "limit": 50, "offset": 10}
         )
         url = str(route.calls[0].request.url)
-        assert "query=login" in url
+        assert "categories=auth" in url
         assert "limit=50" in url
         assert "offset=10" in url
 
