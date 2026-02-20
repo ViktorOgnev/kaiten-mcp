@@ -104,3 +104,99 @@ _tool(
     },
     _delete_column,
 )
+
+
+# ---------------------------------------------------------------------------
+# Subcolumns
+# ---------------------------------------------------------------------------
+
+async def _list_subcolumns(client, args: dict) -> Any:
+    return await client.get(f"/columns/{args['column_id']}/subcolumns")
+
+
+_tool(
+    "kaiten_list_subcolumns",
+    "List all subcolumns of a Kaiten column.",
+    {
+        "type": "object",
+        "properties": {
+            "column_id": {"type": "integer", "description": "Column ID"},
+        },
+        "required": ["column_id"],
+    },
+    _list_subcolumns,
+)
+
+
+async def _create_subcolumn(client, args: dict) -> Any:
+    body = {"title": args["title"]}
+    for key in ("sort_order", "wip_limit"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    return await client.post(f"/columns/{args['column_id']}/subcolumns", json=body)
+
+
+_tool(
+    "kaiten_create_subcolumn",
+    "Create a subcolumn inside a Kaiten column.",
+    {
+        "type": "object",
+        "properties": {
+            "column_id": {"type": "integer", "description": "Column ID"},
+            "title": {"type": "string", "description": "Subcolumn title"},
+            "sort_order": {"type": "number", "description": "Sort order"},
+            "wip_limit": {"type": "integer", "description": "WIP limit"},
+        },
+        "required": ["column_id", "title"],
+    },
+    _create_subcolumn,
+)
+
+
+async def _update_subcolumn(client, args: dict) -> Any:
+    body = {}
+    for key in ("title", "sort_order", "wip_limit"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    return await client.patch(
+        f"/columns/{args['column_id']}/subcolumns/{args['subcolumn_id']}", json=body
+    )
+
+
+_tool(
+    "kaiten_update_subcolumn",
+    "Update a subcolumn of a Kaiten column.",
+    {
+        "type": "object",
+        "properties": {
+            "column_id": {"type": "integer", "description": "Column ID"},
+            "subcolumn_id": {"type": "integer", "description": "Subcolumn ID"},
+            "title": {"type": "string", "description": "New title"},
+            "sort_order": {"type": "number", "description": "Sort order"},
+            "wip_limit": {"type": "integer", "description": "WIP limit"},
+        },
+        "required": ["column_id", "subcolumn_id"],
+    },
+    _update_subcolumn,
+)
+
+
+async def _delete_subcolumn(client, args: dict) -> Any:
+    return await client.delete(
+        f"/columns/{args['column_id']}/subcolumns/{args['subcolumn_id']}"
+    )
+
+
+_tool(
+    "kaiten_delete_subcolumn",
+    "Delete a subcolumn from a Kaiten column.",
+    {
+        "type": "object",
+        "properties": {
+            "column_id": {"type": "integer", "description": "Column ID"},
+            "subcolumn_id": {"type": "integer", "description": "Subcolumn ID"},
+        },
+        "required": ["column_id", "subcolumn_id"],
+    },
+    _delete_subcolumn,
+)
