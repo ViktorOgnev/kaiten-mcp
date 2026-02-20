@@ -333,7 +333,7 @@ async def _cleanup_all(client) -> None:
     # -- Subcolumn --
     if S.subcolumn_id:
         await _safe_delete(
-            _h(SUB_T, "kaiten_delete_subcolumn")(
+            _h(COL_T, "kaiten_delete_subcolumn")(
                 client,
                 {
                     "column_id": S.col_review_id,
@@ -832,7 +832,7 @@ class TestE2EScenario:
 
     async def test_04g_create_subcolumn(self, client):
         """kaiten_create_subcolumn, kaiten_list_subcolumns"""
-        sc = await _h(SUB_T, "kaiten_create_subcolumn")(
+        sc = await _h(COL_T, "kaiten_create_subcolumn")(
             client,
             {
                 "column_id": S.col_review_id,
@@ -841,7 +841,7 @@ class TestE2EScenario:
         )
         S.subcolumn_id = sc["id"]
 
-        subs = await _h(SUB_T, "kaiten_list_subcolumns")(
+        subs = await _h(COL_T, "kaiten_list_subcolumns")(
             client,
             {
                 "column_id": S.col_review_id,
@@ -851,7 +851,7 @@ class TestE2EScenario:
 
     async def test_04h_update_subcolumn(self, client):
         """kaiten_update_subcolumn"""
-        updated = await _h(SUB_T, "kaiten_update_subcolumn")(
+        updated = await _h(COL_T, "kaiten_update_subcolumn")(
             client,
             {
                 "column_id": S.col_review_id,
