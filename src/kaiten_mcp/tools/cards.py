@@ -143,14 +143,19 @@ _tool(
 
 async def _update_card(client, args: dict) -> Any:
     body = {}
-    opt_keys = [
-        "title", "description", "board_id", "column_id", "lane_id",
-        "sort_order", "owner_id", "type_id", "condition", "due_date",
-        "asap", "size_text", "blocked", "external_id", "properties",
+    # Non-nullable fields — skip if not provided or null
+    for key in [
+        "title", "board_id", "column_id", "lane_id", "sort_order",
+        "owner_id", "type_id", "condition", "asap", "blocked", "properties",
+    ]:
+        if args.get(key) is not None:
+            body[key] = args[key]
+    # Nullable fields — include even when explicitly null (to clear the value)
+    for key in [
+        "description", "due_date", "size_text", "external_id",
         "sprint_id", "planned_start", "planned_end",
-    ]
-    for key in opt_keys:
-        if key in args and key != "card_id":
+    ]:
+        if key in args:
             body[key] = args[key]
     return await client.patch(f"/cards/{args['card_id']}", json=body)
 
