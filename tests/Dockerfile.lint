@@ -1,0 +1,10 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install only lint tools and runtime deps (for mypy import resolution).
+# Source code is NOT baked in — mounted via volumes at runtime.
+COPY pyproject.toml .
+RUN pip install --no-cache-dir ruff mypy httpx "mcp>=1.0.0" python-dotenv
+
+ENV PYTHONUNBUFFERED=1

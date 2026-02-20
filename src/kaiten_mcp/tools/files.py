@@ -1,4 +1,5 @@
 """Kaiten Card Files MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -112,9 +113,7 @@ async def _update_card_file(client, args: dict) -> Any:
             body[key] = args[key]
     if args.get("card_cover") is not None:
         body["card_cover"] = args["card_cover"]
-    return await client.patch(
-        f"/cards/{args['card_id']}/files/{args['file_id']}", json=body
-    )
+    return await client.patch(f"/cards/{args['card_id']}/files/{args['file_id']}", json=body)
 
 
 _tool(
@@ -173,9 +172,7 @@ _tool(
 
 
 async def _delete_card_file(client, args: dict) -> Any:
-    return await client.delete(
-        f"/cards/{args['card_id']}/files/{args['file_id']}"
-    )
+    return await client.delete(f"/cards/{args['card_id']}/files/{args['file_id']}")
 
 
 _tool(

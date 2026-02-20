@@ -2,7 +2,6 @@
 
 from typing import Any
 
-
 TOOLS: dict[str, dict] = {}
 
 
@@ -135,9 +134,7 @@ async def _update_card_blocker(client, args: dict) -> Any:
     reason = args.get("reason")
     if reason is not None:
         body["reason"] = reason
-    return await client.patch(
-        f"/cards/{card_id}/blockers/{blocker_id}", json=body
-    )
+    return await client.patch(f"/cards/{card_id}/blockers/{blocker_id}", json=body)
 
 
 _tool(

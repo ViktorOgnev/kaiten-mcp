@@ -1,4 +1,5 @@
 """Compact response utilities for reducing payload size."""
+
 from typing import Any
 
 # Default limit for list operations
@@ -19,7 +20,7 @@ def _is_base64_avatar(value: Any) -> bool:
     return isinstance(value, str) and value.startswith("data:")
 
 
-def _simplify_user(user: dict) -> dict:
+def _simplify_user(user: Any) -> Any:
     """Simplify user object to {id, full_name}."""
     if not isinstance(user, dict):
         return user
@@ -33,9 +34,9 @@ def _simplify_user(user: dict) -> dict:
     return result if result else user
 
 
-def _compact_dict(data: dict) -> dict:
+def _compact_dict(data: dict[str, Any]) -> dict[str, Any]:
     """Apply compact transformation to a dictionary."""
-    result = {}
+    result: dict[str, Any] = {}
     for key, value in data.items():
         # Strip heavy text fields
         if key in STRIP_FIELDS:
@@ -53,8 +54,7 @@ def _compact_dict(data: dict) -> dict:
         # Simplify user lists
         elif key in SIMPLIFY_LIST_FIELDS and isinstance(value, list):
             result[key] = [
-                _simplify_user(item) if isinstance(item, dict) else item
-                for item in value
+                _simplify_user(item) if isinstance(item, dict) else item for item in value
             ]
         # Recursively compact nested dicts
         elif isinstance(value, dict):
@@ -68,9 +68,9 @@ def _compact_dict(data: dict) -> dict:
     return result
 
 
-def _compact_list(data: list) -> list:
+def _compact_list(data: list[Any]) -> list[Any]:
     """Apply compact transformation to a list."""
-    result = []
+    result: list[Any] = []
     for item in data:
         if isinstance(item, dict):
             result.append(_compact_dict(item))
@@ -124,7 +124,9 @@ def select_fields(data: Any, fields_str: str | None) -> Any:
     keys = {f.strip() for f in fields_str.split(",")}
 
     if isinstance(data, list):
-        return [{k: v for k, v in item.items() if k in keys} for item in data if isinstance(item, dict)]
+        return [
+            {k: v for k, v in item.items() if k in keys} for item in data if isinstance(item, dict)
+        ]
     elif isinstance(data, dict):
         return {k: v for k, v in data.items() if k in keys}
     return data

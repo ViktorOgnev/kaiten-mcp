@@ -108,9 +108,7 @@ async def _update_comment(client, args: dict) -> Any:
         body["type"] = 2
     elif fmt == "markdown":
         body["type"] = 1
-    return await client.patch(
-        f"/cards/{card_id}/comments/{comment_id}", json=body
-    )
+    return await client.patch(f"/cards/{card_id}/comments/{comment_id}", json=body)
 
 
 _tool(

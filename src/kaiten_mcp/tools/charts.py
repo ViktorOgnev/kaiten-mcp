@@ -1,4 +1,5 @@
 """Kaiten Charts / Analytics MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -11,6 +12,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 # ---------------------------------------------------------------------------
 # 1. kaiten_get_chart_boards  (GET, sync)
 # ---------------------------------------------------------------------------
+
 
 async def _get_chart_boards(client, args: dict) -> Any:
     space_id = args["space_id"]
@@ -35,6 +37,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 2. kaiten_chart_summary  (POST, sync)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_summary(client, args: dict) -> Any:
     body: dict[str, Any] = {
@@ -72,6 +75,7 @@ _tool(
 # 3. kaiten_chart_block_resolution  (POST, sync)
 # ---------------------------------------------------------------------------
 
+
 async def _chart_block_resolution(client, args: dict) -> Any:
     body: dict[str, Any] = {"space_id": args["space_id"]}
     if args.get("category_ids") is not None:
@@ -103,6 +107,7 @@ _tool(
 # 4. kaiten_chart_due_dates  (POST, sync)
 # ---------------------------------------------------------------------------
 
+
 async def _chart_due_dates(client, args: dict) -> Any:
     body: dict[str, Any] = {
         "space_id": args["space_id"],
@@ -112,7 +117,8 @@ async def _chart_due_dates(client, args: dict) -> Any:
         "checklist_item_date_to": args["checklist_item_date_to"],
     }
     for key in (
-        "due_date", "responsible_id",
+        "due_date",
+        "responsible_id",
     ):
         if args.get(key) is not None:
             body[key] = args[key]
@@ -132,10 +138,19 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "card_date_from": {"type": "string", "description": "Card date range start (ISO 8601)"},
+            "card_date_from": {
+                "type": "string",
+                "description": "Card date range start (ISO 8601)",
+            },
             "card_date_to": {"type": "string", "description": "Card date range end (ISO 8601)"},
-            "checklist_item_date_from": {"type": "string", "description": "Checklist item date range start (ISO 8601)"},
-            "checklist_item_date_to": {"type": "string", "description": "Checklist item date range end (ISO 8601)"},
+            "checklist_item_date_from": {
+                "type": "string",
+                "description": "Checklist item date range start (ISO 8601)",
+            },
+            "checklist_item_date_to": {
+                "type": "string",
+                "description": "Checklist item date range end (ISO 8601)",
+            },
             "due_date": {"type": "string", "description": "Due date filter (ISO 8601)"},
             "responsible_id": {"type": "integer", "description": "Filter by responsible user ID"},
             "tz_offset": {"type": "integer", "description": "Timezone offset in minutes"},
@@ -160,7 +175,13 @@ _tool(
                 "description": "Filter by tag IDs",
             },
         },
-        "required": ["space_id", "card_date_from", "card_date_to", "checklist_item_date_from", "checklist_item_date_to"],
+        "required": [
+            "space_id",
+            "card_date_from",
+            "card_date_to",
+            "checklist_item_date_from",
+            "checklist_item_date_to",
+        ],
     },
     _chart_due_dates,
 )
@@ -169,6 +190,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # Helper: build body for async chart POST endpoints
 # ---------------------------------------------------------------------------
+
 
 def _build_async_chart_body(args: dict, extra_keys: tuple[str, ...] = ()) -> dict[str, Any]:
     """Collect common chart parameters from args into a request body."""
@@ -224,6 +246,7 @@ _ASYNC_NOTE = (
 # 5. kaiten_chart_cfd  (POST, async)
 # ---------------------------------------------------------------------------
 
+
 async def _chart_cfd(client, args: dict) -> Any:
     body = _build_async_chart_body(
         args,
@@ -273,23 +296,26 @@ _CONTROL_EXTRA_PROPS = {
     },
     "start_column_lanes": {
         "type": "object",
-        "description": "Mapping of start column ID to array of lane IDs, e.g. {\"10\": [1, 2]}",
+        "description": 'Mapping of start column ID to array of lane IDs, e.g. {"10": [1, 2]}',
     },
     "end_column_lanes": {
         "type": "object",
-        "description": "Mapping of end column ID to array of lane IDs, e.g. {\"20\": [3, 4]}",
+        "description": 'Mapping of end column ID to array of lane IDs, e.g. {"20": [3, 4]}',
     },
 }
 
 _CONTROL_EXTRA_KEYS = (
-    "start_columns", "end_columns",
-    "start_column_lanes", "end_column_lanes",
+    "start_columns",
+    "end_columns",
+    "start_column_lanes",
+    "end_column_lanes",
 )
 
 
 # ---------------------------------------------------------------------------
 # 6. kaiten_chart_control  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_control(client, args: dict) -> Any:
     body = _build_async_chart_body(args, extra_keys=_CONTROL_EXTRA_KEYS)
@@ -305,8 +331,15 @@ _tool(
             **_COMMON_CHART_PROPS,
             **_CONTROL_EXTRA_PROPS,
         },
-        "required": ["space_id", "date_from", "date_to", "start_columns", "end_columns",
-                      "start_column_lanes", "end_column_lanes"],
+        "required": [
+            "space_id",
+            "date_from",
+            "date_to",
+            "start_columns",
+            "end_columns",
+            "start_column_lanes",
+            "end_column_lanes",
+        ],
     },
     _chart_control,
 )
@@ -315,6 +348,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 7. kaiten_chart_spectral  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_spectral(client, args: dict) -> Any:
     body = _build_async_chart_body(args, extra_keys=_CONTROL_EXTRA_KEYS)
@@ -330,8 +364,15 @@ _tool(
             **_COMMON_CHART_PROPS,
             **_CONTROL_EXTRA_PROPS,
         },
-        "required": ["space_id", "date_from", "date_to", "start_columns", "end_columns",
-                      "start_column_lanes", "end_column_lanes"],
+        "required": [
+            "space_id",
+            "date_from",
+            "date_to",
+            "start_columns",
+            "end_columns",
+            "start_column_lanes",
+            "end_column_lanes",
+        ],
     },
     _chart_spectral,
 )
@@ -340,6 +381,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 8. kaiten_chart_lead_time  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_lead_time(client, args: dict) -> Any:
     body = _build_async_chart_body(args, extra_keys=_CONTROL_EXTRA_KEYS)
@@ -355,8 +397,15 @@ _tool(
             **_COMMON_CHART_PROPS,
             **_CONTROL_EXTRA_PROPS,
         },
-        "required": ["space_id", "date_from", "date_to", "start_columns", "end_columns",
-                      "start_column_lanes", "end_column_lanes"],
+        "required": [
+            "space_id",
+            "date_from",
+            "date_to",
+            "start_columns",
+            "end_columns",
+            "start_column_lanes",
+            "end_column_lanes",
+        ],
     },
     _chart_lead_time,
 )
@@ -365,6 +414,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 9. kaiten_chart_throughput_capacity  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_throughput_capacity(client, args: dict) -> Any:
     body = _build_async_chart_body(args, extra_keys=("end_column",))
@@ -390,6 +440,7 @@ _tool(
 # 10. kaiten_chart_throughput_demand  (POST, async)
 # ---------------------------------------------------------------------------
 
+
 async def _chart_throughput_demand(client, args: dict) -> Any:
     body = _build_async_chart_body(args, extra_keys=("start_column",))
     return await client.post("/charts/throughput-demand-chart", json=body)
@@ -402,7 +453,10 @@ _tool(
         "type": "object",
         "properties": {
             **_COMMON_CHART_PROPS,
-            "start_column": {"type": "integer", "description": "Start (input) column ID (required)"},
+            "start_column": {
+                "type": "integer",
+                "description": "Start (input) column ID (required)",
+            },
         },
         "required": ["space_id", "date_from", "start_column"],
     },
@@ -413,6 +467,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 11. kaiten_chart_task_distribution  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_task_distribution(client, args: dict) -> Any:
     body: dict[str, Any] = {"space_id": args["space_id"]}
@@ -438,7 +493,10 @@ _tool(
             "space_id": {"type": "integer", "description": "Space ID"},
             "timezone": {"type": "string", "description": "Timezone name (e.g. 'Europe/Moscow')"},
             "includeArchivedCards": {"type": "boolean", "description": "Include archived cards"},
-            "only_asap_cards": {"type": "boolean", "description": "Include only ASAP (expedite) cards"},
+            "only_asap_cards": {
+                "type": "boolean",
+                "description": "Include only ASAP (expedite) cards",
+            },
             "card_types": {
                 "type": "array",
                 "items": {"type": "integer"},
@@ -458,6 +516,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 12. kaiten_chart_cycle_time  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_cycle_time(client, args: dict) -> Any:
     body = _build_async_chart_body(
@@ -486,6 +545,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 13. kaiten_chart_sales_funnel  (POST, async)
 # ---------------------------------------------------------------------------
+
 
 async def _chart_sales_funnel(client, args: dict) -> Any:
     body = _build_async_chart_body(
@@ -524,6 +584,7 @@ _tool(
 # 14. kaiten_get_compute_job  (GET)
 # ---------------------------------------------------------------------------
 
+
 async def _get_compute_job(client, args: dict) -> Any:
     job_id = args["job_id"]
     return await client.get(f"/users/current/compute-jobs/{job_id}")
@@ -538,7 +599,10 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "job_id": {"type": "integer", "description": "Compute job ID returned by an async chart tool"},
+            "job_id": {
+                "type": "integer",
+                "description": "Compute job ID returned by an async chart tool",
+            },
         },
         "required": ["job_id"],
     },
@@ -549,6 +613,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # 15. kaiten_cancel_compute_job  (DELETE)
 # ---------------------------------------------------------------------------
+
 
 async def _cancel_compute_job(client, args: dict) -> Any:
     job_id = args["job_id"]

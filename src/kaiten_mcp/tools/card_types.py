@@ -1,4 +1,5 @@
 """Kaiten Card Types MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -72,7 +73,10 @@ _tool(
             "name": {"type": "string", "description": "Type name (1-64 chars)"},
             "letter": {"type": "string", "description": "Single letter or emoji"},
             "color": {"type": "integer", "description": "Color (2-25)"},
-            "description_template": {"type": "string", "description": "Template for card description"},
+            "description_template": {
+                "type": "string",
+                "description": "Template for card description",
+            },
         },
         "required": ["name", "letter", "color"],
     },

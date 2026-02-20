@@ -1,9 +1,9 @@
 """Integration tests for tree navigation tools."""
+
 import pytest
 from httpx import Response
 
-from kaiten_mcp.tools.tree import TOOLS, _fetch_all_entities, _build_tree, _sort_entities
-
+from kaiten_mcp.tools.tree import TOOLS, _fetch_all_entities, _sort_entities
 
 # ---------------------------------------------------------------------------
 # Test data helpers
@@ -225,9 +225,7 @@ class TestGetTree:
             docs=[DOC_2, DOC_3],
             groups=[GROUP_1, GROUP_2],
         )
-        result = await TOOLS["kaiten_get_tree"]["handler"](
-            client, {"root_uid": "group-1"}
-        )
+        result = await TOOLS["kaiten_get_tree"]["handler"](client, {"root_uid": "group-1"})
         # Children of group-1: GROUP_2, SPACE_B, DOC_2
         assert len(result) == 3
         uids = [n["uid"] for n in result]
@@ -243,9 +241,7 @@ class TestGetTree:
             docs=[DOC_2],
             groups=[GROUP_1, GROUP_2],
         )
-        result = await TOOLS["kaiten_get_tree"]["handler"](
-            client, {"depth": 1}
-        )
+        result = await TOOLS["kaiten_get_tree"]["handler"](client, {"depth": 1})
         # Root: GROUP_1. At depth 1, children are listed but not recursed
         group_node = next(n for n in result if n["uid"] == "group-1")
         assert len(group_node["children"]) > 0
@@ -257,9 +253,7 @@ class TestGetTree:
         """Unknown root_uid raises ValueError."""
         _mock_all_routes(mock_api)
         with pytest.raises(ValueError, match="not found"):
-            await TOOLS["kaiten_get_tree"]["handler"](
-                client, {"root_uid": "nonexistent"}
-            )
+            await TOOLS["kaiten_get_tree"]["handler"](client, {"root_uid": "nonexistent"})
 
     async def test_tree_nodes_have_no_parent_entity_uid(self, client, mock_api):
         """Tree nodes should not include parent_entity_uid (it's implied by nesting)."""
@@ -291,9 +285,7 @@ class TestGetTreeEdgeCases:
         ]
         _mock_all_routes(mock_api, groups=circular_groups)
         # With depth limit, should not infinite loop
-        result = await TOOLS["kaiten_get_tree"]["handler"](
-            client, {"depth": 3}
-        )
+        result = await TOOLS["kaiten_get_tree"]["handler"](client, {"depth": 3})
         # Neither is root (both have parents), so result is empty
         assert result == []
 

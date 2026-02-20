@@ -1,10 +1,10 @@
 """Layer 2 handler integration tests for charts & compute-jobs tools."""
+
 import json
 
 from httpx import Response
 
 from kaiten_mcp.tools.charts import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # 1. kaiten_get_chart_boards  (GET /charts/:space_id/boards)
@@ -16,9 +16,7 @@ class TestGetChartBoards:
         route = mock_api.get("/charts/1/boards").mock(
             return_value=Response(200, json=[{"id": 10, "title": "Board A"}])
         )
-        result = await TOOLS["kaiten_get_chart_boards"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_get_chart_boards"]["handler"](client, {"space_id": 1})
         assert route.called
         assert result == [{"id": 10, "title": "Board A"}]
 
@@ -63,9 +61,7 @@ class TestChartBlockResolution:
         route = mock_api.post("/charts/block-resolution-time-chart").mock(
             return_value=Response(200, json=[{"blocker_id": 1, "hours": 8}])
         )
-        result = await TOOLS["kaiten_chart_block_resolution"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_chart_block_resolution"]["handler"](client, {"space_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"space_id": 1}
@@ -232,9 +228,7 @@ class TestChartControl:
         route = mock_api.post("/charts/control-chart").mock(
             return_value=Response(200, json={"compute_job_id": "uuid-ctrl"})
         )
-        result = await TOOLS["kaiten_chart_control"]["handler"](
-            client, {**_CONTROL_REQUIRED}
-        )
+        result = await TOOLS["kaiten_chart_control"]["handler"](client, {**_CONTROL_REQUIRED})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == _CONTROL_REQUIRED
@@ -276,9 +270,7 @@ class TestChartSpectral:
         route = mock_api.post("/charts/spectral-chart").mock(
             return_value=Response(200, json={"compute_job_id": "uuid-spec"})
         )
-        result = await TOOLS["kaiten_chart_spectral"]["handler"](
-            client, {**_CONTROL_REQUIRED}
-        )
+        result = await TOOLS["kaiten_chart_spectral"]["handler"](client, {**_CONTROL_REQUIRED})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == _CONTROL_REQUIRED
@@ -320,9 +312,7 @@ class TestChartLeadTime:
         route = mock_api.post("/charts/lead-time").mock(
             return_value=Response(200, json={"compute_job_id": "uuid-lt"})
         )
-        result = await TOOLS["kaiten_chart_lead_time"]["handler"](
-            client, {**_CONTROL_REQUIRED}
-        )
+        result = await TOOLS["kaiten_chart_lead_time"]["handler"](client, {**_CONTROL_REQUIRED})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == _CONTROL_REQUIRED
@@ -470,9 +460,7 @@ class TestChartTaskDistribution:
         route = mock_api.post("/charts/task-distribution-chart").mock(
             return_value=Response(200, json={"compute_job_id": "uuid-dist"})
         )
-        result = await TOOLS["kaiten_chart_task_distribution"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_chart_task_distribution"]["handler"](client, {"space_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"space_id": 1}
@@ -656,9 +644,7 @@ class TestGetComputeJob:
                 },
             )
         )
-        result = await TOOLS["kaiten_get_compute_job"]["handler"](
-            client, {"job_id": 42}
-        )
+        result = await TOOLS["kaiten_get_compute_job"]["handler"](client, {"job_id": 42})
         assert route.called
         assert result["id"] == 42
         assert result["status"] == "done"
@@ -674,8 +660,6 @@ class TestCancelComputeJob:
         route = mock_api.delete("/users/current/compute-jobs/42").mock(
             return_value=Response(200, json={"id": "42"})
         )
-        result = await TOOLS["kaiten_cancel_compute_job"]["handler"](
-            client, {"job_id": 42}
-        )
+        result = await TOOLS["kaiten_cancel_compute_job"]["handler"](client, {"job_id": 42})
         assert route.called
         assert result == {"id": "42"}

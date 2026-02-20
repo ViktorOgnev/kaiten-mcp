@@ -1,12 +1,11 @@
 """Integration tests for documents handler layer."""
+
 import json
 import time
 
-import pytest
 from httpx import Response
 
-from kaiten_mcp.tools.documents import TOOLS, DEFAULT_LIMIT
-
+from kaiten_mcp.tools.documents import TOOLS
 
 # ---------------------------------------------------------------------------
 # Default Limit Tests
@@ -50,9 +49,7 @@ class TestDocumentAutoSortOrder:
 
     async def test_create_document_auto_sort_order(self, client, mock_api):
         """Without sort_order, should auto-generate based on timestamp."""
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         before = int(time.time())
         await TOOLS["kaiten_create_document"]["handler"](client, {"title": "Doc"})
         after = int(time.time())
@@ -64,9 +61,7 @@ class TestDocumentAutoSortOrder:
 
     async def test_create_document_explicit_sort_order(self, client, mock_api):
         """Explicit sort_order should be used as-is."""
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         await TOOLS["kaiten_create_document"]["handler"](
             client, {"title": "Doc", "sort_order": 999}
         )
@@ -109,18 +104,24 @@ class TestProseMirrorSanitize:
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "First item"}]}
-                            ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "First item"}],
+                                }
+                            ],
                         },
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "Second item"}]}
-                            ]
-                        }
-                    ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "Second item"}],
+                                }
+                            ],
+                        },
+                    ],
                 }
-            ]
+            ],
         }
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
@@ -150,24 +151,33 @@ class TestProseMirrorSanitize:
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "First"}]}
-                            ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "First"}],
+                                }
+                            ],
                         },
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "Second"}]}
-                            ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "Second"}],
+                                }
+                            ],
                         },
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "Third"}]}
-                            ]
-                        }
-                    ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "Third"}],
+                                }
+                            ],
+                        },
+                    ],
                 }
-            ]
+            ],
         }
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
@@ -190,13 +200,10 @@ class TestProseMirrorSanitize:
                 {
                     "type": "heading",
                     "attrs": {"level": 1},
-                    "content": [{"type": "text", "text": "Title"}]
+                    "content": [{"type": "text", "text": "Title"}],
                 },
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "Regular text."}]
-                }
-            ]
+                {"type": "paragraph", "content": [{"type": "text", "text": "Regular text."}]},
+            ],
         }
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
@@ -216,7 +223,7 @@ class TestProseMirrorSanitize:
                 {
                     "type": "heading",
                     "attrs": {"level": 1},
-                    "content": [{"type": "text", "text": "Header"}]
+                    "content": [{"type": "text", "text": "Header"}],
                 },
                 {
                     "type": "bullet_list",
@@ -224,12 +231,15 @@ class TestProseMirrorSanitize:
                         {
                             "type": "list_item",
                             "content": [
-                                {"type": "paragraph", "content": [{"type": "text", "text": "Item"}]}
-                            ]
+                                {
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": "Item"}],
+                                }
+                            ],
                         }
-                    ]
-                }
-            ]
+                    ],
+                },
+            ],
         }
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
@@ -247,15 +257,7 @@ class TestProseMirrorSanitize:
         route = mock_api.patch("/documents/abc-uid").mock(
             return_value=Response(200, json={"uid": "abc-uid"})
         )
-        doc_data = {
-            "type": "doc",
-            "content": [
-                {
-                    "type": "bullet_list",
-                    "content": []
-                }
-            ]
-        }
+        doc_data = {"type": "doc", "content": [{"type": "bullet_list", "content": []}]}
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
         )
@@ -311,7 +313,7 @@ class TestExtractTextFromNode:
             "content": [
                 {"type": "text", "text": "Hello "},
                 {"type": "text", "text": "World"},
-            ]
+            ],
         }
         assert _extract_text_from_node(node) == "Hello World"
 
@@ -377,10 +379,12 @@ class TestMarkSanitization:
 
         doc = {
             "type": "doc",
-            "content": [{
-                "type": "paragraph",
-                "content": [{"type": "text", "text": "hi", "marks": [{"type": "bold"}]}]
-            }]
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "hi", "marks": [{"type": "bold"}]}],
+                }
+            ],
         }
         result = _sanitize_prosemirror(doc)
         assert result["content"][0]["content"][0]["marks"] == [{"type": "strong"}]
@@ -390,7 +394,8 @@ class TestMarkSanitization:
         from kaiten_mcp.tools.documents import _sanitize_prosemirror
 
         node = {
-            "type": "text", "text": "hi",
+            "type": "text",
+            "text": "hi",
             "marks": [{"type": "bold", "attrs": {"custom": True}}],
         }
         result = _sanitize_prosemirror(node)
@@ -403,10 +408,14 @@ class TestMarkSanitization:
         )
         doc_data = {
             "type": "doc",
-            "content": [{
-                "type": "paragraph",
-                "content": [{"type": "text", "text": "important", "marks": [{"type": "bold"}]}]
-            }]
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {"type": "text", "text": "important", "marks": [{"type": "bold"}]}
+                    ],
+                }
+            ],
         }
         await TOOLS["kaiten_update_document"]["handler"](
             client, {"document_uid": "abc-uid", "data": doc_data}
@@ -499,7 +508,9 @@ class TestMarkdownToProsemirror:
         result = _markdown_to_prosemirror("Hello world")
         assert result == {
             "type": "doc",
-            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello world"}]}]
+            "content": [
+                {"type": "paragraph", "content": [{"type": "text", "text": "Hello world"}]}
+            ],
         }
 
     def test_heading_levels(self):
@@ -508,8 +519,9 @@ class TestMarkdownToProsemirror:
         result = _markdown_to_prosemirror("# H1\n\n## H2\n\n### H3")
         assert len(result["content"]) == 3
         assert result["content"][0] == {
-            "type": "heading", "attrs": {"level": 1},
-            "content": [{"type": "text", "text": "H1"}]
+            "type": "heading",
+            "attrs": {"level": 1},
+            "content": [{"type": "text", "text": "H1"}],
         }
         assert result["content"][1]["attrs"]["level"] == 2
         assert result["content"][2]["attrs"]["level"] == 3
@@ -527,7 +539,9 @@ class TestMarkdownToProsemirror:
         result = _markdown_to_prosemirror("> quoted text")
         assert result["content"][0] == {
             "type": "blockquote",
-            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "quoted text"}]}]
+            "content": [
+                {"type": "paragraph", "content": [{"type": "text", "text": "quoted text"}]}
+            ],
         }
 
     def test_double_newline_creates_paragraphs(self):
@@ -601,9 +615,7 @@ class TestCreateDocumentText:
     """Tests for text parameter in create document."""
 
     async def test_create_with_text_sends_prosemirror(self, client, mock_api):
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         await TOOLS["kaiten_create_document"]["handler"](
             client, {"title": "Doc", "text": "## Hello\n\nWorld"}
         )
@@ -613,14 +625,15 @@ class TestCreateDocumentText:
         assert body["data"]["content"][1]["type"] == "paragraph"
 
     async def test_create_with_data_sanitizes(self, client, mock_api):
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         doc_data = {
             "type": "doc",
-            "content": [{"type": "paragraph", "content": [
-                {"type": "text", "text": "hi", "marks": [{"type": "bold"}]}
-            ]}]
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "hi", "marks": [{"type": "bold"}]}],
+                }
+            ],
         }
         await TOOLS["kaiten_create_document"]["handler"](
             client, {"title": "Doc", "data": doc_data}
@@ -629,25 +642,20 @@ class TestCreateDocumentText:
         assert body["data"]["content"][0]["content"][0]["marks"] == [{"type": "strong"}]
 
     async def test_create_without_text_or_data(self, client, mock_api):
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
-        await TOOLS["kaiten_create_document"]["handler"](
-            client, {"title": "Doc"}
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
+        await TOOLS["kaiten_create_document"]["handler"](client, {"title": "Doc"})
         body = json.loads(route.calls[0].request.content)
         assert "data" not in body
 
     async def test_create_text_wins_over_data(self, client, mock_api):
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         await TOOLS["kaiten_create_document"]["handler"](
-            client, {
+            client,
+            {
                 "title": "Doc",
                 "text": "From text",
                 "data": {"type": "doc", "content": []},
-            }
+            },
         )
         body = json.loads(route.calls[0].request.content)
         # text should win — content generated from markdown
@@ -673,13 +681,17 @@ class TestUpdateDocumentText:
             return_value=Response(200, json={"uid": "abc-uid"})
         )
         await TOOLS["kaiten_update_document"]["handler"](
-            client, {
+            client,
+            {
                 "document_uid": "abc-uid",
                 "text": "From text",
-                "data": {"type": "doc", "content": [
-                    {"type": "paragraph", "content": [{"type": "text", "text": "From data"}]}
-                ]},
-            }
+                "data": {
+                    "type": "doc",
+                    "content": [
+                        {"type": "paragraph", "content": [{"type": "text", "text": "From data"}]}
+                    ],
+                },
+            },
         )
         body = json.loads(route.calls[0].request.content)
         # text should win
@@ -699,9 +711,7 @@ class TestListDocuments:
         assert result == []
 
     async def test_list_documents_all_args(self, client, mock_api):
-        route = mock_api.get("/documents").mock(
-            return_value=Response(200, json=[{"uid": "abc"}])
-        )
+        route = mock_api.get("/documents").mock(return_value=Response(200, json=[{"uid": "abc"}]))
         result = await TOOLS["kaiten_list_documents"]["handler"](
             client, {"query": "spec", "limit": 10, "offset": 5}
         )
@@ -717,9 +727,7 @@ class TestCreateDocument:
         route = mock_api.post("/documents").mock(
             return_value=Response(200, json={"uid": "abc", "title": "Doc"})
         )
-        result = await TOOLS["kaiten_create_document"]["handler"](
-            client, {"title": "Doc"}
-        )
+        result = await TOOLS["kaiten_create_document"]["handler"](client, {"title": "Doc"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         # sort_order is now auto-generated
@@ -728,9 +736,7 @@ class TestCreateDocument:
         assert result["title"] == "Doc"
 
     async def test_create_document_all_args(self, client, mock_api):
-        route = mock_api.post("/documents").mock(
-            return_value=Response(200, json={"uid": "abc"})
-        )
+        route = mock_api.post("/documents").mock(return_value=Response(200, json={"uid": "abc"}))
         await TOOLS["kaiten_create_document"]["handler"](
             client,
             {
@@ -754,9 +760,7 @@ class TestGetDocument:
         route = mock_api.get("/documents/abc-uid").mock(
             return_value=Response(200, json={"uid": "abc-uid", "title": "Doc"})
         )
-        result = await TOOLS["kaiten_get_document"]["handler"](
-            client, {"document_uid": "abc-uid"}
-        )
+        result = await TOOLS["kaiten_get_document"]["handler"](client, {"document_uid": "abc-uid"})
         assert route.called
         assert result["uid"] == "abc-uid"
 
@@ -779,7 +783,11 @@ class TestUpdateDocument:
         )
         await TOOLS["kaiten_update_document"]["handler"](
             client,
-            {"document_uid": "abc-uid", "title": "New Title", "data": {"type": "doc", "content": []}},
+            {
+                "document_uid": "abc-uid",
+                "title": "New Title",
+                "data": {"type": "doc", "content": []},
+            },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {"title": "New Title", "data": {"type": "doc", "content": []}}
@@ -787,12 +795,8 @@ class TestUpdateDocument:
 
 class TestDeleteDocument:
     async def test_delete_document_required_only(self, client, mock_api):
-        route = mock_api.delete("/documents/abc-uid").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_document"]["handler"](
-            client, {"document_uid": "abc-uid"}
-        )
+        route = mock_api.delete("/documents/abc-uid").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_document"]["handler"](client, {"document_uid": "abc-uid"})
         assert route.called
 
 
@@ -803,9 +807,7 @@ class TestDeleteDocument:
 
 class TestListDocumentGroups:
     async def test_list_document_groups_required_only(self, client, mock_api):
-        route = mock_api.get("/document-groups").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/document-groups").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_document_groups"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -828,9 +830,7 @@ class TestCreateDocumentGroup:
         route = mock_api.post("/document-groups").mock(
             return_value=Response(200, json={"uid": "g1", "title": "Grp"})
         )
-        result = await TOOLS["kaiten_create_document_group"]["handler"](
-            client, {"title": "Grp"}
-        )
+        result = await TOOLS["kaiten_create_document_group"]["handler"](client, {"title": "Grp"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         # sort_order is now auto-generated
@@ -853,9 +853,7 @@ class TestGetDocumentGroup:
         route = mock_api.get("/document-groups/g1").mock(
             return_value=Response(200, json={"uid": "g1"})
         )
-        result = await TOOLS["kaiten_get_document_group"]["handler"](
-            client, {"group_uid": "g1"}
-        )
+        result = await TOOLS["kaiten_get_document_group"]["handler"](client, {"group_uid": "g1"})
         assert route.called
         assert result["uid"] == "g1"
 
@@ -885,10 +883,6 @@ class TestUpdateDocumentGroup:
 
 class TestDeleteDocumentGroup:
     async def test_delete_document_group_required_only(self, client, mock_api):
-        route = mock_api.delete("/document-groups/g1").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_document_group"]["handler"](
-            client, {"group_uid": "g1"}
-        )
+        route = mock_api.delete("/document-groups/g1").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_document_group"]["handler"](client, {"group_uid": "g1"})
         assert route.called

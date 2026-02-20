@@ -1,4 +1,5 @@
 """Kaiten Service Desk MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -11,6 +12,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- SD Requests ---
+
 
 async def _list_sd_requests(client, args: dict) -> Any:
     params = {}
@@ -124,6 +126,7 @@ _tool(
 
 # --- SD Services ---
 
+
 async def _list_sd_services(client, args: dict) -> Any:
     params = {}
     for key in ("query", "offset"):
@@ -197,21 +200,56 @@ _tool(
         "type": "object",
         "properties": {
             "name": {"type": "string", "description": "Service name (max 256 chars)"},
-            "board_id": {"type": "integer", "description": "Board ID where request cards are created"},
+            "board_id": {
+                "type": "integer",
+                "description": "Board ID where request cards are created",
+            },
             "position": {"type": "integer", "description": "Sort position"},
             "description": {"type": "string", "description": "Service description"},
-            "template_description": {"type": "string", "description": "Default description template for new requests"},
-            "lng": {"type": "string", "description": "Language code (2-char, e.g. 'en', 'ru')", "enum": ["en", "ru"]},
-            "display_status": {"type": "string", "description": "How status is displayed", "enum": ["by_column", "by_state"]},
+            "template_description": {
+                "type": "string",
+                "description": "Default description template for new requests",
+            },
+            "lng": {
+                "type": "string",
+                "description": "Language code (2-char, e.g. 'en', 'ru')",
+                "enum": ["en", "ru"],
+            },
+            "display_status": {
+                "type": "string",
+                "description": "How status is displayed",
+                "enum": ["by_column", "by_state"],
+            },
             "column_id": {"type": "integer", "description": "Default column ID on the board"},
             "lane_id": {"type": "integer", "description": "Default lane ID on the board"},
-            "type_id": {"type": "integer", "description": "Card type ID for created request cards"},
-            "email_settings": {"type": "integer", "description": "Email notification settings bitmask (default 7)"},
-            "fields_settings": {"type": "object", "description": "Custom property fields configuration for the request form (JSON)"},
-            "settings": {"type": "object", "description": "Additional settings (e.g. {allowed_email_masks: [...]})"},
-            "allow_to_add_external_recipients": {"type": "boolean", "description": "Allow adding external email recipients"},
-            "hide_in_list": {"type": "boolean", "description": "Hide service in the public service list"},
-            "is_default": {"type": "boolean", "description": "Set as the default service (only one allowed per company)"},
+            "type_id": {
+                "type": "integer",
+                "description": "Card type ID for created request cards",
+            },
+            "email_settings": {
+                "type": "integer",
+                "description": "Email notification settings bitmask (default 7)",
+            },
+            "fields_settings": {
+                "type": "object",
+                "description": "Custom property fields configuration for the request form (JSON)",
+            },
+            "settings": {
+                "type": "object",
+                "description": "Additional settings (e.g. {allowed_email_masks: [...]})",
+            },
+            "allow_to_add_external_recipients": {
+                "type": "boolean",
+                "description": "Allow adding external email recipients",
+            },
+            "hide_in_list": {
+                "type": "boolean",
+                "description": "Hide service in the public service list",
+            },
+            "is_default": {
+                "type": "boolean",
+                "description": "Set as the default service (only one allowed per company)",
+            },
         },
         "required": ["name", "board_id", "position"],
     },
@@ -233,9 +271,7 @@ async def _update_sd_service(client, args: dict) -> Any:
     for key in ("archived", "allow_to_add_external_recipients", "hide_in_list"):
         if args.get(key) is not None:
             body[key] = args[key]
-    return await client.patch(
-        f"/service-desk/services/{args['service_id']}", json=body
-    )
+    return await client.patch(f"/service-desk/services/{args['service_id']}", json=body)
 
 
 _tool(
@@ -247,20 +283,48 @@ _tool(
             "service_id": {"type": "integer", "description": "Service ID"},
             "name": {"type": "string", "description": "Service name (max 256 chars)"},
             "description": {"type": "string", "description": "Service description"},
-            "template_description": {"type": "string", "description": "Default description template for new requests"},
+            "template_description": {
+                "type": "string",
+                "description": "Default description template for new requests",
+            },
             "lng": {"type": "string", "description": "Language code (2-char, e.g. 'en', 'ru')"},
-            "display_status": {"type": "string", "description": "How status is displayed", "enum": ["by_column", "by_state"]},
-            "board_id": {"type": "integer", "description": "Board ID where request cards are created"},
+            "display_status": {
+                "type": "string",
+                "description": "How status is displayed",
+                "enum": ["by_column", "by_state"],
+            },
+            "board_id": {
+                "type": "integer",
+                "description": "Board ID where request cards are created",
+            },
             "column_id": {"type": "integer", "description": "Default column ID on the board"},
             "lane_id": {"type": "integer", "description": "Default lane ID on the board"},
-            "type_id": {"type": "integer", "description": "Card type ID for created request cards"},
+            "type_id": {
+                "type": "integer",
+                "description": "Card type ID for created request cards",
+            },
             "position": {"type": "integer", "description": "Sort position"},
-            "email_settings": {"type": "integer", "description": "Email notification settings bitmask"},
-            "fields_settings": {"type": "object", "description": "Custom property fields configuration for the request form (JSON)"},
-            "settings": {"type": "object", "description": "Additional settings (e.g. {allowed_email_masks: [...]})"},
+            "email_settings": {
+                "type": "integer",
+                "description": "Email notification settings bitmask",
+            },
+            "fields_settings": {
+                "type": "object",
+                "description": "Custom property fields configuration for the request form (JSON)",
+            },
+            "settings": {
+                "type": "object",
+                "description": "Additional settings (e.g. {allowed_email_masks: [...]})",
+            },
             "archived": {"type": "boolean", "description": "Archive or unarchive the service"},
-            "allow_to_add_external_recipients": {"type": "boolean", "description": "Allow adding external email recipients"},
-            "hide_in_list": {"type": "boolean", "description": "Hide service in the public service list"},
+            "allow_to_add_external_recipients": {
+                "type": "boolean",
+                "description": "Allow adding external email recipients",
+            },
+            "hide_in_list": {
+                "type": "boolean",
+                "description": "Hide service in the public service list",
+            },
         },
         "required": ["service_id"],
     },
@@ -290,6 +354,7 @@ _tool(
 
 # --- SD Organizations ---
 
+
 async def _list_sd_organizations(client, args: dict) -> Any:
     params = {}
     for key in ("query", "offset"):
@@ -308,7 +373,10 @@ _tool(
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search filter"},
-            "includeUsers": {"type": "boolean", "description": "Include organization users in response"},
+            "includeUsers": {
+                "type": "boolean",
+                "description": "Include organization users in response",
+            },
             "limit": {"type": "integer", "description": "Max results"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
@@ -331,7 +399,10 @@ _tool(
         "type": "object",
         "properties": {
             "name": {"type": "string", "description": "Organization name (max 256 chars)"},
-            "description": {"type": "string", "description": "Organization description (max 1024 chars)"},
+            "description": {
+                "type": "string",
+                "description": "Organization description (max 1024 chars)",
+            },
         },
         "required": ["name"],
     },
@@ -362,9 +433,7 @@ async def _update_sd_organization(client, args: dict) -> Any:
     for key in ("name", "description"):
         if key in args:
             body[key] = args[key]
-    return await client.patch(
-        f"/service-desk/organizations/{args['organization_id']}", json=body
-    )
+    return await client.patch(f"/service-desk/organizations/{args['organization_id']}", json=body)
 
 
 _tool(
@@ -375,7 +444,10 @@ _tool(
         "properties": {
             "organization_id": {"type": "integer", "description": "Organization ID"},
             "name": {"type": "string", "description": "Organization name (max 256 chars)"},
-            "description": {"type": "string", "description": "Organization description (max 1024 chars)"},
+            "description": {
+                "type": "string",
+                "description": "Organization description (max 1024 chars)",
+            },
         },
         "required": ["organization_id"],
     },
@@ -384,9 +456,7 @@ _tool(
 
 
 async def _delete_sd_organization(client, args: dict) -> Any:
-    return await client.delete(
-        f"/service-desk/organizations/{args['organization_id']}"
-    )
+    return await client.delete(f"/service-desk/organizations/{args['organization_id']}")
 
 
 _tool(
@@ -404,6 +474,7 @@ _tool(
 
 
 # --- SD SLA ---
+
 
 async def _list_sd_sla(client, args: dict) -> Any:
     params = {}
@@ -466,7 +537,10 @@ _tool(
                 "description": "SLA rules (conditions and time targets)",
                 "items": {"type": "object"},
             },
-            "notification_settings": {"type": "object", "description": "Notification configuration"},
+            "notification_settings": {
+                "type": "object",
+                "description": "Notification configuration",
+            },
             "v2": {"type": "boolean", "description": "Use v2 SLA format"},
         },
         "required": ["name", "rules"],
@@ -496,8 +570,14 @@ _tool(
             "sla_id": {"type": "string", "description": "SLA ID (UUID)"},
             "name": {"type": "string", "description": "SLA policy name"},
             "status": {"type": "string", "description": "SLA status"},
-            "notification_settings": {"type": "object", "description": "Notification configuration"},
-            "should_delete_sla_from_cards": {"type": "boolean", "description": "Remove SLA from cards when deactivating"},
+            "notification_settings": {
+                "type": "object",
+                "description": "Notification configuration",
+            },
+            "should_delete_sla_from_cards": {
+                "type": "boolean",
+                "description": "Remove SLA from cards when deactivating",
+            },
         },
         "required": ["sla_id"],
     },
@@ -525,6 +605,7 @@ _tool(
 
 # --- SD Template Answers ---
 
+
 async def _list_sd_template_answers(client, args: dict) -> Any:
     return await client.get("/service-desk/template-answers")
 
@@ -541,9 +622,7 @@ _tool(
 
 
 async def _get_sd_template_answer(client, args: dict) -> Any:
-    return await client.get(
-        f"/service-desk/template-answers/{args['template_answer_id']}"
-    )
+    return await client.get(f"/service-desk/template-answers/{args['template_answer_id']}")
 
 
 _tool(
@@ -607,9 +686,7 @@ _tool(
 
 
 async def _delete_sd_template_answer(client, args: dict) -> Any:
-    return await client.delete(
-        f"/service-desk/template-answers/{args['template_answer_id']}"
-    )
+    return await client.delete(f"/service-desk/template-answers/{args['template_answer_id']}")
 
 
 _tool(
@@ -628,10 +705,14 @@ _tool(
 
 # --- SLA Rules ---
 
+
 async def _create_sla_rule(client, args: dict) -> Any:
     body: dict[str, Any] = {}
     for key in (
-        "type", "calendar_id", "start_column_uid", "finish_column_uid",
+        "type",
+        "calendar_id",
+        "start_column_uid",
+        "finish_column_uid",
     ):
         if args.get(key) is not None:
             body[key] = args[key]
@@ -639,9 +720,7 @@ async def _create_sla_rule(client, args: dict) -> Any:
         body["estimated_time"] = args["estimated_time"]
     if args.get("notification_settings") is not None:
         body["notification_settings"] = args["notification_settings"]
-    return await client.post(
-        f"/service-desk/sla/{args['sla_id']}/rules", json=body
-    )
+    return await client.post(f"/service-desk/sla/{args['sla_id']}/rules", json=body)
 
 
 _tool(
@@ -653,10 +732,19 @@ _tool(
             "sla_id": {"type": "string", "description": "SLA ID (UUID)"},
             "type": {"type": "string", "description": "Rule type"},
             "calendar_id": {"type": "string", "description": "Calendar ID for business hours"},
-            "start_column_uid": {"type": "string", "description": "Column UID where measurement starts"},
-            "finish_column_uid": {"type": "string", "description": "Column UID where measurement ends"},
+            "start_column_uid": {
+                "type": "string",
+                "description": "Column UID where measurement starts",
+            },
+            "finish_column_uid": {
+                "type": "string",
+                "description": "Column UID where measurement ends",
+            },
             "estimated_time": {"type": "integer", "description": "Target time in seconds"},
-            "notification_settings": {"type": "object", "description": "Notification configuration for the rule"},
+            "notification_settings": {
+                "type": "object",
+                "description": "Notification configuration for the rule",
+            },
         },
         "required": ["sla_id"],
     },
@@ -667,7 +755,10 @@ _tool(
 async def _update_sla_rule(client, args: dict) -> Any:
     body: dict[str, Any] = {}
     for key in (
-        "type", "calendar_id", "start_column_uid", "finish_column_uid",
+        "type",
+        "calendar_id",
+        "start_column_uid",
+        "finish_column_uid",
     ):
         if args.get(key) is not None:
             body[key] = args[key]
@@ -690,10 +781,19 @@ _tool(
             "rule_id": {"type": "string", "description": "Rule ID"},
             "type": {"type": "string", "description": "Rule type"},
             "calendar_id": {"type": "string", "description": "Calendar ID for business hours"},
-            "start_column_uid": {"type": "string", "description": "Column UID where measurement starts"},
-            "finish_column_uid": {"type": "string", "description": "Column UID where measurement ends"},
+            "start_column_uid": {
+                "type": "string",
+                "description": "Column UID where measurement starts",
+            },
+            "finish_column_uid": {
+                "type": "string",
+                "description": "Column UID where measurement ends",
+            },
             "estimated_time": {"type": "integer", "description": "Target time in seconds"},
-            "notification_settings": {"type": "object", "description": "Notification configuration for the rule"},
+            "notification_settings": {
+                "type": "object",
+                "description": "Notification configuration for the rule",
+            },
         },
         "required": ["sla_id", "rule_id"],
     },
@@ -702,9 +802,7 @@ _tool(
 
 
 async def _delete_sla_rule(client, args: dict) -> Any:
-    return await client.delete(
-        f"/service-desk/sla/{args['sla_id']}/rules/{args['rule_id']}"
-    )
+    return await client.delete(f"/service-desk/sla/{args['sla_id']}/rules/{args['rule_id']}")
 
 
 _tool(
@@ -724,10 +822,9 @@ _tool(
 
 # --- SLA Recalculate ---
 
+
 async def _recalculate_sla(client, args: dict) -> Any:
-    return await client.post(
-        f"/service-desk/sla/{args['sla_id']}/recalculate-measurements"
-    )
+    return await client.post(f"/service-desk/sla/{args['sla_id']}/recalculate-measurements")
 
 
 _tool(
@@ -745,6 +842,7 @@ _tool(
 
 
 # --- SD Users ---
+
 
 async def _list_sd_users(client, args: dict) -> Any:
     params: dict[str, Any] = {}
@@ -768,8 +866,14 @@ _tool(
             "query": {"type": "string", "description": "Search filter"},
             "limit": {"type": "integer", "description": "Max results"},
             "offset": {"type": "integer", "description": "Pagination offset"},
-            "include_paid_users": {"type": "boolean", "description": "Include paid (internal) users"},
-            "include_all_sd_users": {"type": "boolean", "description": "Include all SD users regardless of status"},
+            "include_paid_users": {
+                "type": "boolean",
+                "description": "Include paid (internal) users",
+            },
+            "include_all_sd_users": {
+                "type": "boolean",
+                "description": "Include all SD users regardless of status",
+            },
         },
     },
     _list_sd_users,
@@ -781,9 +885,7 @@ async def _update_sd_user(client, args: dict) -> Any:
     for key in ("full_name", "lng"):
         if args.get(key) is not None:
             body[key] = args[key]
-    return await client.patch(
-        f"/service-desk/users/{args['user_id']}", json=body
-    )
+    return await client.patch(f"/service-desk/users/{args['user_id']}", json=body)
 
 
 _tool(
@@ -804,10 +906,9 @@ _tool(
 
 # --- SD User Temp Password ---
 
+
 async def _set_sd_user_temp_password(client, args: dict) -> Any:
-    return await client.patch(
-        f"/service-desk/users/set-temporary-password/{args['user_id']}"
-    )
+    return await client.patch(f"/service-desk/users/set-temporary-password/{args['user_id']}")
 
 
 _tool(
@@ -825,6 +926,7 @@ _tool(
 
 
 # --- SD Organization Users ---
+
 
 async def _add_sd_org_user(client, args: dict) -> Any:
     body: dict[str, Any] = {"user_id": args["user_id"]}
@@ -952,6 +1054,7 @@ _tool(
 
 # --- SD Settings ---
 
+
 async def _get_sd_settings(client, args: dict) -> Any:
     return await client.get("/sd-settings/current")
 
@@ -978,7 +1081,10 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "service_desk_settings": {"type": "object", "description": "Service Desk configuration object"},
+            "service_desk_settings": {
+                "type": "object",
+                "description": "Service Desk configuration object",
+            },
         },
         "required": ["service_desk_settings"],
     },
@@ -987,6 +1093,7 @@ _tool(
 
 
 # --- SD Stats ---
+
 
 async def _get_sd_stats(client, args: dict) -> Any:
     params: dict[str, Any] = {}
@@ -1053,6 +1160,7 @@ _tool(
 
 # --- Vote Properties ---
 
+
 async def _add_service_vote_property(client, args: dict) -> Any:
     body = {"id": args["id"]}
     return await client.post(
@@ -1098,6 +1206,7 @@ _tool(
 
 # --- Card SLAs ---
 
+
 async def _attach_card_sla(client, args: dict) -> Any:
     body = {"sla_id": args["sla_id"]}
     return await client.post(f"/cards/{args['card_id']}/slas", json=body)
@@ -1119,9 +1228,7 @@ _tool(
 
 
 async def _detach_card_sla(client, args: dict) -> Any:
-    return await client.delete(
-        f"/cards/{args['card_id']}/slas/{args['sla_id']}"
-    )
+    return await client.delete(f"/cards/{args['card_id']}/slas/{args['sla_id']}")
 
 
 _tool(
@@ -1141,10 +1248,9 @@ _tool(
 
 # --- Card/Space SLA Measurements ---
 
+
 async def _get_card_sla_measurements(client, args: dict) -> Any:
-    return await client.get(
-        f"/cards/{args['card_id']}/sla-rules-measurements"
-    )
+    return await client.get(f"/cards/{args['card_id']}/sla-rules-measurements")
 
 
 _tool(
@@ -1162,9 +1268,7 @@ _tool(
 
 
 async def _get_space_sla_measurements(client, args: dict) -> Any:
-    return await client.get(
-        f"/spaces/{args['space_id']}/sla-rules-measurements"
-    )
+    return await client.get(f"/spaces/{args['space_id']}/sla-rules-measurements")
 
 
 _tool(

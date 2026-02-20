@@ -1,4 +1,5 @@
 """Kaiten Automations & Workflows MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -13,6 +14,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 # ---------------------------------------------------------------------------
 # Space Automations
 # ---------------------------------------------------------------------------
+
 
 async def _list_automations(client, args: dict) -> Any:
     return await client.get(f"/spaces/{args['space_id']}/automations")
@@ -115,9 +117,7 @@ _tool(
 
 
 async def _get_automation(client, args: dict) -> Any:
-    return await client.get(
-        f"/spaces/{args['space_id']}/automations/{args['automation_id']}"
-    )
+    return await client.get(f"/spaces/{args['space_id']}/automations/{args['automation_id']}")
 
 
 _tool(
@@ -193,9 +193,7 @@ _tool(
 
 
 async def _delete_automation(client, args: dict) -> Any:
-    return await client.delete(
-        f"/spaces/{args['space_id']}/automations/{args['automation_id']}"
-    )
+    return await client.delete(f"/spaces/{args['space_id']}/automations/{args['automation_id']}")
 
 
 _tool(
@@ -229,7 +227,10 @@ _tool(
         "properties": {
             "space_id": {"type": "integer", "description": "Source space ID"},
             "automation_id": {"type": "string", "description": "Automation ID (UUID) to copy"},
-            "target_space_id": {"type": "integer", "description": "Target space ID to copy the automation into"},
+            "target_space_id": {
+                "type": "integer",
+                "description": "Target space ID to copy the automation into",
+            },
         },
         "required": ["space_id", "automation_id", "target_space_id"],
     },
@@ -240,6 +241,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # Company Workflows
 # ---------------------------------------------------------------------------
+
 
 async def _list_workflows(client, args: dict) -> Any:
     params: dict[str, Any] = {}

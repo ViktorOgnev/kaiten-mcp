@@ -1,11 +1,10 @@
 """Layer 2 handler integration tests for tools/checklists.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.checklists import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # Checklists
@@ -73,9 +72,7 @@ class TestUpdateChecklist:
 
 class TestDeleteChecklist:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/1/checklists/5").mock(
-            return_value=Response(200, json={})
-        )
+        route = mock_api.delete("/cards/1/checklists/5").mock(return_value=Response(200, json={}))
         result = await TOOLS["kaiten_delete_checklist"]["handler"](
             client, {"card_id": 1, "checklist_id": 5}
         )

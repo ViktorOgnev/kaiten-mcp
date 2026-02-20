@@ -1,10 +1,10 @@
 """Layer 2 handler integration tests for cards tools."""
+
 import json
 
 from httpx import Response
 
 from kaiten_mcp.tools.cards import TOOLS
-from kaiten_mcp.tools.compact import DEFAULT_LIMIT
 
 
 class TestListCardsDefaultLimit:
@@ -12,9 +12,7 @@ class TestListCardsDefaultLimit:
 
     async def test_default_limit_50_when_not_specified(self, client, mock_api):
         """Without explicit limit, should use DEFAULT_LIMIT (50)."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_cards"]["handler"](client, {})
         assert route.called
         url = str(route.calls[0].request.url)
@@ -22,9 +20,7 @@ class TestListCardsDefaultLimit:
 
     async def test_explicit_limit_overrides_default(self, client, mock_api):
         """Explicit limit should override the default."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_cards"]["handler"](client, {"limit": 25})
         assert route.called
         url = str(route.calls[0].request.url)
@@ -33,9 +29,7 @@ class TestListCardsDefaultLimit:
 
     async def test_limit_100_is_respected(self, client, mock_api):
         """Max limit of 100 should work."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_cards"]["handler"](client, {"limit": 100})
         url = str(route.calls[0].request.url)
         assert "limit=100" in url
@@ -59,9 +53,7 @@ class TestListCardsCompact:
                 },
             }
         ]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": False})
         assert route.called
         # Full response should be unchanged
@@ -76,9 +68,7 @@ class TestListCardsCompact:
                 "avatar_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
             }
         ]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
         assert route.called
         assert "avatar_url" not in result[0]
@@ -99,9 +89,7 @@ class TestListCardsCompact:
                 },
             }
         ]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
         assert route.called
         assert result[0]["owner"] == {"id": 10, "full_name": "John Doe"}
@@ -117,9 +105,7 @@ class TestListCardsCompact:
                 ],
             }
         ]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_cards"]["handler"](client, {"compact": True})
         assert route.called
         assert result[0]["members"] == [
@@ -135,9 +121,7 @@ class TestListCardsCompact:
                 "avatar_url": "data:image/png;base64,xxx",
             }
         ]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_cards"]["handler"](client, {})
         assert route.called
         # Should keep the avatar_url since compact defaults to False
@@ -154,9 +138,7 @@ class TestListCards:
         assert result == [{"id": 1, "title": "Card One"}]
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
         all_params = {
             "query": "search term",
             "space_id": 1,
@@ -204,9 +186,7 @@ class TestGetCard:
         route = mock_api.get("/cards/100").mock(
             return_value=Response(200, json={"id": 100, "title": "My Card"})
         )
-        result = await TOOLS["kaiten_get_card"]["handler"](
-            client, {"card_id": 100}
-        )
+        result = await TOOLS["kaiten_get_card"]["handler"](client, {"card_id": 100})
         assert route.called
         assert result == {"id": 100, "title": "My Card"}
 
@@ -214,9 +194,7 @@ class TestGetCard:
         route = mock_api.get("/cards/PROJ-123").mock(
             return_value=Response(200, json={"id": 100, "title": "By Key"})
         )
-        result = await TOOLS["kaiten_get_card"]["handler"](
-            client, {"card_id": "PROJ-123"}
-        )
+        result = await TOOLS["kaiten_get_card"]["handler"](client, {"card_id": "PROJ-123"})
         assert route.called
         assert result["title"] == "By Key"
 
@@ -235,9 +213,7 @@ class TestCreateCard:
         assert result == {"id": 200, "title": "New Card"}
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.post("/cards").mock(
-            return_value=Response(200, json={"id": 200})
-        )
+        route = mock_api.post("/cards").mock(return_value=Response(200, json={"id": 200}))
         all_args = {
             "title": "Full Card",
             "board_id": 10,
@@ -283,20 +259,14 @@ class TestCreateCard:
 
 class TestUpdateCard:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.patch("/cards/100").mock(
-            return_value=Response(200, json={"id": 100})
-        )
-        result = await TOOLS["kaiten_update_card"]["handler"](
-            client, {"card_id": 100}
-        )
+        route = mock_api.patch("/cards/100").mock(return_value=Response(200, json={"id": 100}))
+        result = await TOOLS["kaiten_update_card"]["handler"](client, {"card_id": 100})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.patch("/cards/100").mock(
-            return_value=Response(200, json={"id": 100})
-        )
+        route = mock_api.patch("/cards/100").mock(return_value=Response(200, json={"id": 100}))
         all_args = {
             "card_id": 100,
             "title": "Updated Title",
@@ -356,21 +326,13 @@ class TestUpdateCard:
 
 class TestDeleteCard:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/100").mock(
-            return_value=Response(204)
-        )
-        result = await TOOLS["kaiten_delete_card"]["handler"](
-            client, {"card_id": 100}
-        )
+        route = mock_api.delete("/cards/100").mock(return_value=Response(204))
+        result = await TOOLS["kaiten_delete_card"]["handler"](client, {"card_id": 100})
         assert route.called
 
     async def test_with_string_key(self, client, mock_api):
-        route = mock_api.delete("/cards/PROJ-789").mock(
-            return_value=Response(204)
-        )
-        result = await TOOLS["kaiten_delete_card"]["handler"](
-            client, {"card_id": "PROJ-789"}
-        )
+        route = mock_api.delete("/cards/PROJ-789").mock(return_value=Response(204))
+        result = await TOOLS["kaiten_delete_card"]["handler"](client, {"card_id": "PROJ-789"})
         assert route.called
 
 
@@ -379,9 +341,7 @@ class TestArchiveCard:
         route = mock_api.patch("/cards/100").mock(
             return_value=Response(200, json={"id": 100, "condition": 2})
         )
-        result = await TOOLS["kaiten_archive_card"]["handler"](
-            client, {"card_id": 100}
-        )
+        result = await TOOLS["kaiten_archive_card"]["handler"](client, {"card_id": 100})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"condition": 2}
@@ -391,9 +351,7 @@ class TestArchiveCard:
         route = mock_api.patch("/cards/PROJ-001").mock(
             return_value=Response(200, json={"id": 1, "condition": 2})
         )
-        result = await TOOLS["kaiten_archive_card"]["handler"](
-            client, {"card_id": "PROJ-001"}
-        )
+        result = await TOOLS["kaiten_archive_card"]["handler"](client, {"card_id": "PROJ-001"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"condition": 2}
@@ -401,20 +359,14 @@ class TestArchiveCard:
 
 class TestMoveCard:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.patch("/cards/100").mock(
-            return_value=Response(200, json={"id": 100})
-        )
-        result = await TOOLS["kaiten_move_card"]["handler"](
-            client, {"card_id": 100}
-        )
+        route = mock_api.patch("/cards/100").mock(return_value=Response(200, json={"id": 100}))
+        result = await TOOLS["kaiten_move_card"]["handler"](client, {"card_id": 100})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.patch("/cards/100").mock(
-            return_value=Response(200, json={"id": 100})
-        )
+        route = mock_api.patch("/cards/100").mock(return_value=Response(200, json={"id": 100}))
         result = await TOOLS["kaiten_move_card"]["handler"](
             client,
             {
@@ -452,9 +404,7 @@ class TestListAllCards:
         route = mock_api.get("/cards").mock(
             return_value=Response(200, json=[{"id": i} for i in range(5)])
         )
-        result = await TOOLS["kaiten_list_all_cards"]["handler"](
-            client, {}
-        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](client, {})
         assert route.called
         assert len(result) == 5
 
@@ -468,17 +418,13 @@ class TestListAllCards:
                 Response(200, json=page2),
             ]
         )
-        result = await TOOLS["kaiten_list_all_cards"]["handler"](
-            client, {"page_size": 100}
-        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](client, {"page_size": 100})
         assert route.call_count == 2
         assert len(result) == 170
 
     async def test_with_space_filter(self, client, mock_api):
         """Filters passed to each page request."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[{"id": 1}]))
         result = await TOOLS["kaiten_list_all_cards"]["handler"](
             client, {"space_id": 688824, "condition": 1}
         )
@@ -489,9 +435,7 @@ class TestListAllCards:
     async def test_max_pages_limit(self, client, mock_api):
         """Stops after max_pages."""
         full_page = [{"id": i} for i in range(100)]
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=full_page)
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=full_page))
         result = await TOOLS["kaiten_list_all_cards"]["handler"](
             client, {"page_size": 100, "max_pages": 3}
         )
@@ -507,15 +451,11 @@ class TestListAllCards:
                 "id": 42,
                 "full_name": "User",
                 "username": "user",
-                "avatar": "data:image/png;base64,longdata..."
+                "avatar": "data:image/png;base64,longdata...",
             },
         }
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[card_with_avatar])
-        )
-        result = await TOOLS["kaiten_list_all_cards"]["handler"](
-            client, {}
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[card_with_avatar]))
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](client, {})
         # compact=True by default, so avatar should be stripped
         assert route.called
         # Check that result is a list (compact_response applied)
@@ -523,12 +463,8 @@ class TestListAllCards:
 
     async def test_empty_result(self, client, mock_api):
         """Empty first page stops pagination."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
-        result = await TOOLS["kaiten_list_all_cards"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](client, {"space_id": 1})
         assert route.call_count == 1
         assert result == []
 
@@ -550,9 +486,7 @@ class TestListCardsRelationsFields:
 
     async def test_list_cards_with_relations_selective(self, client, mock_api):
         """Selective relations should be passed as query parameter."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[{"id": 1}]))
         await TOOLS["kaiten_list_cards"]["handler"](
             client, {"space_id": 1, "relations": "member,type"}
         )
@@ -562,9 +496,12 @@ class TestListCardsRelationsFields:
     async def test_list_cards_with_fields_filter(self, client, mock_api):
         """fields param should whitelist-filter the returned data."""
         route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[
-                {"id": 1, "title": "A", "description": "D", "state": 3},
-            ])
+            return_value=Response(
+                200,
+                json=[
+                    {"id": 1, "title": "A", "description": "D", "state": 3},
+                ],
+            )
         )
         result = await TOOLS["kaiten_list_cards"]["handler"](
             client, {"space_id": 1, "fields": "id,title"}
@@ -573,20 +510,14 @@ class TestListCardsRelationsFields:
 
     async def test_list_all_cards_default_relations_none(self, client, mock_api):
         """list_all_cards should default relations to 'none'."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
-        await TOOLS["kaiten_list_all_cards"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
+        await TOOLS["kaiten_list_all_cards"]["handler"](client, {"space_id": 1})
         url = str(route.calls[0].request.url)
         assert "relations=none" in url
 
     async def test_list_all_cards_override_relations(self, client, mock_api):
         """list_all_cards should allow overriding relations."""
-        route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_all_cards"]["handler"](
             client, {"space_id": 1, "relations": "member"}
         )
@@ -596,9 +527,12 @@ class TestListCardsRelationsFields:
     async def test_list_all_cards_with_fields(self, client, mock_api):
         """list_all_cards fields param should whitelist-filter the result."""
         route = mock_api.get("/cards").mock(
-            return_value=Response(200, json=[
-                {"id": 1, "title": "A", "description": "D", "created": "2025-01-01"},
-            ])
+            return_value=Response(
+                200,
+                json=[
+                    {"id": 1, "title": "A", "description": "D", "created": "2025-01-01"},
+                ],
+            )
         )
         result = await TOOLS["kaiten_list_all_cards"]["handler"](
             client, {"space_id": 1, "fields": "id,created"}

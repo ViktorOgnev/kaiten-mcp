@@ -1,4 +1,5 @@
 """Kaiten Boards MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response
@@ -23,7 +24,11 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects)",
+                "default": False,
+            },
         },
         "required": ["space_id"],
     },
@@ -73,7 +78,10 @@ _tool(
             "top": {"type": "number", "description": "Top position (px)"},
             "left": {"type": "number", "description": "Left position (px)"},
             "sort_order": {"type": "number", "description": "Sort order"},
-            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards"},
+            "default_card_type_id": {
+                "type": "integer",
+                "description": "Default card type ID for new cards",
+            },
         },
         "required": ["space_id", "title"],
     },
@@ -89,9 +97,7 @@ async def _update_board(client, args: dict) -> Any:
     for key in ("top", "left", "sort_order", "default_card_type_id"):
         if args.get(key) is not None:
             body[key] = args[key]
-    return await client.patch(
-        f"/spaces/{args['space_id']}/boards/{args['board_id']}", json=body
-    )
+    return await client.patch(f"/spaces/{args['space_id']}/boards/{args['board_id']}", json=body)
 
 
 _tool(
@@ -108,7 +114,10 @@ _tool(
             "top": {"type": "number", "description": "Top position (px)"},
             "left": {"type": "number", "description": "Left position (px)"},
             "sort_order": {"type": "number", "description": "Sort order"},
-            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards"},
+            "default_card_type_id": {
+                "type": "integer",
+                "description": "Default card type ID for new cards",
+            },
         },
         "required": ["space_id", "board_id"],
     },
@@ -117,9 +126,7 @@ _tool(
 
 
 async def _delete_board(client, args: dict) -> Any:
-    return await client.delete(
-        f"/spaces/{args['space_id']}/boards/{args['board_id']}"
-    )
+    return await client.delete(f"/spaces/{args['space_id']}/boards/{args['board_id']}")
 
 
 _tool(

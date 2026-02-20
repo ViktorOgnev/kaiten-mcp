@@ -1,7 +1,7 @@
 """Integration tests for webhooks handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.webhooks import TOOLS
@@ -12,9 +12,7 @@ class TestListWebhooks:
         route = mock_api.get("/spaces/1/external-webhooks").mock(
             return_value=Response(200, json=[])
         )
-        result = await TOOLS["kaiten_list_webhooks"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_list_webhooks"]["handler"](client, {"space_id": 1})
         assert route.called
         assert result == []
 
@@ -96,12 +94,8 @@ class TestUpdateWebhook:
 
 class TestDeleteWebhook:
     async def test_delete_webhook_required_only(self, client, mock_api):
-        route = mock_api.delete("/spaces/1/external-webhooks/10").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_webhook"]["handler"](
-            client, {"space_id": 1, "webhook_id": 10}
-        )
+        route = mock_api.delete("/spaces/1/external-webhooks/10").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_webhook"]["handler"](client, {"space_id": 1, "webhook_id": 10})
         assert route.called
 
 
@@ -115,9 +109,7 @@ class TestListIncomingWebhooks:
         route = mock_api.get("/spaces/1/webhooks").mock(
             return_value=Response(200, json=[{"id": "abc123"}])
         )
-        result = await TOOLS["kaiten_list_incoming_webhooks"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_list_incoming_webhooks"]["handler"](client, {"space_id": 1})
         assert route.called
         assert result == [{"id": "abc123"}]
 
@@ -222,9 +214,7 @@ class TestUpdateIncomingWebhook:
 
 class TestDeleteIncomingWebhook:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/spaces/1/webhooks/wh_hash_123").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/spaces/1/webhooks/wh_hash_123").mock(return_value=Response(204))
         await TOOLS["kaiten_delete_incoming_webhook"]["handler"](
             client, {"space_id": 1, "webhook_id": "wh_hash_123"}
         )

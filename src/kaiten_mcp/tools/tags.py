@@ -1,4 +1,5 @@
 """Kaiten Tags MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -28,8 +29,14 @@ _tool(
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search filter (matches by name)"},
-            "space_id": {"type": "integer", "description": "Filter tags by space (only tags used on cards in this space)"},
-            "ids": {"type": "string", "description": "Comma-separated tag IDs to fetch specific tags"},
+            "space_id": {
+                "type": "integer",
+                "description": "Filter tags by space (only tags used on cards in this space)",
+            },
+            "ids": {
+                "type": "string",
+                "description": "Comma-separated tag IDs to fetch specific tags",
+            },
             "limit": {"type": "integer", "description": "Max results"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
@@ -49,7 +56,10 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "name": {"type": "string", "description": "Tag name (1-255 chars, must be unique within the company)"},
+            "name": {
+                "type": "string",
+                "description": "Tag name (1-255 chars, must be unique within the company)",
+            },
         },
         "required": ["name"],
     },
@@ -75,7 +85,12 @@ _tool(
         "properties": {
             "tag_id": {"type": "integer", "description": "Tag ID"},
             "name": {"type": "string", "description": "New tag name (1-255 chars)"},
-            "color": {"type": "integer", "description": "Color index (1-17)", "minimum": 1, "maximum": 17},
+            "color": {
+                "type": "integer",
+                "description": "Color index (1-17)",
+                "minimum": 1,
+                "maximum": 17,
+            },
         },
         "required": ["tag_id"],
     },
@@ -103,10 +118,9 @@ _tool(
 
 # --- Card-level tags ---
 
+
 async def _add_card_tag(client, args: dict) -> Any:
-    return await client.post(
-        f"/cards/{args['card_id']}/tags", json={"name": args["name"]}
-    )
+    return await client.post(f"/cards/{args['card_id']}/tags", json={"name": args["name"]})
 
 
 _tool(

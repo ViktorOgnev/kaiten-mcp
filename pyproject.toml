@@ -14,6 +14,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+lint = [
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
 test = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
@@ -21,6 +25,12 @@ test = [
     "pytest-timeout>=2.3",
     "respx>=0.22",
 ]
+dev = [
+    "kaiten-mcp[test,lint]",
+]
+
+[project.scripts]
+kaiten-mcp = "kaiten_mcp.server:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -35,7 +45,68 @@ exclude_lines = [
     "def main",
     "asyncio.run",
     "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "@overload",
 ]
 
-[project.scripts]
-kaiten-mcp = "kaiten_mcp.server:main"
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "F",      # pyflakes — undefined names, unused imports
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "B",      # bugbear — mutable default args, bare except
+    "ASYNC",  # blocking calls in async functions
+    "UP",     # pyupgrade — modernize syntax
+    "I",      # isort — import sorting
+    "C4",     # comprehension improvements
+    "SIM",    # simplify
+    "RUF",    # ruff-specific
+    "PERF",   # performance anti-patterns
+    "PT",     # pytest style
+    "T20",    # leftover print()
+    "PIE",    # misc lints
+    "LOG",    # logging anti-patterns
+]
+ignore = [
+    "B008",   # function call in default arg (MCP SDK pattern)
+    "UP040",  # type statement requires Python 3.12+ (we support 3.11+)
+    "E501",   # line too long — JSON schema descriptions are intentionally long
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PERF", "B011", "F841", "PT017", "PT018", "PT003", "PT006", "PT019"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["kaiten_mcp"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "kaiten_mcp.client",
+    "kaiten_mcp.server",
+    "kaiten_mcp.tools.compact",
+]
+disallow_untyped_defs = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["dotenv.*"]
+ignore_missing_imports = true

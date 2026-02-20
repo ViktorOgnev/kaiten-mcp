@@ -1,7 +1,7 @@
 """Layer 2 handler integration tests for tools/comments.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.comments import TOOLS
@@ -77,7 +77,6 @@ class TestUpdateComment:
         assert body == {"text": "Updated"}
         assert result == {"id": 10, "text": "Updated"}
 
-
     async def test_format_html(self, client, mock_api):
         route = mock_api.patch("/cards/1/comments/10").mock(
             return_value=Response(200, json={"id": 10, "text": "<p>Updated</p>", "type": 2})
@@ -101,9 +100,7 @@ class TestUpdateComment:
 
 class TestDeleteComment:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/1/comments/10").mock(
-            return_value=Response(200, json={})
-        )
+        route = mock_api.delete("/cards/1/comments/10").mock(return_value=Response(200, json={}))
         result = await TOOLS["kaiten_delete_comment"]["handler"](
             client, {"card_id": 1, "comment_id": 10}
         )

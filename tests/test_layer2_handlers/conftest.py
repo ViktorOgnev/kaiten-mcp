@@ -1,4 +1,5 @@
 """Shared fixtures for handler integration tests."""
+
 import pytest
 import respx
 

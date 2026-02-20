@@ -1,4 +1,5 @@
 """Kaiten Webhooks MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -9,6 +10,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- External Webhooks (outbound event notifications) ---
+
 
 async def _list_webhooks(client, args: dict) -> Any:
     return await client.get(f"/spaces/{args['space_id']}/external-webhooks")
@@ -40,7 +42,10 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "url": {"type": "string", "description": "Webhook URL to receive events (max 4096 chars)"},
+            "url": {
+                "type": "string",
+                "description": "Webhook URL to receive events (max 4096 chars)",
+            },
         },
         "required": ["space_id", "url"],
     },
@@ -49,9 +54,7 @@ _tool(
 
 
 async def _get_webhook(client, args: dict) -> Any:
-    return await client.get(
-        f"/spaces/{args['space_id']}/external-webhooks/{args['webhook_id']}"
-    )
+    return await client.get(f"/spaces/{args['space_id']}/external-webhooks/{args['webhook_id']}")
 
 
 _tool(
@@ -88,7 +91,10 @@ _tool(
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
             "webhook_id": {"type": "integer", "description": "Webhook ID"},
-            "url": {"type": "string", "description": "Webhook URL to receive events (max 4096 chars)"},
+            "url": {
+                "type": "string",
+                "description": "Webhook URL to receive events (max 4096 chars)",
+            },
             "enabled": {"type": "boolean", "description": "Whether the webhook is enabled"},
         },
         "required": ["space_id", "webhook_id"],
@@ -119,6 +125,7 @@ _tool(
 
 
 # --- Incoming Webhooks (card-creation webhooks) ---
+
 
 async def _list_incoming_webhooks(client, args: dict) -> Any:
     return await client.get(f"/spaces/{args['space_id']}/webhooks")
@@ -225,9 +232,7 @@ _tool(
 
 
 async def _delete_incoming_webhook(client, args: dict) -> Any:
-    return await client.delete(
-        f"/spaces/{args['space_id']}/webhooks/{args['webhook_id']}"
-    )
+    return await client.delete(f"/spaces/{args['space_id']}/webhooks/{args['webhook_id']}")
 
 
 _tool(

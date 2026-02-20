@@ -1,4 +1,5 @@
 """Kaiten Custom Properties MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -12,8 +13,17 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_custom_properties(client, args: dict) -> Any:
     params = {}
-    for key in ("include_values", "include_author", "types", "conditions",
-                "query", "offset", "order_by", "order_direction", "board_id"):
+    for key in (
+        "include_values",
+        "include_author",
+        "types",
+        "conditions",
+        "query",
+        "offset",
+        "order_by",
+        "order_direction",
+        "board_id",
+    ):
         if args.get(key) is not None:
             params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
@@ -74,8 +84,13 @@ _tool(
 
 async def _create_custom_property(client, args: dict) -> Any:
     body = {"name": args["name"], "type": args["type"]}
-    for key in ("show_on_facade", "multi_select", "colorful", "multiline",
-                "values_creatable_by_users"):
+    for key in (
+        "show_on_facade",
+        "multi_select",
+        "colorful",
+        "multiline",
+        "values_creatable_by_users",
+    ):
         if args.get(key) is not None:
             body[key] = args[key]
     for key in ("values_type", "vote_variant"):
@@ -98,16 +113,34 @@ _tool(
             "type": {
                 "type": "string",
                 "enum": [
-                    "string", "number", "date", "email", "checkbox", "select",
-                    "formula", "url", "collective_score", "vote",
-                    "collective_vote", "catalog", "phone", "user", "attachment",
+                    "string",
+                    "number",
+                    "date",
+                    "email",
+                    "checkbox",
+                    "select",
+                    "formula",
+                    "url",
+                    "collective_score",
+                    "vote",
+                    "collective_vote",
+                    "catalog",
+                    "phone",
+                    "user",
+                    "attachment",
                 ],
                 "description": "Property type",
             },
             "show_on_facade": {"type": "boolean", "description": "Show on card facade"},
-            "multi_select": {"type": "boolean", "description": "Enable multi-select (for select type)"},
+            "multi_select": {
+                "type": "boolean",
+                "description": "Enable multi-select (for select type)",
+            },
             "colorful": {"type": "boolean", "description": "Enable colors for select values"},
-            "multiline": {"type": "boolean", "description": "Multiline text field (for string type)"},
+            "multiline": {
+                "type": "boolean",
+                "description": "Multiline text field (for string type)",
+            },
             "values_creatable_by_users": {
                 "type": "boolean",
                 "description": "Allow regular users to create new select values (for select type)",
@@ -139,8 +172,14 @@ async def _update_custom_property(client, args: dict) -> Any:
     for key in ("name", "condition"):
         if args.get(key) is not None:
             body[key] = args[key]
-    for key in ("show_on_facade", "multi_select", "colorful", "multiline",
-                "values_creatable_by_users", "is_used_as_progress"):
+    for key in (
+        "show_on_facade",
+        "multi_select",
+        "colorful",
+        "multiline",
+        "values_creatable_by_users",
+        "is_used_as_progress",
+    ):
         if args.get(key) is not None:
             body[key] = args[key]
     if args.get("color") is not None:
@@ -160,7 +199,11 @@ _tool(
         "properties": {
             "property_id": {"type": "integer", "description": "Property ID"},
             "name": {"type": "string", "description": "New name"},
-            "condition": {"type": "string", "enum": ["active", "inactive"], "description": "Status"},
+            "condition": {
+                "type": "string",
+                "enum": ["active", "inactive"],
+                "description": "Status",
+            },
             "show_on_facade": {"type": "boolean", "description": "Show on card facade"},
             "multi_select": {"type": "boolean", "description": "Multi-select mode"},
             "colorful": {"type": "boolean", "description": "Enable colors"},
@@ -208,6 +251,7 @@ _tool(
 
 
 # --- Select values ---
+
 
 async def _list_select_values(client, args: dict) -> Any:
     params = {}
@@ -294,7 +338,10 @@ _tool(
         "type": "object",
         "properties": {
             "property_id": {"type": "integer", "description": "Property ID"},
-            "value": {"type": "string", "description": "Select value text (1-1024 chars, must be unique within the property)"},
+            "value": {
+                "type": "string",
+                "description": "Select value text (1-1024 chars, must be unique within the property)",
+            },
             "color": {"type": "integer", "description": "Color index"},
             "sort_order": {"type": "number", "description": "Sort order (float)"},
         },

@@ -1,11 +1,10 @@
 """Integration tests for service_desk handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.service_desk import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # SD Requests
@@ -14,9 +13,7 @@ from kaiten_mcp.tools.service_desk import TOOLS
 
 class TestListSdRequests:
     async def test_list_sd_requests_required_only(self, client, mock_api):
-        route = mock_api.get("/service-desk/requests").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/service-desk/requests").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_sd_requests"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -74,9 +71,7 @@ class TestGetSdRequest:
         route = mock_api.get("/service-desk/requests/1").mock(
             return_value=Response(200, json={"id": 1})
         )
-        result = await TOOLS["kaiten_get_sd_request"]["handler"](
-            client, {"request_id": 1}
-        )
+        result = await TOOLS["kaiten_get_sd_request"]["handler"](client, {"request_id": 1})
         assert route.called
         assert result == {"id": 1}
 
@@ -86,9 +81,7 @@ class TestUpdateSdRequest:
         route = mock_api.patch("/service-desk/requests/1").mock(
             return_value=Response(200, json={"id": 1})
         )
-        result = await TOOLS["kaiten_update_sd_request"]["handler"](
-            client, {"request_id": 1}
-        )
+        result = await TOOLS["kaiten_update_sd_request"]["handler"](client, {"request_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -116,12 +109,8 @@ class TestUpdateSdRequest:
 
 class TestDeleteSdRequest:
     async def test_delete_sd_request_required_only(self, client, mock_api):
-        route = mock_api.delete("/service-desk/requests/1").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_sd_request"]["handler"](
-            client, {"request_id": 1}
-        )
+        route = mock_api.delete("/service-desk/requests/1").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_sd_request"]["handler"](client, {"request_id": 1})
         assert route.called
 
 
@@ -132,9 +121,7 @@ class TestDeleteSdRequest:
 
 class TestListSdServices:
     async def test_list_sd_services_required_only(self, client, mock_api):
-        route = mock_api.get("/service-desk/services").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/service-desk/services").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_sd_services"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -159,9 +146,7 @@ class TestGetSdService:
         route = mock_api.get("/service-desk/services/3").mock(
             return_value=Response(200, json={"id": 3})
         )
-        result = await TOOLS["kaiten_get_sd_service"]["handler"](
-            client, {"service_id": 3}
-        )
+        result = await TOOLS["kaiten_get_sd_service"]["handler"](client, {"service_id": 3})
         assert route.called
         assert result == {"id": 3}
 
@@ -200,9 +185,7 @@ class TestCreateSdOrganization:
         route = mock_api.post("/service-desk/organizations").mock(
             return_value=Response(200, json={"id": 1, "name": "Acme"})
         )
-        result = await TOOLS["kaiten_create_sd_organization"]["handler"](
-            client, {"name": "Acme"}
-        )
+        result = await TOOLS["kaiten_create_sd_organization"]["handler"](client, {"name": "Acme"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"name": "Acme"}
@@ -256,12 +239,8 @@ class TestUpdateSdOrganization:
 
 class TestDeleteSdOrganization:
     async def test_delete_sd_organization_required_only(self, client, mock_api):
-        route = mock_api.delete("/service-desk/organizations/1").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_sd_organization"]["handler"](
-            client, {"organization_id": 1}
-        )
+        route = mock_api.delete("/service-desk/organizations/1").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_sd_organization"]["handler"](client, {"organization_id": 1})
         assert route.called
 
 
@@ -272,9 +251,7 @@ class TestDeleteSdOrganization:
 
 class TestListSdSla:
     async def test_list_sd_sla_required_only(self, client, mock_api):
-        route = mock_api.get("/service-desk/sla").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/service-desk/sla").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_sd_sla"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -283,9 +260,7 @@ class TestListSdSla:
         route = mock_api.get("/service-desk/sla").mock(
             return_value=Response(200, json=[{"id": 1}])
         )
-        await TOOLS["kaiten_list_sd_sla"]["handler"](
-            client, {"limit": 10, "offset": 5}
-        )
+        await TOOLS["kaiten_list_sd_sla"]["handler"](client, {"limit": 10, "offset": 5})
         url = str(route.calls[0].request.url)
         assert "limit=10" in url
         assert "offset=5" in url
@@ -368,9 +343,7 @@ class TestUpdateSdService:
         route = mock_api.patch("/service-desk/services/5").mock(
             return_value=Response(200, json={"id": 5})
         )
-        result = await TOOLS["kaiten_update_sd_service"]["handler"](
-            client, {"service_id": 5}
-        )
+        result = await TOOLS["kaiten_update_sd_service"]["handler"](client, {"service_id": 5})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -425,9 +398,7 @@ class TestDeleteSdService:
         route = mock_api.patch("/service-desk/services/5").mock(
             return_value=Response(200, json={"id": 5, "archived": True})
         )
-        result = await TOOLS["kaiten_delete_sd_service"]["handler"](
-            client, {"service_id": 5}
-        )
+        result = await TOOLS["kaiten_delete_sd_service"]["handler"](client, {"service_id": 5})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"archived": True}
@@ -478,9 +449,7 @@ class TestUpdateSdSla:
         route = mock_api.patch("/service-desk/sla/uuid-1").mock(
             return_value=Response(200, json={"id": "uuid-1"})
         )
-        result = await TOOLS["kaiten_update_sd_sla"]["handler"](
-            client, {"sla_id": "uuid-1"}
-        )
+        result = await TOOLS["kaiten_update_sd_sla"]["handler"](client, {"sla_id": "uuid-1"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -510,12 +479,8 @@ class TestUpdateSdSla:
 
 class TestDeleteSdSla:
     async def test_delete_sd_sla_required_only(self, client, mock_api):
-        route = mock_api.delete("/service-desk/sla/uuid-1").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_sd_sla"]["handler"](
-            client, {"sla_id": "uuid-1"}
-        )
+        route = mock_api.delete("/service-desk/sla/uuid-1").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_sd_sla"]["handler"](client, {"sla_id": "uuid-1"})
         assert route.called
 
 
@@ -529,9 +494,7 @@ class TestListSdTemplateAnswers:
         route = mock_api.get("/service-desk/template-answers").mock(
             return_value=Response(200, json=[])
         )
-        result = await TOOLS["kaiten_list_sd_template_answers"]["handler"](
-            client, {}
-        )
+        result = await TOOLS["kaiten_list_sd_template_answers"]["handler"](client, {})
         assert route.called
         assert result == []
 
@@ -551,9 +514,7 @@ class TestGetSdTemplateAnswer:
 class TestCreateSdTemplateAnswer:
     async def test_create_sd_template_answer_required_only(self, client, mock_api):
         route = mock_api.post("/service-desk/template-answers").mock(
-            return_value=Response(
-                200, json={"id": "ta-uuid-1", "name": "Greeting"}
-            )
+            return_value=Response(200, json={"id": "ta-uuid-1", "name": "Greeting"})
         )
         result = await TOOLS["kaiten_create_sd_template_answer"]["handler"](
             client, {"name": "Greeting", "text": "Hello, how can I help?"}
@@ -594,9 +555,9 @@ class TestUpdateSdTemplateAnswer:
 
 class TestDeleteSdTemplateAnswer:
     async def test_delete_sd_template_answer_required_only(self, client, mock_api):
-        route = mock_api.delete(
-            "/service-desk/template-answers/ta-uuid-1"
-        ).mock(return_value=Response(204))
+        route = mock_api.delete("/service-desk/template-answers/ta-uuid-1").mock(
+            return_value=Response(204)
+        )
         await TOOLS["kaiten_delete_sd_template_answer"]["handler"](
             client, {"template_answer_id": "ta-uuid-1"}
         )
@@ -613,9 +574,7 @@ class TestCreateSlaRule:
         route = mock_api.post("/service-desk/sla/sla-uuid-1/rules").mock(
             return_value=Response(200, json={"id": "rule-uuid-1"})
         )
-        result = await TOOLS["kaiten_create_sla_rule"]["handler"](
-            client, {"sla_id": "sla-uuid-1"}
-        )
+        result = await TOOLS["kaiten_create_sla_rule"]["handler"](client, {"sla_id": "sla-uuid-1"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -650,9 +609,9 @@ class TestCreateSlaRule:
 
 class TestUpdateSlaRule:
     async def test_update_sla_rule_required_only(self, client, mock_api):
-        route = mock_api.patch(
-            "/service-desk/sla/sla-uuid-1/rules/rule-uuid-1"
-        ).mock(return_value=Response(200, json={"id": "rule-uuid-1"}))
+        route = mock_api.patch("/service-desk/sla/sla-uuid-1/rules/rule-uuid-1").mock(
+            return_value=Response(200, json={"id": "rule-uuid-1"})
+        )
         result = await TOOLS["kaiten_update_sla_rule"]["handler"](
             client, {"sla_id": "sla-uuid-1", "rule_id": "rule-uuid-1"}
         )
@@ -661,9 +620,9 @@ class TestUpdateSlaRule:
         assert body == {}
 
     async def test_update_sla_rule_all_args(self, client, mock_api):
-        route = mock_api.patch(
-            "/service-desk/sla/sla-uuid-1/rules/rule-uuid-1"
-        ).mock(return_value=Response(200, json={"id": "rule-uuid-1"}))
+        route = mock_api.patch("/service-desk/sla/sla-uuid-1/rules/rule-uuid-1").mock(
+            return_value=Response(200, json={"id": "rule-uuid-1"})
+        )
         await TOOLS["kaiten_update_sla_rule"]["handler"](
             client,
             {
@@ -690,9 +649,9 @@ class TestUpdateSlaRule:
 
 class TestDeleteSlaRule:
     async def test_delete_sla_rule_required_only(self, client, mock_api):
-        route = mock_api.delete(
-            "/service-desk/sla/sla-uuid-1/rules/rule-uuid-1"
-        ).mock(return_value=Response(204))
+        route = mock_api.delete("/service-desk/sla/sla-uuid-1/rules/rule-uuid-1").mock(
+            return_value=Response(204)
+        )
         await TOOLS["kaiten_delete_sla_rule"]["handler"](
             client, {"sla_id": "sla-uuid-1", "rule_id": "rule-uuid-1"}
         )
@@ -706,12 +665,10 @@ class TestDeleteSlaRule:
 
 class TestRecalculateSla:
     async def test_recalculate_sla_required_only(self, client, mock_api):
-        route = mock_api.post(
-            "/service-desk/sla/sla-uuid-1/recalculate-measurements"
-        ).mock(return_value=Response(200, json={"job_id": "job-1"}))
-        result = await TOOLS["kaiten_recalculate_sla"]["handler"](
-            client, {"sla_id": "sla-uuid-1"}
+        route = mock_api.post("/service-desk/sla/sla-uuid-1/recalculate-measurements").mock(
+            return_value=Response(200, json={"job_id": "job-1"})
         )
+        result = await TOOLS["kaiten_recalculate_sla"]["handler"](client, {"sla_id": "sla-uuid-1"})
         assert route.called
         assert result == {"job_id": "job-1"}
 
@@ -723,9 +680,7 @@ class TestRecalculateSla:
 
 class TestListSdUsers:
     async def test_list_sd_users_required_only(self, client, mock_api):
-        route = mock_api.get("/service-desk/users").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/service-desk/users").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_sd_users"]["handler"](client, {})
         assert route.called
         url = str(route.calls[0].request.url)
@@ -759,9 +714,7 @@ class TestUpdateSdUser:
         route = mock_api.patch("/service-desk/users/42").mock(
             return_value=Response(200, json={"id": 42})
         )
-        result = await TOOLS["kaiten_update_sd_user"]["handler"](
-            client, {"user_id": 42}
-        )
+        result = await TOOLS["kaiten_update_sd_user"]["handler"](client, {"user_id": 42})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -784,9 +737,9 @@ class TestUpdateSdUser:
 
 class TestSetSdUserTempPassword:
     async def test_set_sd_user_temp_password_required_only(self, client, mock_api):
-        route = mock_api.patch(
-            "/service-desk/users/set-temporary-password/42"
-        ).mock(return_value=Response(200, json={"password": "tmp123"}))
+        route = mock_api.patch("/service-desk/users/set-temporary-password/42").mock(
+            return_value=Response(200, json={"password": "tmp123"})
+        )
         result = await TOOLS["kaiten_set_sd_user_temp_password"]["handler"](
             client, {"user_id": 42}
         )
@@ -825,9 +778,9 @@ class TestAddSdOrgUser:
 
 class TestUpdateSdOrgUser:
     async def test_update_sd_org_user_required_only(self, client, mock_api):
-        route = mock_api.patch(
-            "/service-desk/organizations/1/users/42"
-        ).mock(return_value=Response(200, json={"id": 42}))
+        route = mock_api.patch("/service-desk/organizations/1/users/42").mock(
+            return_value=Response(200, json={"id": 42})
+        )
         result = await TOOLS["kaiten_update_sd_org_user"]["handler"](
             client, {"organization_id": 1, "user_id": 42}
         )
@@ -836,9 +789,9 @@ class TestUpdateSdOrgUser:
         assert body == {}
 
     async def test_update_sd_org_user_all_args(self, client, mock_api):
-        route = mock_api.patch(
-            "/service-desk/organizations/1/users/42"
-        ).mock(return_value=Response(200, json={"id": 42}))
+        route = mock_api.patch("/service-desk/organizations/1/users/42").mock(
+            return_value=Response(200, json={"id": 42})
+        )
         await TOOLS["kaiten_update_sd_org_user"]["handler"](
             client,
             {"organization_id": 1, "user_id": 42, "permissions": 15},
@@ -849,9 +802,9 @@ class TestUpdateSdOrgUser:
 
 class TestRemoveSdOrgUser:
     async def test_remove_sd_org_user_required_only(self, client, mock_api):
-        route = mock_api.delete(
-            "/service-desk/organizations/1/users/42"
-        ).mock(return_value=Response(204))
+        route = mock_api.delete("/service-desk/organizations/1/users/42").mock(
+            return_value=Response(204)
+        )
         await TOOLS["kaiten_remove_sd_org_user"]["handler"](
             client, {"organization_id": 1, "user_id": 42}
         )
@@ -986,9 +939,9 @@ class TestGetSdSlaStats:
 
 class TestAddServiceVoteProperty:
     async def test_add_service_vote_property_required_only(self, client, mock_api):
-        route = mock_api.post(
-            "/service-desk/services/1/vote-properties"
-        ).mock(return_value=Response(200, json={"id": 5}))
+        route = mock_api.post("/service-desk/services/1/vote-properties").mock(
+            return_value=Response(200, json={"id": 5})
+        )
         result = await TOOLS["kaiten_add_service_vote_property"]["handler"](
             client, {"service_id": 1, "id": 5}
         )
@@ -999,9 +952,9 @@ class TestAddServiceVoteProperty:
 
 class TestRemoveServiceVoteProperty:
     async def test_remove_service_vote_property_required_only(self, client, mock_api):
-        route = mock_api.delete(
-            "/service-desk/services/1/vote-properties/5"
-        ).mock(return_value=Response(204))
+        route = mock_api.delete("/service-desk/services/1/vote-properties/5").mock(
+            return_value=Response(204)
+        )
         await TOOLS["kaiten_remove_service_vote_property"]["handler"](
             client, {"service_id": 1, "property_id": 5}
         )
@@ -1028,9 +981,7 @@ class TestAttachCardSla:
 
 class TestDetachCardSla:
     async def test_detach_card_sla_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/100/slas/sla-uuid-1").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/cards/100/slas/sla-uuid-1").mock(return_value=Response(204))
         await TOOLS["kaiten_detach_card_sla"]["handler"](
             client, {"card_id": 100, "sla_id": "sla-uuid-1"}
         )

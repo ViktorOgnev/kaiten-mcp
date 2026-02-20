@@ -1,13 +1,12 @@
 """Tests for compact response utilities."""
-import pytest
 
 from kaiten_mcp.tools.compact import (
     DEFAULT_LIMIT,
     STRIP_FIELDS,
-    compact_response,
-    select_fields,
     _is_base64_avatar,
     _simplify_user,
+    compact_response,
+    select_fields,
 )
 
 

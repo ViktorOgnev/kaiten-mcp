@@ -1,4 +1,5 @@
 """Kaiten Checklists MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -9,6 +10,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- Checklists ---
+
 
 async def _list_checklists(client, args: dict) -> Any:
     return await client.get(f"/cards/{args['card_id']}/checklists")
@@ -80,9 +82,7 @@ _tool(
 
 
 async def _delete_checklist(client, args: dict) -> Any:
-    return await client.delete(
-        f"/cards/{args['card_id']}/checklists/{args['checklist_id']}"
-    )
+    return await client.delete(f"/cards/{args['card_id']}/checklists/{args['checklist_id']}")
 
 
 _tool(
@@ -102,10 +102,9 @@ _tool(
 
 # --- Checklist Items ---
 
+
 async def _list_checklist_items(client, args: dict) -> Any:
-    return await client.get(
-        f"/cards/{args['card_id']}/checklists/{args['checklist_id']}/items"
-    )
+    return await client.get(f"/cards/{args['card_id']}/checklists/{args['checklist_id']}/items")
 
 
 _tool(

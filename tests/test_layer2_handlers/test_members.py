@@ -1,12 +1,10 @@
 """Layer 2 handler integration tests for tools/members.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.members import TOOLS
-from kaiten_mcp.tools.compact import DEFAULT_LIMIT
-
 
 # ---------------------------------------------------------------------------
 # Default Limit Tests
@@ -18,9 +16,7 @@ class TestListUsersDefaultLimit:
 
     async def test_default_limit_50_when_not_specified(self, client, mock_api):
         """Without explicit limit, should use DEFAULT_LIMIT (50)."""
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_users"]["handler"](client, {})
         assert route.called
         url = str(route.calls[0].request.url)
@@ -28,9 +24,7 @@ class TestListUsersDefaultLimit:
 
     async def test_explicit_limit_overrides_default(self, client, mock_api):
         """Explicit limit should override the default."""
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=[]))
         await TOOLS["kaiten_list_users"]["handler"](client, {"limit": 25})
         url = str(route.calls[0].request.url)
         assert "limit=25" in url
@@ -55,9 +49,7 @@ class TestListUsersCompact:
                 "avatar_url": "data:image/png;base64,iVBORw0KGgo=",
             }
         ]
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_users"]["handler"](client, {"compact": False})
         assert route.called
         assert result == full_response
@@ -71,9 +63,7 @@ class TestListUsersCompact:
                 "avatar_url": "data:image/png;base64,iVBORw0KGgo=",
             }
         ]
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_users"]["handler"](client, {"compact": True})
         assert route.called
         assert "avatar_url" not in result[0]
@@ -88,9 +78,7 @@ class TestListUsersCompact:
                 "avatar_url": "https://example.com/avatar.png",
             }
         ]
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_users"]["handler"](client, {"compact": True})
         assert result[0]["avatar_url"] == "https://example.com/avatar.png"
 
@@ -102,9 +90,7 @@ class TestListUsersCompact:
                 "avatar_url": "data:image/png;base64,xxx",
             }
         ]
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=full_response)
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=full_response))
         result = await TOOLS["kaiten_list_users"]["handler"](client, {})
         assert route.called
         # Should keep the avatar since compact defaults to False
@@ -121,18 +107,14 @@ class TestListCardMembers:
         route = mock_api.get("/cards/1/members").mock(
             return_value=Response(200, json=[{"id": 42, "username": "alice"}])
         )
-        result = await TOOLS["kaiten_list_card_members"]["handler"](
-            client, {"card_id": 1}
-        )
+        result = await TOOLS["kaiten_list_card_members"]["handler"](client, {"card_id": 1})
         assert route.called
         assert result == [{"id": 42, "username": "alice"}]
 
 
 class TestAddCardMember:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.post("/cards/1/members").mock(
-            return_value=Response(200, json={"id": 42})
-        )
+        route = mock_api.post("/cards/1/members").mock(return_value=Response(200, json={"id": 42}))
         result = await TOOLS["kaiten_add_card_member"]["handler"](
             client, {"card_id": 1, "user_id": 42}
         )
@@ -144,9 +126,7 @@ class TestAddCardMember:
 
 class TestRemoveCardMember:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/1/members/42").mock(
-            return_value=Response(200, json={})
-        )
+        route = mock_api.delete("/cards/1/members/42").mock(return_value=Response(200, json={}))
         result = await TOOLS["kaiten_remove_card_member"]["handler"](
             client, {"card_id": 1, "user_id": 42}
         )
@@ -164,9 +144,7 @@ class TestListUsers:
         assert result == [{"id": 1, "username": "admin"}]
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.get("/users").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/users").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_users"]["handler"](
             client,
             {"query": "alice", "limit": 10, "offset": 5, "include_inactive": True},

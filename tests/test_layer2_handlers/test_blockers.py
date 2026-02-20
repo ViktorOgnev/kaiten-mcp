@@ -1,7 +1,7 @@
 """Layer 2 handler integration tests for tools/blockers.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.blockers import TOOLS
@@ -12,21 +12,15 @@ class TestListCardBlockers:
         route = mock_api.get("/cards/1/blockers").mock(
             return_value=Response(200, json=[{"id": 3, "reason": "Waiting"}])
         )
-        result = await TOOLS["kaiten_list_card_blockers"]["handler"](
-            client, {"card_id": 1}
-        )
+        result = await TOOLS["kaiten_list_card_blockers"]["handler"](client, {"card_id": 1})
         assert route.called
         assert result == [{"id": 3, "reason": "Waiting"}]
 
 
 class TestCreateCardBlocker:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.post("/cards/1/blockers").mock(
-            return_value=Response(200, json={"id": 3})
-        )
-        result = await TOOLS["kaiten_create_card_blocker"]["handler"](
-            client, {"card_id": 1}
-        )
+        route = mock_api.post("/cards/1/blockers").mock(return_value=Response(200, json={"id": 3}))
+        result = await TOOLS["kaiten_create_card_blocker"]["handler"](client, {"card_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
@@ -48,10 +42,13 @@ class TestGetCardBlocker:
     async def test_required_only(self, client, mock_api):
         """Handler fetches list endpoint and filters by blocker_id client-side."""
         route = mock_api.get("/cards/1/blockers").mock(
-            return_value=Response(200, json=[
-                {"id": 2, "reason": "Other"},
-                {"id": 3, "reason": "Waiting"},
-            ])
+            return_value=Response(
+                200,
+                json=[
+                    {"id": 2, "reason": "Other"},
+                    {"id": 3, "reason": "Waiting"},
+                ],
+            )
         )
         result = await TOOLS["kaiten_get_card_blocker"]["handler"](
             client, {"card_id": 1, "blocker_id": 3}
@@ -62,9 +59,12 @@ class TestGetCardBlocker:
     async def test_not_found_returns_none(self, client, mock_api):
         """Returns None when blocker_id is not in the list."""
         route = mock_api.get("/cards/1/blockers").mock(
-            return_value=Response(200, json=[
-                {"id": 2, "reason": "Other"},
-            ])
+            return_value=Response(
+                200,
+                json=[
+                    {"id": 2, "reason": "Other"},
+                ],
+            )
         )
         result = await TOOLS["kaiten_get_card_blocker"]["handler"](
             client, {"card_id": 1, "blocker_id": 999}
@@ -110,9 +110,7 @@ class TestUpdateCardBlocker:
 
 class TestDeleteCardBlocker:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/1/blockers/3").mock(
-            return_value=Response(200, json={})
-        )
+        route = mock_api.delete("/cards/1/blockers/3").mock(return_value=Response(200, json={}))
         result = await TOOLS["kaiten_delete_card_blocker"]["handler"](
             client, {"card_id": 1, "blocker_id": 3}
         )

@@ -2,7 +2,6 @@
 
 from typing import Any
 
-
 TOOLS: dict[str, dict] = {}
 
 
@@ -255,7 +254,8 @@ async def _update_planned_relation(client, args: dict) -> Any:
         "gap_type": args["gap_type"],
     }
     return await client.patch(
-        f"/cards/{card_id}/planned-relation/{target_card_id}", json=body,
+        f"/cards/{card_id}/planned-relation/{target_card_id}",
+        json=body,
     )
 
 

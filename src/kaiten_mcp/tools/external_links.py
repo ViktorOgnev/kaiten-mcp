@@ -1,4 +1,5 @@
 """Kaiten External Links MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -9,6 +10,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- Card External Links ---
+
 
 async def _list_external_links(client, args: dict) -> Any:
     return await client.get(f"/cards/{args['card_id']}/external-links")
@@ -80,9 +82,7 @@ _tool(
 
 
 async def _delete_external_link(client, args: dict) -> Any:
-    return await client.delete(
-        f"/cards/{args['card_id']}/external-links/{args['link_id']}"
-    )
+    return await client.delete(f"/cards/{args['card_id']}/external-links/{args['link_id']}")
 
 
 _tool(

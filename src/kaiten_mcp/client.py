@@ -1,7 +1,9 @@
 """Async HTTP client for Kaiten REST API."""
+
 import asyncio
-import os
+import contextlib
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -76,9 +78,7 @@ class KaitenClient:
         for attempt in range(MAX_RETRIES):
             await self._rate_limit()
             try:
-                response = await client.request(
-                    method, path, params=params, json=json
-                )
+                response = await client.request(method, path, params=params, json=json)
                 if response.status_code == 429:
                     retry_after = response.headers.get("Retry-After")
                     if retry_after:
@@ -93,13 +93,11 @@ class KaitenClient:
                     continue
                 if response.status_code >= 400:
                     body = None
-                    try:
+                    with contextlib.suppress(Exception):
                         body = response.json()
-                    except Exception:
-                        pass
-                    msg = ""
+                    msg: str = ""
                     if isinstance(body, dict):
-                        msg = body.get("message", body.get("error", ""))
+                        msg = str(body.get("message", body.get("error", "")))
                     if not msg:
                         msg = response.text[:500]
                     raise KaitenApiError(response.status_code, msg, body)
@@ -110,7 +108,7 @@ class KaitenClient:
                 return response.json()
             except httpx.HTTPError as e:
                 if attempt == MAX_RETRIES - 1:
-                    raise KaitenApiError(0, f"Connection error: {e}")
+                    raise KaitenApiError(0, f"Connection error: {e}") from e
                 await asyncio.sleep(RETRY_DELAY)
 
         # All retries exhausted (e.g. repeated 429)

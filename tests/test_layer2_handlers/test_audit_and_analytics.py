@@ -1,12 +1,10 @@
 """Integration tests for audit_and_analytics handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.audit_and_analytics import TOOLS
-from kaiten_mcp.tools.compact import compact_response
-
 
 # ---------------------------------------------------------------------------
 # Audit Logs
@@ -15,17 +13,13 @@ from kaiten_mcp.tools.compact import compact_response
 
 class TestListAuditLogs:
     async def test_list_audit_logs_required_only(self, client, mock_api):
-        route = mock_api.get("/audit-logs").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/audit-logs").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_audit_logs"]["handler"](client, {})
         assert route.called
         assert result == []
 
     async def test_list_audit_logs_all_args(self, client, mock_api):
-        route = mock_api.get("/audit-logs").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
+        route = mock_api.get("/audit-logs").mock(return_value=Response(200, json=[{"id": 1}]))
         await TOOLS["kaiten_list_audit_logs"]["handler"](
             client, {"categories": "auth,app", "limit": 50, "offset": 10}
         )
@@ -42,12 +36,8 @@ class TestListAuditLogs:
 
 class TestGetCardActivity:
     async def test_get_card_activity_required_only(self, client, mock_api):
-        route = mock_api.get("/cards/42/activity").mock(
-            return_value=Response(200, json=[])
-        )
-        result = await TOOLS["kaiten_get_card_activity"]["handler"](
-            client, {"card_id": 42}
-        )
+        route = mock_api.get("/cards/42/activity").mock(return_value=Response(200, json=[]))
+        result = await TOOLS["kaiten_get_card_activity"]["handler"](client, {"card_id": 42})
         assert route.called
         assert result == []
 
@@ -65,12 +55,8 @@ class TestGetCardActivity:
 
 class TestGetSpaceActivity:
     async def test_get_space_activity_required_only(self, client, mock_api):
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=[])
-        )
-        result = await TOOLS["kaiten_get_space_activity"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=[]))
+        result = await TOOLS["kaiten_get_space_activity"]["handler"](client, {"space_id": 1})
         assert route.called
         assert result == []
 
@@ -79,7 +65,8 @@ class TestGetSpaceActivity:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_get_space_activity"]["handler"](
-            client, {
+            client,
+            {
                 "space_id": 1,
                 "limit": 20,
                 "offset": 0,
@@ -87,7 +74,7 @@ class TestGetSpaceActivity:
                 "created_after": "2025-01-01T00:00:00Z",
                 "created_before": "2025-12-31T23:59:59Z",
                 "author_id": 42,
-            }
+            },
         )
         url = str(route.calls[0].request.url)
         assert "limit=20" in url
@@ -99,9 +86,7 @@ class TestGetSpaceActivity:
 
 class TestGetCompanyActivity:
     async def test_get_company_activity_required_only(self, client, mock_api):
-        route = mock_api.get("/company/activity").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/company/activity").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_get_company_activity"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -111,7 +96,8 @@ class TestGetCompanyActivity:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_get_company_activity"]["handler"](
-            client, {
+            client,
+            {
                 "limit": 100,
                 "offset": 50,
                 "actions": "card_move",
@@ -120,7 +106,7 @@ class TestGetCompanyActivity:
                 "author_id": 10,
                 "cursor_created": "2025-05-15T12:00:00Z",
                 "cursor_id": 999,
-            }
+            },
         )
         url = str(route.calls[0].request.url)
         assert "limit=100" in url
@@ -141,9 +127,7 @@ class TestGetAllSpaceActivity:
         route = mock_api.get("/spaces/1/activity").mock(
             return_value=Response(200, json=[{"id": i} for i in range(5)])
         )
-        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
-            client, {"space_id": 1}
-        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](client, {"space_id": 1})
         assert route.called
         assert len(result) == 5
 
@@ -169,11 +153,12 @@ class TestGetAllSpaceActivity:
             return_value=Response(200, json=[{"id": 1, "action": "card_move"}])
         )
         result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
-            client, {
+            client,
+            {
                 "space_id": 1,
                 "actions": "card_move,card_add",
                 "created_after": "2025-01-01T00:00:00Z",
-            }
+            },
         )
         assert route.called
         url = str(route.calls[0].request.url)
@@ -183,9 +168,7 @@ class TestGetAllSpaceActivity:
     async def test_max_pages_limit(self, client, mock_api):
         """Stops after max_pages even if more data exists."""
         full_page = [{"id": i} for i in range(100)]
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=full_page)
-        )
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=full_page))
         result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
             client, {"space_id": 1, "page_size": 100, "max_pages": 2}
         )
@@ -194,12 +177,8 @@ class TestGetAllSpaceActivity:
 
     async def test_empty_result(self, client, mock_api):
         """Empty first page stops pagination."""
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=[])
-        )
-        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=[]))
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](client, {"space_id": 1})
         assert route.call_count == 1
         assert result == []
 
@@ -228,20 +207,14 @@ class TestGetCardLocationHistory:
 
 class TestListSavedFilters:
     async def test_list_saved_filters_required_only(self, client, mock_api):
-        route = mock_api.get("/saved-filters").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/saved-filters").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_saved_filters"]["handler"](client, {})
         assert route.called
         assert result == []
 
     async def test_list_saved_filters_all_args(self, client, mock_api):
-        route = mock_api.get("/saved-filters").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
-        await TOOLS["kaiten_list_saved_filters"]["handler"](
-            client, {"limit": 10, "offset": 5}
-        )
+        route = mock_api.get("/saved-filters").mock(return_value=Response(200, json=[{"id": 1}]))
+        await TOOLS["kaiten_list_saved_filters"]["handler"](client, {"limit": 10, "offset": 5})
         url = str(route.calls[0].request.url)
         assert "limit=10" in url
         assert "offset=5" in url
@@ -261,9 +234,7 @@ class TestCreateSavedFilter:
         assert body == {"title": "My Filter", "filter": {"status": "open"}}
 
     async def test_create_saved_filter_all_args(self, client, mock_api):
-        route = mock_api.post("/saved-filters").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.post("/saved-filters").mock(return_value=Response(200, json={"id": 1}))
         filter_obj = {"status": "open", "assignee": 42}
         await TOOLS["kaiten_create_saved_filter"]["handler"](
             client, {"name": "Shared Filter", "filter": filter_obj, "shared": True}
@@ -278,32 +249,22 @@ class TestCreateSavedFilter:
 
 class TestGetSavedFilter:
     async def test_get_saved_filter_required_only(self, client, mock_api):
-        route = mock_api.get("/saved-filters/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
-        result = await TOOLS["kaiten_get_saved_filter"]["handler"](
-            client, {"filter_id": 1}
-        )
+        route = mock_api.get("/saved-filters/1").mock(return_value=Response(200, json={"id": 1}))
+        result = await TOOLS["kaiten_get_saved_filter"]["handler"](client, {"filter_id": 1})
         assert route.called
         assert result == {"id": 1}
 
 
 class TestUpdateSavedFilter:
     async def test_update_saved_filter_required_only(self, client, mock_api):
-        route = mock_api.patch("/saved-filters/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
-        result = await TOOLS["kaiten_update_saved_filter"]["handler"](
-            client, {"filter_id": 1}
-        )
+        route = mock_api.patch("/saved-filters/1").mock(return_value=Response(200, json={"id": 1}))
+        result = await TOOLS["kaiten_update_saved_filter"]["handler"](client, {"filter_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_update_saved_filter_all_args(self, client, mock_api):
-        route = mock_api.patch("/saved-filters/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.patch("/saved-filters/1").mock(return_value=Response(200, json={"id": 1}))
         filter_obj = {"priority": "high"}
         await TOOLS["kaiten_update_saved_filter"]["handler"](
             client,
@@ -324,12 +285,8 @@ class TestUpdateSavedFilter:
 
 class TestDeleteSavedFilter:
     async def test_delete_saved_filter_required_only(self, client, mock_api):
-        route = mock_api.delete("/saved-filters/1").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_saved_filter"]["handler"](
-            client, {"filter_id": 1}
-        )
+        route = mock_api.delete("/saved-filters/1").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_saved_filter"]["handler"](client, {"filter_id": 1})
         assert route.called
 
 
@@ -354,9 +311,7 @@ class TestActivityCompactFields:
                 },
             }
         ]
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=mock_data)
-        )
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=mock_data))
         result = await TOOLS["kaiten_get_space_activity"]["handler"](
             client, {"space_id": 1, "compact": True}
         )
@@ -365,12 +320,8 @@ class TestActivityCompactFields:
 
     async def test_space_activity_fields(self, client, mock_api):
         """fields param should whitelist-filter space activity results."""
-        mock_data = [
-            {"id": 1, "action": "card_move", "card_id": 100, "extra": "data"}
-        ]
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=mock_data)
-        )
+        mock_data = [{"id": 1, "action": "card_move", "card_id": 100, "extra": "data"}]
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=mock_data))
         result = await TOOLS["kaiten_get_space_activity"]["handler"](
             client, {"space_id": 1, "fields": "id,action,card_id"}
         )
@@ -389,12 +340,8 @@ class TestActivityCompactFields:
                 },
             }
         ]
-        route = mock_api.get("/spaces/1/activity").mock(
-            return_value=Response(200, json=mock_data)
-        )
-        result = await TOOLS["kaiten_get_space_activity"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/spaces/1/activity").mock(return_value=Response(200, json=mock_data))
+        result = await TOOLS["kaiten_get_space_activity"]["handler"](client, {"space_id": 1})
         # compact=False by default, so full author is kept
         assert result[0]["author"]["email"] == "u@example.com"
 
@@ -412,23 +359,15 @@ class TestActivityCompactFields:
                 },
             }
         ]
-        route = mock_api.get("/company/activity").mock(
-            return_value=Response(200, json=mock_data)
-        )
-        result = await TOOLS["kaiten_get_company_activity"]["handler"](
-            client, {"compact": True}
-        )
+        route = mock_api.get("/company/activity").mock(return_value=Response(200, json=mock_data))
+        result = await TOOLS["kaiten_get_company_activity"]["handler"](client, {"compact": True})
         assert route.called
         assert result[0]["author"] == {"id": 5, "full_name": "Admin"}
 
     async def test_company_activity_fields(self, client, mock_api):
         """fields param should whitelist-filter company activity results."""
-        mock_data = [
-            {"id": 1, "action": "card_add", "card_id": 50, "board_id": 10}
-        ]
-        route = mock_api.get("/company/activity").mock(
-            return_value=Response(200, json=mock_data)
-        )
+        mock_data = [{"id": 1, "action": "card_add", "card_id": 50, "board_id": 10}]
+        route = mock_api.get("/company/activity").mock(return_value=Response(200, json=mock_data))
         result = await TOOLS["kaiten_get_company_activity"]["handler"](
             client, {"fields": "id,card_id"}
         )

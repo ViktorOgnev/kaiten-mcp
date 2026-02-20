@@ -1,16 +1,14 @@
 """Layer 3: MCP server integration tests for call_tool and list_tools."""
-import json
 
-import httpx
-import pytest
-import respx
+import json
 from unittest.mock import AsyncMock, patch
 
+import pytest
+import respx
 from mcp.types import CallToolResult, TextContent, Tool
 
-from kaiten_mcp.client import KaitenClient, KaitenApiError
-from kaiten_mcp.server import call_tool, list_tools, get_client, ALL_TOOLS
-
+from kaiten_mcp.client import KaitenApiError, KaitenClient
+from kaiten_mcp.server import ALL_TOOLS, call_tool, get_client, list_tools
 
 BASE_URL = "https://test-company.kaiten.ru/api/latest"
 
@@ -53,7 +51,10 @@ async def test_call_tool_unknown_name_special_chars():
 async def test_call_tool_handler_returns_dict():
     payload = {"id": 1, "title": "Test Space"}
     tool_name = "kaiten_get_space"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}}):
+    with patch.dict(
+        ALL_TOOLS,
+        {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}},
+    ):
         result = await call_tool(tool_name, {"space_id": 1})
     parsed = json.loads(_text(result))
     assert parsed == payload
@@ -62,7 +63,10 @@ async def test_call_tool_handler_returns_dict():
 async def test_call_tool_handler_returns_nested_dict():
     payload = {"id": 1, "meta": {"key": "value", "count": 42}}
     tool_name = "kaiten_get_space"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}}):
+    with patch.dict(
+        ALL_TOOLS,
+        {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}},
+    ):
         result = await call_tool(tool_name, {"space_id": 1})
     parsed = json.loads(_text(result))
     assert parsed == payload
@@ -75,7 +79,10 @@ async def test_call_tool_handler_returns_nested_dict():
 async def test_call_tool_handler_returns_list():
     payload = [{"id": 1}, {"id": 2}]
     tool_name = "kaiten_list_spaces"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}}):
+    with patch.dict(
+        ALL_TOOLS,
+        {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=payload)}},
+    ):
         result = await call_tool(tool_name, {})
     parsed = json.loads(_text(result))
     assert parsed == payload
@@ -84,7 +91,9 @@ async def test_call_tool_handler_returns_list():
 
 async def test_call_tool_handler_returns_empty_list():
     tool_name = "kaiten_list_spaces"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=[])}}):
+    with patch.dict(
+        ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=[])}}
+    ):
         result = await call_tool(tool_name, {})
     assert json.loads(_text(result)) == []
 
@@ -94,7 +103,9 @@ async def test_call_tool_handler_returns_empty_list():
 
 async def test_call_tool_handler_returns_none():
     tool_name = "kaiten_delete_space"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=None)}}):
+    with patch.dict(
+        ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=None)}}
+    ):
         result = await call_tool(tool_name, {"space_id": 1})
     assert _text(result) == "OK"
 
@@ -104,7 +115,10 @@ async def test_call_tool_handler_returns_none():
 
 async def test_call_tool_handler_returns_string():
     tool_name = "kaiten_get_space"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value="some text")}}):
+    with patch.dict(
+        ALL_TOOLS,
+        {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value="some text")}},
+    ):
         result = await call_tool(tool_name, {"space_id": 1})
     assert _text(result) == "some text"
 
@@ -112,7 +126,9 @@ async def test_call_tool_handler_returns_string():
 async def test_call_tool_handler_returns_integer():
     """Non-dict/list/None/str values are converted via str()."""
     tool_name = "kaiten_get_space"
-    with patch.dict(ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=42)}}):
+    with patch.dict(
+        ALL_TOOLS, {tool_name: {**ALL_TOOLS[tool_name], "handler": AsyncMock(return_value=42)}}
+    ):
         result = await call_tool(tool_name, {"space_id": 1})
     assert _text(result) == "42"
 
@@ -224,6 +240,7 @@ async def test_list_tools_names_match_all_tools():
 def test_get_client_creates_kaiten_client():
     """get_client() creates a KaitenClient when _client is None."""
     import kaiten_mcp.server as srv
+
     original = srv._client
     try:
         srv._client = None

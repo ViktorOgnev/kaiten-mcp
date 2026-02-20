@@ -1,4 +1,5 @@
 """Layer 2 handler integration tests for files tools."""
+
 import json
 
 from httpx import Response
@@ -11,9 +12,7 @@ class TestListCardFiles:
         route = mock_api.get("/cards/42/files").mock(
             return_value=Response(200, json=[{"id": 1, "name": "doc.pdf"}])
         )
-        result = await TOOLS["kaiten_list_card_files"]["handler"](
-            client, {"card_id": 42}
-        )
+        result = await TOOLS["kaiten_list_card_files"]["handler"](client, {"card_id": 42})
         assert route.called
         assert result == [{"id": 1, "name": "doc.pdf"}]
 
@@ -32,9 +31,7 @@ class TestCreateCardFile:
         assert result == {"id": 10, "name": "doc.pdf"}
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.post("/cards/42/files").mock(
-            return_value=Response(200, json={"id": 10})
-        )
+        route = mock_api.post("/cards/42/files").mock(return_value=Response(200, json={"id": 10}))
         await TOOLS["kaiten_create_card_file"]["handler"](
             client,
             {
@@ -106,10 +103,6 @@ class TestUpdateCardFile:
 
 class TestDeleteCardFile:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/42/files/10").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_card_file"]["handler"](
-            client, {"card_id": 42, "file_id": 10}
-        )
+        route = mock_api.delete("/cards/42/files/10").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_card_file"]["handler"](client, {"card_id": 42, "file_id": 10})
         assert route.called

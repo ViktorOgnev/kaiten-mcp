@@ -1,4 +1,5 @@
 """Kaiten Lanes MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -45,8 +46,14 @@ _tool(
             "sort_order": {"type": "number", "description": "Sort order"},
             "row_count": {"type": "integer", "description": "Number of sub-rows to split into"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
-            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
-            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards in this lane"},
+            "wip_limit_type": {
+                "type": "integer",
+                "description": "WIP limit type (1=cards count, 2=size sum)",
+            },
+            "default_card_type_id": {
+                "type": "integer",
+                "description": "Default card type ID for new cards in this lane",
+            },
         },
         "required": ["board_id", "title"],
     },
@@ -56,13 +63,18 @@ _tool(
 
 async def _update_lane(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "sort_order", "row_count", "wip_limit", "wip_limit_type",
-                 "default_card_type_id", "condition"):
+    for key in (
+        "title",
+        "sort_order",
+        "row_count",
+        "wip_limit",
+        "wip_limit_type",
+        "default_card_type_id",
+        "condition",
+    ):
         if args.get(key) is not None:
             body[key] = args[key]
-    return await client.patch(
-        f"/boards/{args['board_id']}/lanes/{args['lane_id']}", json=body
-    )
+    return await client.patch(f"/boards/{args['board_id']}/lanes/{args['lane_id']}", json=body)
 
 
 _tool(
@@ -77,9 +89,19 @@ _tool(
             "sort_order": {"type": "number", "description": "Sort order"},
             "row_count": {"type": "integer", "description": "Number of sub-rows to split into"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
-            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
-            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards in this lane"},
-            "condition": {"type": "integer", "enum": [1, 2], "description": "1=active, 2=archived"},
+            "wip_limit_type": {
+                "type": "integer",
+                "description": "WIP limit type (1=cards count, 2=size sum)",
+            },
+            "default_card_type_id": {
+                "type": "integer",
+                "description": "Default card type ID for new cards in this lane",
+            },
+            "condition": {
+                "type": "integer",
+                "enum": [1, 2],
+                "description": "1=active, 2=archived",
+            },
         },
         "required": ["board_id", "lane_id"],
     },
@@ -88,9 +110,7 @@ _tool(
 
 
 async def _delete_lane(client, args: dict) -> Any:
-    return await client.delete(
-        f"/boards/{args['board_id']}/lanes/{args['lane_id']}"
-    )
+    return await client.delete(f"/boards/{args['board_id']}/lanes/{args['lane_id']}")
 
 
 _tool(

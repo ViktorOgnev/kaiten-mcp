@@ -1,6 +1,5 @@
 from typing import Any
 
-
 TOOLS: dict[str, dict] = {}
 
 
@@ -26,9 +25,7 @@ async def _list_card_time_logs(client, args: dict) -> Any:
     personal = args.get("personal")
     if personal is not None:
         params["personal"] = personal
-    return await client.get(
-        f"/cards/{card_id}/time-logs", params=params if params else None
-    )
+    return await client.get(f"/cards/{card_id}/time-logs", params=params if params else None)
 
 
 _tool(
@@ -124,9 +121,7 @@ async def _update_time_log(client, args: dict) -> Any:
         value = args.get(key)
         if value is not None:
             body[key] = value
-    return await client.patch(
-        f"/cards/{card_id}/time-logs/{time_log_id}", json=body
-    )
+    return await client.patch(f"/cards/{card_id}/time-logs/{time_log_id}", json=body)
 
 
 _tool(

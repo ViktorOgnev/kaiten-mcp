@@ -1,7 +1,7 @@
 """Layer 2 handler integration tests for tools/time_logs.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.time_logs import TOOLS
@@ -12,16 +12,12 @@ class TestListCardTimeLogs:
         route = mock_api.get("/cards/1/time-logs").mock(
             return_value=Response(200, json=[{"id": 50, "time_spent": 60}])
         )
-        result = await TOOLS["kaiten_list_card_time_logs"]["handler"](
-            client, {"card_id": 1}
-        )
+        result = await TOOLS["kaiten_list_card_time_logs"]["handler"](client, {"card_id": 1})
         assert route.called
         assert result == [{"id": 50, "time_spent": 60}]
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.get("/cards/1/time-logs").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/cards/1/time-logs").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_card_time_logs"]["handler"](
             client, {"card_id": 1, "for_date": "2025-01-15", "personal": True}
         )
@@ -107,9 +103,7 @@ class TestUpdateTimeLog:
 
 class TestDeleteTimeLog:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/cards/1/time-logs/50").mock(
-            return_value=Response(200, json={})
-        )
+        route = mock_api.delete("/cards/1/time-logs/50").mock(return_value=Response(200, json={}))
         result = await TOOLS["kaiten_delete_time_log"]["handler"](
             client, {"card_id": 1, "time_log_id": 50}
         )

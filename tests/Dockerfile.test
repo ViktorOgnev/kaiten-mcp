@@ -7,7 +7,7 @@ COPY pyproject.toml .
 COPY src/ src/
 
 # Install in editable mode so Python uses /app/src/ (mountable via volume)
-RUN pip install --no-cache-dir -e ".[test]"
+RUN pip install --no-cache-dir -e ".[test,lint]"
 
 ENV PYTHONUNBUFFERED=1
 

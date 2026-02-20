@@ -1,4 +1,5 @@
 """Kaiten Columns MCP tools."""
+
 from typing import Any
 
 TOOLS: dict[str, dict] = {}
@@ -48,7 +49,10 @@ _tool(
                 "description": "Column type: 1=queue, 2=in_progress, 3=done",
             },
             "wip_limit": {"type": "integer", "description": "WIP limit"},
-            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
+            "wip_limit_type": {
+                "type": "integer",
+                "description": "WIP limit type (1=cards count, 2=size sum)",
+            },
             "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
         },
@@ -63,9 +67,7 @@ async def _update_column(client, args: dict) -> Any:
     for key in ("title", "type", "wip_limit", "wip_limit_type", "col_count", "sort_order"):
         if args.get(key) is not None:
             body[key] = args[key]
-    return await client.patch(
-        f"/boards/{args['board_id']}/columns/{args['column_id']}", json=body
-    )
+    return await client.patch(f"/boards/{args['board_id']}/columns/{args['column_id']}", json=body)
 
 
 _tool(
@@ -79,7 +81,10 @@ _tool(
             "title": {"type": "string", "description": "New title"},
             "type": {"type": "integer", "enum": [1, 2, 3], "description": "Column type"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
-            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
+            "wip_limit_type": {
+                "type": "integer",
+                "description": "WIP limit type (1=cards count, 2=size sum)",
+            },
             "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
         },
@@ -90,9 +95,7 @@ _tool(
 
 
 async def _delete_column(client, args: dict) -> Any:
-    return await client.delete(
-        f"/boards/{args['board_id']}/columns/{args['column_id']}"
-    )
+    return await client.delete(f"/boards/{args['board_id']}/columns/{args['column_id']}")
 
 
 _tool(
@@ -113,6 +116,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # Subcolumns
 # ---------------------------------------------------------------------------
+
 
 async def _list_subcolumns(client, args: dict) -> Any:
     return await client.get(f"/columns/{args['column_id']}/subcolumns")
@@ -188,9 +192,7 @@ _tool(
 
 
 async def _delete_subcolumn(client, args: dict) -> Any:
-    return await client.delete(
-        f"/columns/{args['column_id']}/subcolumns/{args['subcolumn_id']}"
-    )
+    return await client.delete(f"/columns/{args['column_id']}/subcolumns/{args['subcolumn_id']}")
 
 
 _tool(

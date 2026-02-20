@@ -1,4 +1,5 @@
 """Layer 2 handler integration tests for columns tools."""
+
 import json
 
 from httpx import Response
@@ -11,9 +12,7 @@ class TestListColumns:
         route = mock_api.get("/boards/10/columns").mock(
             return_value=Response(200, json=[{"id": 1, "title": "To Do"}])
         )
-        result = await TOOLS["kaiten_list_columns"]["handler"](
-            client, {"board_id": 10}
-        )
+        result = await TOOLS["kaiten_list_columns"]["handler"](client, {"board_id": 10})
         assert route.called
         assert result == [{"id": 1, "title": "To Do"}]
 
@@ -94,9 +93,7 @@ class TestUpdateColumn:
 
 class TestDeleteColumn:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/boards/10/columns/5").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/boards/10/columns/5").mock(return_value=Response(204))
         result = await TOOLS["kaiten_delete_column"]["handler"](
             client, {"board_id": 10, "column_id": 5}
         )
@@ -113,9 +110,7 @@ class TestListSubcolumns:
         route = mock_api.get("/columns/10/subcolumns").mock(
             return_value=Response(200, json=[{"id": 20, "title": "In Progress"}])
         )
-        result = await TOOLS["kaiten_list_subcolumns"]["handler"](
-            client, {"column_id": 10}
-        )
+        result = await TOOLS["kaiten_list_subcolumns"]["handler"](client, {"column_id": 10})
         assert route.called
         assert result == [{"id": 20, "title": "In Progress"}]
 

@@ -1,13 +1,12 @@
-"""Layer 1 – Tool Registration & Discovery.
+"""Layer 1 - Tool Registration & Discovery.
 
 Verify that ALL 246 MCP tools are properly registered and discoverable.
 """
+
 import asyncio
 import inspect
 
-import pytest
-
-from kaiten_mcp.server import TOOL_MODULES, ALL_TOOLS, list_tools
+from kaiten_mcp.server import ALL_TOOLS, TOOL_MODULES, list_tools
 
 
 class TestToolRegistration:
@@ -46,9 +45,7 @@ class TestToolRegistration:
     def test_all_schemas_are_objects(self):
         for name, defn in ALL_TOOLS.items():
             schema = defn["inputSchema"]
-            assert schema.get("type") == "object", (
-                f"{name}: schema type is not object"
-            )
+            assert schema.get("type") == "object", f"{name}: schema type is not object"
             assert "properties" in schema, f"{name}: schema missing properties"
 
     def test_required_fields_exist_in_properties(self):
@@ -57,28 +54,27 @@ class TestToolRegistration:
             required = schema.get("required", [])
             props = schema.get("properties", {})
             for field in required:
-                assert field in props, (
-                    f"{name}: required field '{field}' not in properties"
-                )
+                assert field in props, f"{name}: required field '{field}' not in properties"
 
     def test_all_handlers_are_coroutines(self):
         for name, defn in ALL_TOOLS.items():
-            assert asyncio.iscoroutinefunction(defn["handler"]), (
-                f"{name}: handler is not async"
-            )
+            assert asyncio.iscoroutinefunction(defn["handler"]), f"{name}: handler is not async"
 
     def test_all_handlers_have_two_params(self):
         for name, defn in ALL_TOOLS.items():
             sig = inspect.signature(defn["handler"])
             params = list(sig.parameters.keys())
-            assert len(params) == 2, (
-                f"{name}: expected 2 params, got {params}"
-            )
+            assert len(params) == 2, f"{name}: expected 2 params, got {params}"
 
     def test_property_types_are_valid(self):
         valid_types = {
-            "string", "integer", "number", "boolean",
-            "object", "array", "null",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "object",
+            "array",
+            "null",
         }
         for name, defn in ALL_TOOLS.items():
             for prop_name, prop in defn["inputSchema"].get("properties", {}).items():
@@ -86,9 +82,7 @@ class TestToolRegistration:
                     t = prop["type"]
                     types = t if isinstance(t, list) else [t]
                     for tt in types:
-                        assert tt in valid_types, (
-                            f"{name}.{prop_name}: invalid type '{tt}'"
-                        )
+                        assert tt in valid_types, f"{name}.{prop_name}: invalid type '{tt}'"
 
     def test_no_handler_shared_across_tools(self):
         handler_ids = [id(defn["handler"]) for defn in ALL_TOOLS.values()]

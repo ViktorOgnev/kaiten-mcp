@@ -1,4 +1,5 @@
 """Kaiten Projects & Sprints MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response
@@ -11,6 +12,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- Projects ---
+
 
 async def _list_projects(client, args: dict) -> Any:
     return await client.get("/projects")
@@ -171,7 +173,11 @@ _tool(
         "type": "object",
         "properties": {
             "project_id": {"type": "string", "description": "Project ID (UUID)"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
+            },
         },
         "required": ["project_id"],
     },
@@ -201,9 +207,7 @@ _tool(
 
 
 async def _remove_project_card(client, args: dict) -> Any:
-    return await client.delete(
-        f"/projects/{args['project_id']}/cards/{args['card_id']}"
-    )
+    return await client.delete(f"/projects/{args['project_id']}/cards/{args['card_id']}")
 
 
 _tool(
@@ -222,6 +226,7 @@ _tool(
 
 
 # --- Sprints ---
+
 
 async def _list_sprints(client, args: dict) -> Any:
     params = {}

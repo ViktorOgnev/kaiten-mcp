@@ -1,11 +1,10 @@
 """Integration tests for automations handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.automations import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # Space Automations
@@ -14,12 +13,8 @@ from kaiten_mcp.tools.automations import TOOLS
 
 class TestListAutomations:
     async def test_list_automations_required_only(self, client, mock_api):
-        route = mock_api.get("/spaces/1/automations").mock(
-            return_value=Response(200, json=[])
-        )
-        result = await TOOLS["kaiten_list_automations"]["handler"](
-            client, {"space_id": 1}
-        )
+        route = mock_api.get("/spaces/1/automations").mock(return_value=Response(200, json=[]))
+        result = await TOOLS["kaiten_list_automations"]["handler"](client, {"space_id": 1})
         assert route.called
         assert result == []
 
@@ -154,9 +149,7 @@ class TestCopyAutomation:
 
 class TestListWorkflows:
     async def test_list_workflows_required_only(self, client, mock_api):
-        route = mock_api.get("/company/workflows").mock(
-            return_value=Response(200, json=[])
-        )
+        route = mock_api.get("/company/workflows").mock(return_value=Response(200, json=[]))
         result = await TOOLS["kaiten_list_workflows"]["handler"](client, {})
         assert route.called
         assert result == []
@@ -165,9 +158,7 @@ class TestListWorkflows:
         route = mock_api.get("/company/workflows").mock(
             return_value=Response(200, json=[{"id": 1}])
         )
-        await TOOLS["kaiten_list_workflows"]["handler"](
-            client, {"limit": 5, "offset": 10}
-        )
+        await TOOLS["kaiten_list_workflows"]["handler"](client, {"limit": 5, "offset": 10})
         url = str(route.calls[0].request.url)
         assert "limit=5" in url
         assert "offset=10" in url
@@ -198,11 +189,12 @@ class TestCreateWorkflow:
         ]
         transitions = [{"id": "t1", "prev_stage_id": "s1", "next_stage_id": "s2"}]
         await TOOLS["kaiten_create_workflow"]["handler"](
-            client, {
+            client,
+            {
                 "name": "Dev Pipeline",
                 "stages": stages,
                 "transitions": transitions,
-            }
+            },
         )
         body = json.loads(route.calls[0].request.content)
         assert body == {
@@ -261,8 +253,6 @@ class TestUpdateWorkflow:
 
 class TestDeleteWorkflow:
     async def test_delete_workflow_required_only(self, client, mock_api):
-        route = mock_api.delete("/company/workflows/wf-uuid-1").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/company/workflows/wf-uuid-1").mock(return_value=Response(204))
         await TOOLS["kaiten_delete_workflow"]["handler"](client, {"workflow_id": "wf-uuid-1"})
         assert route.called

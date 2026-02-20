@@ -1,6 +1,6 @@
 from typing import Any
 
-from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response
 
 TOOLS: dict[str, dict] = {}
 
@@ -136,10 +136,7 @@ async def _list_users(client, args: dict) -> Any:
 
 _tool(
     name="kaiten_list_users",
-    description=(
-        "List company users. Supports search, pagination, and filtering "
-        "inactive users."
-    ),
+    description=("List company users. Supports search, pagination, and filtering inactive users."),
     schema={
         "type": "object",
         "properties": {

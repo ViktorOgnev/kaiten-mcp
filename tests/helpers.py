@@ -1,4 +1,5 @@
 """Shared test assertion helpers."""
+
 import json
 
 from httpx import Request

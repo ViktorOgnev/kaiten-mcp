@@ -28,35 +28,36 @@ Safety
 * Every entity uses a unique timestamp prefix.
 * Teardown deletes everything in reverse dependency order.
 """
+
 from __future__ import annotations
 
+import logging
 import os
 import time
-import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from kaiten_mcp.client import KaitenClient, KaitenApiError
+from kaiten_mcp.client import KaitenApiError, KaitenClient
 
 # -- Tool handler imports --
 from kaiten_mcp.tools.audit_and_analytics import TOOLS as AUDIT_T
-from kaiten_mcp.tools.service_desk import TOOLS as SD_T
-from kaiten_mcp.tools.utilities import TOOLS as UTIL_T
-from kaiten_mcp.tools.roles_and_groups import TOOLS as RG_T
-from kaiten_mcp.tools.spaces import TOOLS as SPACE_T
+from kaiten_mcp.tools.automations import TOOLS as AUTO_T
+from kaiten_mcp.tools.blockers import TOOLS as BLK_T
 from kaiten_mcp.tools.boards import TOOLS as BOARD_T
+from kaiten_mcp.tools.card_relations import TOOLS as REL_T
+from kaiten_mcp.tools.cards import TOOLS as CARD_T
 from kaiten_mcp.tools.columns import TOOLS as COL_T
 from kaiten_mcp.tools.lanes import TOOLS as LANE_T
-from kaiten_mcp.tools.cards import TOOLS as CARD_T
-from kaiten_mcp.tools.tags import TOOLS as TAG_T
-from kaiten_mcp.tools.blockers import TOOLS as BLK_T
-from kaiten_mcp.tools.card_relations import TOOLS as REL_T
 from kaiten_mcp.tools.members import TOOLS as MBR_T
-from kaiten_mcp.tools.subscribers import TOOLS as SUB_T
-from kaiten_mcp.tools.webhooks import TOOLS as WH_T
-from kaiten_mcp.tools.automations import TOOLS as AUTO_T
 from kaiten_mcp.tools.projects import TOOLS as PROJ_T
+from kaiten_mcp.tools.roles_and_groups import TOOLS as RG_T
+from kaiten_mcp.tools.service_desk import TOOLS as SD_T
+from kaiten_mcp.tools.spaces import TOOLS as SPACE_T
+from kaiten_mcp.tools.subscribers import TOOLS as SUB_T
+from kaiten_mcp.tools.tags import TOOLS as TAG_T
+from kaiten_mcp.tools.utilities import TOOLS as UTIL_T
+from kaiten_mcp.tools.webhooks import TOOLS as WH_T
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,7 @@ def _e2e_cleanup():
     if not os.environ.get("KAITEN_E2E"):
         return
     import asyncio
+
     domain = os.environ.get("KAITEN_DOMAIN", "")
     token = os.environ.get("KAITEN_TOKEN", "")
     if not domain or not token:
@@ -153,93 +155,119 @@ async def _cleanup_all(client) -> None:
     # Saved filter
     if S.saved_filter_id:
         await _safe_delete(
-            _h(AUDIT_T, "kaiten_delete_saved_filter")(client, {
-                "filter_id": S.saved_filter_id,
-            })
+            _h(AUDIT_T, "kaiten_delete_saved_filter")(
+                client,
+                {
+                    "filter_id": S.saved_filter_id,
+                },
+            )
         )
 
     # User timer
     if S.timer_id:
         await _safe_delete(
-            _h(UTIL_T, "kaiten_delete_user_timer")(client, {
-                "timer_id": S.timer_id,
-            })
+            _h(UTIL_T, "kaiten_delete_user_timer")(
+                client,
+                {
+                    "timer_id": S.timer_id,
+                },
+            )
         )
 
     # SD organization
     if S.sd_org_id:
         await _safe_delete(
-            _h(SD_T, "kaiten_delete_sd_organization")(client, {
-                "organization_id": S.sd_org_id,
-            })
+            _h(SD_T, "kaiten_delete_sd_organization")(
+                client,
+                {
+                    "organization_id": S.sd_org_id,
+                },
+            )
         )
 
     # Automation
     if S.automation_id and S.space_id:
         await _safe_delete(
-            _h(AUTO_T, "kaiten_delete_automation")(client, {
-                "space_id": S.space_id,
-                "automation_id": S.automation_id,
-            })
+            _h(AUTO_T, "kaiten_delete_automation")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "automation_id": S.automation_id,
+                },
+            )
         )
 
     # Relations cleanup
     if S.card_a_id and S.card_b_id:
         await _safe_delete(
-            _h(REL_T, "kaiten_remove_card_child")(client, {
-                "card_id": S.card_a_id, "child_id": S.card_b_id,
-            })
+            _h(REL_T, "kaiten_remove_card_child")(
+                client,
+                {
+                    "card_id": S.card_a_id,
+                    "child_id": S.card_b_id,
+                },
+            )
         )
     if S.card_b_id and S.card_c_id:
         await _safe_delete(
-            _h(REL_T, "kaiten_remove_card_parent")(client, {
-                "card_id": S.card_c_id, "parent_id": S.card_b_id,
-            })
+            _h(REL_T, "kaiten_remove_card_parent")(
+                client,
+                {
+                    "card_id": S.card_c_id,
+                    "parent_id": S.card_b_id,
+                },
+            )
         )
 
     # Cards
     for cid in [S.card_c_id, S.card_b_id, S.card_a_id]:
         if cid:
-            await _safe_delete(
-                _h(CARD_T, "kaiten_delete_card")(client, {"card_id": cid})
-            )
+            await _safe_delete(_h(CARD_T, "kaiten_delete_card")(client, {"card_id": cid}))
 
     # Lane
     if S.lane_id:
         await _safe_delete(
-            _h(LANE_T, "kaiten_delete_lane")(client, {
-                "board_id": S.board_id, "lane_id": S.lane_id,
-            })
+            _h(LANE_T, "kaiten_delete_lane")(
+                client,
+                {
+                    "board_id": S.board_id,
+                    "lane_id": S.lane_id,
+                },
+            )
         )
 
     # Columns
     for cid in [S.col_backlog_id, S.col_done_id]:
         if cid:
             await _safe_delete(
-                _h(COL_T, "kaiten_delete_column")(client, {
-                    "board_id": S.board_id, "column_id": cid,
-                })
+                _h(COL_T, "kaiten_delete_column")(
+                    client,
+                    {
+                        "board_id": S.board_id,
+                        "column_id": cid,
+                    },
+                )
             )
 
     # Board
     if S.board_id:
         await _safe_delete(
-            _h(BOARD_T, "kaiten_delete_board")(client, {
-                "space_id": S.space_id, "board_id": S.board_id,
-            })
+            _h(BOARD_T, "kaiten_delete_board")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "board_id": S.board_id,
+                },
+            )
         )
 
     # Space
     if S.space_id:
-        await _safe_delete(
-            _h(SPACE_T, "kaiten_delete_space")(client, {"space_id": S.space_id})
-        )
+        await _safe_delete(_h(SPACE_T, "kaiten_delete_space")(client, {"space_id": S.space_id}))
 
     # Tag
     if S.tag_id:
-        await _safe_delete(
-            _h(TAG_T, "kaiten_delete_tag")(client, {"tag_id": S.tag_id})
-        )
+        await _safe_delete(_h(TAG_T, "kaiten_delete_tag")(client, {"tag_id": S.tag_id}))
 
     logger.info("=== EXPANDED CLEANUP COMPLETE ===")
 
@@ -268,51 +296,83 @@ class TestE2EExpanded:
 
     async def test_01_setup_infrastructure(self, client):
         """Create space, board, columns, lane, and cards for testing."""
-        sp = await _h(SPACE_T, "kaiten_create_space")(client, {
-            "title": f"{PREFIX} Expanded E2E",
-        })
+        sp = await _h(SPACE_T, "kaiten_create_space")(
+            client,
+            {
+                "title": f"{PREFIX} Expanded E2E",
+            },
+        )
         S.space_id = sp["id"]
 
-        bd = await _h(BOARD_T, "kaiten_create_board")(client, {
-            "space_id": S.space_id,
-            "title": f"{PREFIX} Board",
-        })
+        bd = await _h(BOARD_T, "kaiten_create_board")(
+            client,
+            {
+                "space_id": S.space_id,
+                "title": f"{PREFIX} Board",
+            },
+        )
         S.board_id = bd["id"]
 
-        c1 = await _h(COL_T, "kaiten_create_column")(client, {
-            "board_id": S.board_id, "title": "Backlog", "type": 1,
-        })
+        c1 = await _h(COL_T, "kaiten_create_column")(
+            client,
+            {
+                "board_id": S.board_id,
+                "title": "Backlog",
+                "type": 1,
+            },
+        )
         S.col_backlog_id = c1["id"]
 
-        c2 = await _h(COL_T, "kaiten_create_column")(client, {
-            "board_id": S.board_id, "title": "Done", "type": 3,
-        })
+        c2 = await _h(COL_T, "kaiten_create_column")(
+            client,
+            {
+                "board_id": S.board_id,
+                "title": "Done",
+                "type": 3,
+            },
+        )
         S.col_done_id = c2["id"]
 
-        ln = await _h(LANE_T, "kaiten_create_lane")(client, {
-            "board_id": S.board_id, "title": "Default",
-        })
+        ln = await _h(LANE_T, "kaiten_create_lane")(
+            client,
+            {
+                "board_id": S.board_id,
+                "title": "Default",
+            },
+        )
         S.lane_id = ln["id"]
 
-        card_a = await _h(CARD_T, "kaiten_create_card")(client, {
-            "title": f"{PREFIX} Card A (parent)",
-            "board_id": S.board_id, "column_id": S.col_backlog_id,
-            "lane_id": S.lane_id,
-        })
+        card_a = await _h(CARD_T, "kaiten_create_card")(
+            client,
+            {
+                "title": f"{PREFIX} Card A (parent)",
+                "board_id": S.board_id,
+                "column_id": S.col_backlog_id,
+                "lane_id": S.lane_id,
+            },
+        )
         S.card_a_id = card_a["id"]
 
-        card_b = await _h(CARD_T, "kaiten_create_card")(client, {
-            "title": f"{PREFIX} Card B (middle)",
-            "board_id": S.board_id, "column_id": S.col_backlog_id,
-            "lane_id": S.lane_id,
-        })
+        card_b = await _h(CARD_T, "kaiten_create_card")(
+            client,
+            {
+                "title": f"{PREFIX} Card B (middle)",
+                "board_id": S.board_id,
+                "column_id": S.col_backlog_id,
+                "lane_id": S.lane_id,
+            },
+        )
         S.card_b_id = card_b["id"]
 
-        card_c = await _h(CARD_T, "kaiten_create_card")(client, {
-            "title": f"{PREFIX} Card C (child)",
-            "board_id": S.board_id, "column_id": S.col_backlog_id,
-            "lane_id": S.lane_id,
-        })
+        card_c = await _h(CARD_T, "kaiten_create_card")(
+            client,
+            {
+                "title": f"{PREFIX} Card C (child)",
+                "board_id": S.board_id,
+                "column_id": S.col_backlog_id,
+                "lane_id": S.lane_id,
+            },
+        )
         S.card_c_id = card_c["id"]
 
     # ---------------------------------------------------------------
@@ -322,9 +382,12 @@ class TestE2EExpanded:
     async def test_10_audit_logs(self, client):
         """kaiten_list_audit_logs"""
         try:
-            logs = await _h(AUDIT_T, "kaiten_list_audit_logs")(client, {
-                "limit": 5,
-            })
+            logs = await _h(AUDIT_T, "kaiten_list_audit_logs")(
+                client,
+                {
+                    "limit": 5,
+                },
+            )
             assert isinstance(logs, list)
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -334,30 +397,44 @@ class TestE2EExpanded:
 
     async def test_11_card_activity(self, client):
         """kaiten_get_card_activity"""
-        activity = await _h(AUDIT_T, "kaiten_get_card_activity")(client, {
-            "card_id": S.card_a_id, "limit": 5,
-        })
+        activity = await _h(AUDIT_T, "kaiten_get_card_activity")(
+            client,
+            {
+                "card_id": S.card_a_id,
+                "limit": 5,
+            },
+        )
         assert isinstance(activity, list)
 
     async def test_12_space_activity(self, client):
         """kaiten_get_space_activity"""
-        activity = await _h(AUDIT_T, "kaiten_get_space_activity")(client, {
-            "space_id": S.space_id, "limit": 5,
-        })
+        activity = await _h(AUDIT_T, "kaiten_get_space_activity")(
+            client,
+            {
+                "space_id": S.space_id,
+                "limit": 5,
+            },
+        )
         assert isinstance(activity, list)
 
     async def test_13_company_activity(self, client):
         """kaiten_get_company_activity"""
-        activity = await _h(AUDIT_T, "kaiten_get_company_activity")(client, {
-            "limit": 5,
-        })
+        activity = await _h(AUDIT_T, "kaiten_get_company_activity")(
+            client,
+            {
+                "limit": 5,
+            },
+        )
         assert isinstance(activity, list)
 
     async def test_14_card_location_history(self, client):
         """kaiten_get_card_location_history"""
-        history = await _h(AUDIT_T, "kaiten_get_card_location_history")(client, {
-            "card_id": S.card_a_id,
-        })
+        history = await _h(AUDIT_T, "kaiten_get_card_location_history")(
+            client,
+            {
+                "card_id": S.card_a_id,
+            },
+        )
         assert isinstance(history, list)
 
     async def test_15_saved_filters_crud(self, client):
@@ -370,32 +447,47 @@ class TestE2EExpanded:
         exercise list_saved_filters.
         """
         # List always works (even if empty)
-        filters = await _h(AUDIT_T, "kaiten_list_saved_filters")(client, {
-            "limit": 50,
-        })
+        filters = await _h(AUDIT_T, "kaiten_list_saved_filters")(
+            client,
+            {
+                "limit": 50,
+            },
+        )
         assert isinstance(filters, list)
 
         try:
-            sf = await _h(AUDIT_T, "kaiten_create_saved_filter")(client, {
-                "name": f"{PREFIX} Test Filter",
-                "filter": {"board_id": S.board_id},
-            })
+            sf = await _h(AUDIT_T, "kaiten_create_saved_filter")(
+                client,
+                {
+                    "name": f"{PREFIX} Test Filter",
+                    "filter": {"board_id": S.board_id},
+                },
+            )
             S.saved_filter_id = sf["id"]
 
-            got = await _h(AUDIT_T, "kaiten_get_saved_filter")(client, {
-                "filter_id": S.saved_filter_id,
-            })
+            got = await _h(AUDIT_T, "kaiten_get_saved_filter")(
+                client,
+                {
+                    "filter_id": S.saved_filter_id,
+                },
+            )
             assert got is not None
 
-            updated = await _h(AUDIT_T, "kaiten_update_saved_filter")(client, {
-                "filter_id": S.saved_filter_id,
-                "name": f"{PREFIX} Test Filter (updated)",
-            })
+            updated = await _h(AUDIT_T, "kaiten_update_saved_filter")(
+                client,
+                {
+                    "filter_id": S.saved_filter_id,
+                    "name": f"{PREFIX} Test Filter (updated)",
+                },
+            )
             assert updated is not None
 
-            await _h(AUDIT_T, "kaiten_delete_saved_filter")(client, {
-                "filter_id": S.saved_filter_id,
-            })
+            await _h(AUDIT_T, "kaiten_delete_saved_filter")(
+                client,
+                {
+                    "filter_id": S.saved_filter_id,
+                },
+            )
             S.saved_filter_id = 0  # cleaned up inline
         except KaitenApiError as exc:
             if exc.status_code in (400, 403, 405):
@@ -413,25 +505,34 @@ class TestE2EExpanded:
 
     async def test_20_get_card_blocker(self, client):
         """kaiten_create_card_blocker, kaiten_get_card_blocker, kaiten_delete_card_blocker"""
-        blk = await _h(BLK_T, "kaiten_create_card_blocker")(client, {
-            "card_id": S.card_b_id,
-            "reason": f"{PREFIX} Test blocker for get",
-        })
+        blk = await _h(BLK_T, "kaiten_create_card_blocker")(
+            client,
+            {
+                "card_id": S.card_b_id,
+                "reason": f"{PREFIX} Test blocker for get",
+            },
+        )
         S.blocker_id = blk["id"]
 
-        got = await _h(BLK_T, "kaiten_get_card_blocker")(client, {
-            "card_id": S.card_b_id,
-            "blocker_id": S.blocker_id,
-        })
+        got = await _h(BLK_T, "kaiten_get_card_blocker")(
+            client,
+            {
+                "card_id": S.card_b_id,
+                "blocker_id": S.blocker_id,
+            },
+        )
         assert got is not None
         assert got["id"] == S.blocker_id
         assert PREFIX in got["reason"]
 
         # Clean up
-        await _h(BLK_T, "kaiten_delete_card_blocker")(client, {
-            "card_id": S.card_b_id,
-            "blocker_id": S.blocker_id,
-        })
+        await _h(BLK_T, "kaiten_delete_card_blocker")(
+            client,
+            {
+                "card_id": S.card_b_id,
+                "blocker_id": S.blocker_id,
+            },
+        )
         S.blocker_id = 0
 
     # ---------------------------------------------------------------
@@ -442,32 +543,44 @@ class TestE2EExpanded:
         """kaiten_add_card_parent, kaiten_remove_card_parent"""
         # Add card_b as parent of card_c via add_parent
         try:
-            await _h(REL_T, "kaiten_add_card_parent")(client, {
-                "card_id": S.card_c_id,
-                "parent_card_id": S.card_b_id,
-            })
+            await _h(REL_T, "kaiten_add_card_parent")(
+                client,
+                {
+                    "card_id": S.card_c_id,
+                    "parent_card_id": S.card_b_id,
+                },
+            )
         except KaitenApiError as e:
             if e.status_code == 500:
                 pytest.skip("add_card_parent returns 500 -- sandbox limitation")
             raise
 
         # Verify
-        parents = await _h(REL_T, "kaiten_list_card_parents")(client, {
-            "card_id": S.card_c_id,
-        })
+        parents = await _h(REL_T, "kaiten_list_card_parents")(
+            client,
+            {
+                "card_id": S.card_c_id,
+            },
+        )
         parent_ids = [p["id"] for p in parents]
         assert S.card_b_id in parent_ids
 
         # Remove parent
-        await _h(REL_T, "kaiten_remove_card_parent")(client, {
-            "card_id": S.card_c_id,
-            "parent_id": S.card_b_id,
-        })
+        await _h(REL_T, "kaiten_remove_card_parent")(
+            client,
+            {
+                "card_id": S.card_c_id,
+                "parent_id": S.card_b_id,
+            },
+        )
 
         # Verify removal
-        parents_after = await _h(REL_T, "kaiten_list_card_parents")(client, {
-            "card_id": S.card_c_id,
-        })
+        parents_after = await _h(REL_T, "kaiten_list_card_parents")(
+            client,
+            {
+                "card_id": S.card_c_id,
+            },
+        )
         parent_ids_after = [p["id"] for p in parents_after]
         assert S.card_b_id not in parent_ids_after
 
@@ -477,15 +590,21 @@ class TestE2EExpanded:
 
     async def test_40_delete_tag(self, client):
         """kaiten_create_tag, kaiten_delete_tag"""
-        tag = await _h(TAG_T, "kaiten_create_tag")(client, {
-            "name": f"{PREFIX}-deleteme",
-        })
+        tag = await _h(TAG_T, "kaiten_create_tag")(
+            client,
+            {
+                "name": f"{PREFIX}-deleteme",
+            },
+        )
         S.tag_id = tag["id"]
 
         try:
-            await _h(TAG_T, "kaiten_delete_tag")(client, {
-                "tag_id": S.tag_id,
-            })
+            await _h(TAG_T, "kaiten_delete_tag")(
+                client,
+                {
+                    "tag_id": S.tag_id,
+                },
+            )
             S.tag_id = 0  # cleaned up inline
         except KaitenApiError as exc:
             if exc.status_code == 405:
@@ -518,27 +637,39 @@ class TestE2EExpanded:
             timers = await _h(UTIL_T, "kaiten_list_user_timers")(client, {})
             assert isinstance(timers, list)
 
-            timer = await _h(UTIL_T, "kaiten_create_user_timer")(client, {
-                "card_id": S.card_a_id,
-            })
+            timer = await _h(UTIL_T, "kaiten_create_user_timer")(
+                client,
+                {
+                    "card_id": S.card_a_id,
+                },
+            )
             S.timer_id = timer["id"]
 
-            got = await _h(UTIL_T, "kaiten_get_user_timer")(client, {
-                "timer_id": S.timer_id,
-            })
+            got = await _h(UTIL_T, "kaiten_get_user_timer")(
+                client,
+                {
+                    "timer_id": S.timer_id,
+                },
+            )
             assert got["id"] == S.timer_id
 
             # Pause the timer
-            updated = await _h(UTIL_T, "kaiten_update_user_timer")(client, {
-                "timer_id": S.timer_id,
-                "paused": True,
-            })
+            updated = await _h(UTIL_T, "kaiten_update_user_timer")(
+                client,
+                {
+                    "timer_id": S.timer_id,
+                    "paused": True,
+                },
+            )
             # The API may return various shapes; just verify no error
             assert updated is not None
 
-            await _h(UTIL_T, "kaiten_delete_user_timer")(client, {
-                "timer_id": S.timer_id,
-            })
+            await _h(UTIL_T, "kaiten_delete_user_timer")(
+                client,
+                {
+                    "timer_id": S.timer_id,
+                },
+            )
             S.timer_id = 0
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -553,9 +684,12 @@ class TestE2EExpanded:
     async def test_70_removed_boards(self, client):
         """kaiten_list_removed_boards"""
         try:
-            boards = await _h(UTIL_T, "kaiten_list_removed_boards")(client, {
-                "limit": 5,
-            })
+            boards = await _h(UTIL_T, "kaiten_list_removed_boards")(
+                client,
+                {
+                    "limit": 5,
+                },
+            )
             assert isinstance(boards, list)
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -579,9 +713,12 @@ class TestE2EExpanded:
         """kaiten_get_calendar -- get a specific calendar."""
         cals = await _h(UTIL_T, "kaiten_list_calendars")(client, {"limit": 5})
         if cals:
-            cal = await _h(UTIL_T, "kaiten_get_calendar")(client, {
-                "calendar_id": cals[0]["id"],
-            })
+            cal = await _h(UTIL_T, "kaiten_get_calendar")(
+                client,
+                {
+                    "calendar_id": cals[0]["id"],
+                },
+            )
             assert cal["id"] == cals[0]["id"]
         else:
             logger.info("No calendars found; skipping get_calendar")
@@ -594,14 +731,20 @@ class TestE2EExpanded:
         try:
             # Update to test name
             test_name = original_name or "Test Company"
-            await _h(UTIL_T, "kaiten_update_company")(client, {
-                "name": test_name,
-            })
+            await _h(UTIL_T, "kaiten_update_company")(
+                client,
+                {
+                    "name": test_name,
+                },
+            )
             # Restore (idempotent if name was already the same)
             if original_name:
-                await _h(UTIL_T, "kaiten_update_company")(client, {
-                    "name": original_name,
-                })
+                await _h(UTIL_T, "kaiten_update_company")(
+                    client,
+                    {
+                        "name": original_name,
+                    },
+                )
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
                 logger.info("update_company returned %d; skipping", exc.status_code)
@@ -616,9 +759,12 @@ class TestE2EExpanded:
         """kaiten_get_role"""
         roles = await _h(RG_T, "kaiten_list_roles")(client, {"limit": 5})
         if roles:
-            role = await _h(RG_T, "kaiten_get_role")(client, {
-                "role_id": roles[0]["id"],
-            })
+            role = await _h(RG_T, "kaiten_get_role")(
+                client,
+                {
+                    "role_id": roles[0]["id"],
+                },
+            )
             assert role["id"] == roles[0]["id"]
         else:
             logger.info("No roles found; skipping get_role")
@@ -629,9 +775,12 @@ class TestE2EExpanded:
         so we only test update_space_user and handle errors gracefully."""
         # The space creator is already a space user with owner role.
         # Try listing space users and updating role for current user.
-        users = await _h(RG_T, "kaiten_list_space_users")(client, {
-            "space_id": S.space_id,
-        })
+        users = await _h(RG_T, "kaiten_list_space_users")(
+            client,
+            {
+                "space_id": S.space_id,
+            },
+        )
         assert isinstance(users, list)
         assert len(users) >= 1
 
@@ -640,11 +789,14 @@ class TestE2EExpanded:
         try:
             roles = await _h(RG_T, "kaiten_list_roles")(client, {"limit": 5})
             if roles:
-                await _h(RG_T, "kaiten_update_space_user")(client, {
-                    "space_id": S.space_id,
-                    "user_id": S.current_user_id,
-                    "role_id": roles[0]["id"],
-                })
+                await _h(RG_T, "kaiten_update_space_user")(
+                    client,
+                    {
+                        "space_id": S.space_id,
+                        "user_id": S.current_user_id,
+                        "role_id": roles[0]["id"],
+                    },
+                )
         except KaitenApiError as exc:
             if exc.status_code in (400, 403, 405, 422):
                 logger.info(
@@ -664,9 +816,12 @@ class TestE2EExpanded:
             services = await _h(SD_T, "kaiten_list_sd_services")(client, {"limit": 5})
             assert isinstance(services, list)
             if services:
-                svc = await _h(SD_T, "kaiten_get_sd_service")(client, {
-                    "service_id": services[0]["id"],
-                })
+                svc = await _h(SD_T, "kaiten_get_sd_service")(
+                    client,
+                    {
+                        "service_id": services[0]["id"],
+                    },
+                )
                 assert svc["id"] == services[0]["id"]
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -688,10 +843,13 @@ class TestE2EExpanded:
     async def test_92_sd_request_create_405(self, client):
         """kaiten_create_sd_request -- expected 405, verify graceful handling."""
         try:
-            await _h(SD_T, "kaiten_create_sd_request")(client, {
-                "title": f"{PREFIX} SD request test",
-                "service_id": 999999,
-            })
+            await _h(SD_T, "kaiten_create_sd_request")(
+                client,
+                {
+                    "title": f"{PREFIX} SD request test",
+                    "service_id": 999999,
+                },
+            )
             # If it succeeds (unlikely with fake service_id), that is also fine
         except KaitenApiError as exc:
             assert exc.status_code in (400, 403, 404, 405, 422), (
@@ -712,9 +870,13 @@ class TestE2EExpanded:
     async def test_94_sd_request_update_405(self, client):
         """kaiten_update_sd_request -- expected 405, verify graceful handling."""
         try:
-            await _h(SD_T, "kaiten_update_sd_request")(client, {
-                "request_id": 1, "title": "test",
-            })
+            await _h(SD_T, "kaiten_update_sd_request")(
+                client,
+                {
+                    "request_id": 1,
+                    "title": "test",
+                },
+            )
         except KaitenApiError as exc:
             assert exc.status_code in (403, 404, 405), (
                 f"Expected 403/404/405 from update_sd_request, got {exc.status_code}"
@@ -739,25 +901,37 @@ class TestE2EExpanded:
             orgs = await _h(SD_T, "kaiten_list_sd_organizations")(client, {"limit": 5})
             assert isinstance(orgs, list)
 
-            org = await _h(SD_T, "kaiten_create_sd_organization")(client, {
-                "name": f"{PREFIX} Test SD Org",
-            })
+            org = await _h(SD_T, "kaiten_create_sd_organization")(
+                client,
+                {
+                    "name": f"{PREFIX} Test SD Org",
+                },
+            )
             S.sd_org_id = org["id"]
 
-            got = await _h(SD_T, "kaiten_get_sd_organization")(client, {
-                "organization_id": S.sd_org_id,
-            })
+            got = await _h(SD_T, "kaiten_get_sd_organization")(
+                client,
+                {
+                    "organization_id": S.sd_org_id,
+                },
+            )
             assert got["name"] == f"{PREFIX} Test SD Org"
 
-            updated = await _h(SD_T, "kaiten_update_sd_organization")(client, {
-                "organization_id": S.sd_org_id,
-                "name": f"{PREFIX} Test SD Org (updated)",
-            })
+            updated = await _h(SD_T, "kaiten_update_sd_organization")(
+                client,
+                {
+                    "organization_id": S.sd_org_id,
+                    "name": f"{PREFIX} Test SD Org (updated)",
+                },
+            )
             assert "updated" in updated["name"]
 
-            await _h(SD_T, "kaiten_delete_sd_organization")(client, {
-                "organization_id": S.sd_org_id,
-            })
+            await _h(SD_T, "kaiten_delete_sd_organization")(
+                client,
+                {
+                    "organization_id": S.sd_org_id,
+                },
+            )
             S.sd_org_id = 0
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -771,9 +945,12 @@ class TestE2EExpanded:
             slas = await _h(SD_T, "kaiten_list_sd_sla")(client, {"limit": 5})
             assert isinstance(slas, list)
             if slas:
-                sla = await _h(SD_T, "kaiten_get_sd_sla")(client, {
-                    "sla_id": slas[0]["id"],
-                })
+                sla = await _h(SD_T, "kaiten_get_sd_sla")(
+                    client,
+                    {
+                        "sla_id": slas[0]["id"],
+                    },
+                )
                 assert sla["id"] == slas[0]["id"]
         except KaitenApiError as exc:
             if exc.status_code in (403, 405):
@@ -789,26 +966,34 @@ class TestE2EExpanded:
         """kaiten_get_automation -- expected 405, verify graceful handling."""
         # First create an automation so we have a valid ID
         try:
-            auto = await _h(AUTO_T, "kaiten_create_automation")(client, {
-                "space_id": S.space_id,
-                "name": f"{PREFIX} 405-test automation",
-                "type": "on_action",
-                "trigger": {"type": "card_created"},
-                "actions": [{
-                    "type": "add_assignee",
-                    "created": datetime.now(timezone.utc).isoformat(),
-                    "data": {"variant": "specific", "userId": S.current_user_id},
-                }],
-            })
+            auto = await _h(AUTO_T, "kaiten_create_automation")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "name": f"{PREFIX} 405-test automation",
+                    "type": "on_action",
+                    "trigger": {"type": "card_created"},
+                    "actions": [
+                        {
+                            "type": "add_assignee",
+                            "created": datetime.now(UTC).isoformat(),
+                            "data": {"variant": "specific", "userId": S.current_user_id},
+                        }
+                    ],
+                },
+            )
             S.automation_id = auto["id"]
         except KaitenApiError:
             pytest.skip("Cannot create automation; skipping get_automation 405 test")
 
         try:
-            await _h(AUTO_T, "kaiten_get_automation")(client, {
-                "space_id": S.space_id,
-                "automation_id": S.automation_id,
-            })
+            await _h(AUTO_T, "kaiten_get_automation")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "automation_id": S.automation_id,
+                },
+            )
             # If it succeeds, the API now supports GET single automation
         except KaitenApiError as exc:
             assert exc.status_code == 405, (
@@ -819,24 +1004,28 @@ class TestE2EExpanded:
     async def test_a1_get_webhook_405(self, client):
         """kaiten_get_webhook -- expected 405, verify graceful handling."""
         try:
-            wh = await _h(WH_T, "kaiten_create_webhook")(client, {
-                "space_id": S.space_id,
-                "url": f"https://httpbin.org/post?test={TS}-405",
-            })
+            wh = await _h(WH_T, "kaiten_create_webhook")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "url": f"https://httpbin.org/post?test={TS}-405",
+                },
+            )
             S.webhook_id = wh["id"]
         except KaitenApiError:
             pytest.skip("Cannot create webhook; skipping get_webhook 405 test")
 
         try:
-            await _h(WH_T, "kaiten_get_webhook")(client, {
-                "space_id": S.space_id,
-                "webhook_id": S.webhook_id,
-            })
+            await _h(WH_T, "kaiten_get_webhook")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "webhook_id": S.webhook_id,
+                },
+            )
             # If it succeeds, the API now supports GET single webhook
         except KaitenApiError as exc:
-            assert exc.status_code == 405, (
-                f"Expected 405 from get_webhook, got {exc.status_code}"
-            )
+            assert exc.status_code == 405, f"Expected 405 from get_webhook, got {exc.status_code}"
             logger.info("get_webhook returned 405 as expected")
 
     async def test_a2_delete_webhook_405(self, client):
@@ -844,10 +1033,13 @@ class TestE2EExpanded:
         if not S.webhook_id:
             pytest.skip("No webhook to delete")
         try:
-            await _h(WH_T, "kaiten_delete_webhook")(client, {
-                "space_id": S.space_id,
-                "webhook_id": S.webhook_id,
-            })
+            await _h(WH_T, "kaiten_delete_webhook")(
+                client,
+                {
+                    "space_id": S.space_id,
+                    "webhook_id": S.webhook_id,
+                },
+            )
             S.webhook_id = 0  # cleaned up if DELETE works
         except KaitenApiError as exc:
             assert exc.status_code == 405, (
@@ -859,9 +1051,12 @@ class TestE2EExpanded:
     async def test_a3_list_card_subscribers_405(self, client):
         """kaiten_list_card_subscribers -- expected 405."""
         try:
-            subs = await _h(SUB_T, "kaiten_list_card_subscribers")(client, {
-                "card_id": S.card_a_id,
-            })
+            subs = await _h(SUB_T, "kaiten_list_card_subscribers")(
+                client,
+                {
+                    "card_id": S.card_a_id,
+                },
+            )
             # If it succeeds, good
             assert isinstance(subs, list)
         except KaitenApiError as exc:
@@ -873,9 +1068,12 @@ class TestE2EExpanded:
     async def test_a4_list_column_subscribers_405(self, client):
         """kaiten_list_column_subscribers -- expected 405."""
         try:
-            subs = await _h(SUB_T, "kaiten_list_column_subscribers")(client, {
-                "column_id": S.col_backlog_id,
-            })
+            subs = await _h(SUB_T, "kaiten_list_column_subscribers")(
+                client,
+                {
+                    "column_id": S.col_backlog_id,
+                },
+            )
             assert isinstance(subs, list)
         except KaitenApiError as exc:
             assert exc.status_code == 405, (
@@ -886,16 +1084,20 @@ class TestE2EExpanded:
     async def test_a5_delete_sprint_405(self, client):
         """kaiten_delete_sprint -- expected 405."""
         # Create a sprint to try deleting it
-        start = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        start = datetime.now(UTC).strftime("%Y-%m-%d")
         from datetime import timedelta
-        finish = (datetime.now(timezone.utc) + timedelta(days=14)).strftime("%Y-%m-%d")
+
+        finish = (datetime.now(UTC) + timedelta(days=14)).strftime("%Y-%m-%d")
         try:
-            sp = await _h(PROJ_T, "kaiten_create_sprint")(client, {
-                "title": f"{PREFIX} Sprint-405-test",
-                "board_id": S.board_id,
-                "start_date": start,
-                "finish_date": finish,
-            })
+            sp = await _h(PROJ_T, "kaiten_create_sprint")(
+                client,
+                {
+                    "title": f"{PREFIX} Sprint-405-test",
+                    "board_id": S.board_id,
+                    "start_date": start,
+                    "finish_date": finish,
+                },
+            )
             sprint_id = sp.get("id")
             if not sprint_id:
                 # Sprint creation is async; try listing
@@ -913,9 +1115,12 @@ class TestE2EExpanded:
             pytest.skip("Could not get sprint ID; skipping delete_sprint 405 test")
 
         try:
-            await _h(PROJ_T, "kaiten_delete_sprint")(client, {
-                "sprint_id": sprint_id,
-            })
+            await _h(PROJ_T, "kaiten_delete_sprint")(
+                client,
+                {
+                    "sprint_id": sprint_id,
+                },
+            )
             # If it succeeds, the API now supports DELETE sprint
         except KaitenApiError as exc:
             assert exc.status_code in (405, 403), (

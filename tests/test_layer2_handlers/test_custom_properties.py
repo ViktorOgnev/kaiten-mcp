@@ -1,7 +1,7 @@
 """Integration tests for custom_properties handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.custom_properties import TOOLS
@@ -54,9 +54,7 @@ class TestGetCustomProperty:
         route = mock_api.get("/company/custom-properties/5").mock(
             return_value=Response(200, json={"id": 5, "name": "Priority"})
         )
-        result = await TOOLS["kaiten_get_custom_property"]["handler"](
-            client, {"property_id": 5}
-        )
+        result = await TOOLS["kaiten_get_custom_property"]["handler"](client, {"property_id": 5})
         assert route.called
         assert result == {"id": 5, "name": "Priority"}
 
@@ -161,12 +159,8 @@ class TestUpdateCustomProperty:
 
 class TestDeleteCustomProperty:
     async def test_delete_custom_property_required_only(self, client, mock_api):
-        route = mock_api.delete("/company/custom-properties/5").mock(
-            return_value=Response(204)
-        )
-        await TOOLS["kaiten_delete_custom_property"]["handler"](
-            client, {"property_id": 5}
-        )
+        route = mock_api.delete("/company/custom-properties/5").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_custom_property"]["handler"](client, {"property_id": 5})
         assert route.called
 
 
@@ -175,9 +169,7 @@ class TestListSelectValues:
         route = mock_api.get("/company/custom-properties/3/select-values").mock(
             return_value=Response(200, json=[])
         )
-        result = await TOOLS["kaiten_list_select_values"]["handler"](
-            client, {"property_id": 3}
-        )
+        result = await TOOLS["kaiten_list_select_values"]["handler"](client, {"property_id": 3})
         assert route.called
         assert result == []
 

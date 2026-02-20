@@ -1,4 +1,5 @@
 """Kaiten Entity Tree navigation tools."""
+
 import asyncio
 from typing import Any
 
@@ -19,35 +20,41 @@ async def _fetch_all_entities(client) -> list[dict]:
 
     entities: list[dict] = []
 
-    for space in (spaces_resp if isinstance(spaces_resp, list) else []):
+    for space in spaces_resp if isinstance(spaces_resp, list) else []:
         uid = space.get("uid")
         if uid is None:
             continue
-        entities.append({
-            "type": "space",
-            "uid": uid,
-            "id": space.get("id"),
-            "title": space.get("title", ""),
-            "parent_entity_uid": space.get("parent_entity_uid"),
-        })
+        entities.append(
+            {
+                "type": "space",
+                "uid": uid,
+                "id": space.get("id"),
+                "title": space.get("title", ""),
+                "parent_entity_uid": space.get("parent_entity_uid"),
+            }
+        )
 
-    for doc in (docs_resp if isinstance(docs_resp, list) else []):
-        entities.append({
-            "type": "document",
-            "uid": doc.get("uid", ""),
-            "id": None,
-            "title": doc.get("title", ""),
-            "parent_entity_uid": doc.get("parent_entity_uid"),
-        })
+    for doc in docs_resp if isinstance(docs_resp, list) else []:
+        entities.append(  # noqa: PERF401 — multi-loop building shared list
+            {
+                "type": "document",
+                "uid": doc.get("uid", ""),
+                "id": None,
+                "title": doc.get("title", ""),
+                "parent_entity_uid": doc.get("parent_entity_uid"),
+            }
+        )
 
-    for group in (groups_resp if isinstance(groups_resp, list) else []):
-        entities.append({
-            "type": "document_group",
-            "uid": group.get("uid", ""),
-            "id": None,
-            "title": group.get("title", ""),
-            "parent_entity_uid": group.get("parent_entity_uid"),
-        })
+    for group in groups_resp if isinstance(groups_resp, list) else []:
+        entities.append(  # noqa: PERF401 — multi-loop building shared list
+            {
+                "type": "document_group",
+                "uid": group.get("uid", ""),
+                "id": None,
+                "title": group.get("title", ""),
+                "parent_entity_uid": group.get("parent_entity_uid"),
+            }
+        )
 
     return entities
 
@@ -65,6 +72,7 @@ def _strip_id_none(entity: dict) -> dict:
 
 
 # --- list_children ---
+
 
 async def _list_children(client, args: dict) -> Any:
     parent_uid = args.get("parent_entity_uid")
@@ -95,6 +103,7 @@ _tool(
 
 
 # --- get_tree ---
+
 
 def _build_tree(entities: list[dict], root_uid: str | None, max_depth: int) -> list[dict]:
     """Build nested tree from flat entity list."""

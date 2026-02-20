@@ -1,4 +1,5 @@
 """Layer 2 handler integration tests for lanes tools."""
+
 import json
 
 from httpx import Response
@@ -11,9 +12,7 @@ class TestListLanes:
         route = mock_api.get("/boards/10/lanes").mock(
             return_value=Response(200, json=[{"id": 1, "title": "Default"}])
         )
-        result = await TOOLS["kaiten_list_lanes"]["handler"](
-            client, {"board_id": 10}
-        )
+        result = await TOOLS["kaiten_list_lanes"]["handler"](client, {"board_id": 10})
         assert route.called
         assert result == [{"id": 1, "title": "Default"}]
 
@@ -32,9 +31,7 @@ class TestCreateLane:
         assert result == {"id": 3, "title": "Bug Lane"}
 
     async def test_all_args(self, client, mock_api):
-        route = mock_api.post("/boards/10/lanes").mock(
-            return_value=Response(200, json={"id": 3})
-        )
+        route = mock_api.post("/boards/10/lanes").mock(return_value=Response(200, json={"id": 3}))
         result = await TOOLS["kaiten_create_lane"]["handler"](
             client,
             {
@@ -104,9 +101,7 @@ class TestUpdateLane:
 
 class TestDeleteLane:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/boards/10/lanes/3").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/boards/10/lanes/3").mock(return_value=Response(204))
         result = await TOOLS["kaiten_delete_lane"]["handler"](
             client, {"board_id": 10, "lane_id": 3}
         )

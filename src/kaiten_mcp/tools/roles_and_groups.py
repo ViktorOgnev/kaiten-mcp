@@ -1,7 +1,8 @@
 """Kaiten Roles, Groups & Space Users MCP tools."""
+
 from typing import Any
 
-from kaiten_mcp.tools.compact import compact_response, DEFAULT_LIMIT
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response
 
 TOOLS: dict[str, dict] = {}
 
@@ -13,6 +14,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 # ---------------------------------------------------------------------------
 # Space Users
 # ---------------------------------------------------------------------------
+
 
 async def _list_space_users(client, args: dict) -> Any:
     compact = args.get("compact", False)
@@ -27,7 +29,11 @@ _tool(
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
+            },
         },
         "required": ["space_id"],
     },
@@ -62,9 +68,7 @@ async def _update_space_user(client, args: dict) -> Any:
     body: dict[str, Any] = {}
     if args.get("role_id") is not None:
         body["role_id"] = args["role_id"]
-    return await client.patch(
-        f"/spaces/{args['space_id']}/users/{args['user_id']}", json=body
-    )
+    return await client.patch(f"/spaces/{args['space_id']}/users/{args['user_id']}", json=body)
 
 
 _tool(
@@ -84,9 +88,7 @@ _tool(
 
 
 async def _remove_space_user(client, args: dict) -> Any:
-    return await client.delete(
-        f"/spaces/{args['space_id']}/users/{args['user_id']}"
-    )
+    return await client.delete(f"/spaces/{args['space_id']}/users/{args['user_id']}")
 
 
 _tool(
@@ -107,6 +109,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # Company Groups
 # ---------------------------------------------------------------------------
+
 
 async def _list_company_groups(client, args: dict) -> Any:
     params: dict[str, Any] = {}
@@ -223,7 +226,11 @@ _tool(
         "type": "object",
         "properties": {
             "group_uid": {"type": "string", "description": "Group UID"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
+            },
         },
         "required": ["group_uid"],
     },
@@ -233,9 +240,7 @@ _tool(
 
 async def _add_group_user(client, args: dict) -> Any:
     body: dict[str, Any] = {"user_id": args["user_id"]}
-    return await client.post(
-        f"/groups/{args['group_uid']}/users", json=body
-    )
+    return await client.post(f"/groups/{args['group_uid']}/users", json=body)
 
 
 _tool(
@@ -254,9 +259,7 @@ _tool(
 
 
 async def _remove_group_user(client, args: dict) -> Any:
-    return await client.delete(
-        f"/groups/{args['group_uid']}/users/{args['user_id']}"
-    )
+    return await client.delete(f"/groups/{args['group_uid']}/users/{args['user_id']}")
 
 
 _tool(
@@ -277,6 +280,7 @@ _tool(
 # ---------------------------------------------------------------------------
 # Roles
 # ---------------------------------------------------------------------------
+
 
 async def _list_roles(client, args: dict) -> Any:
     params: dict[str, Any] = {}

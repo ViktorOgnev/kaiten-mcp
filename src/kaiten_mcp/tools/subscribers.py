@@ -1,4 +1,5 @@
 """Kaiten Card Subscribers MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response
@@ -14,6 +15,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 # Card Subscribers
 # ---------------------------------------------------------------------------
 
+
 async def _list_card_subscribers(client, args: dict) -> Any:
     compact = args.get("compact", False)
     result = await client.get(f"/cards/{args['card_id']}/subscribers")
@@ -27,7 +29,11 @@ _tool(
         "type": "object",
         "properties": {
             "card_id": {"type": "integer", "description": "Card ID"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
+            },
         },
         "required": ["card_id"],
     },
@@ -57,9 +63,7 @@ _tool(
 
 
 async def _remove_card_subscriber(client, args: dict) -> Any:
-    return await client.delete(
-        f"/cards/{args['card_id']}/subscribers/{args['user_id']}"
-    )
+    return await client.delete(f"/cards/{args['card_id']}/subscribers/{args['user_id']}")
 
 
 _tool(
@@ -81,6 +85,7 @@ _tool(
 # Column Subscribers
 # ---------------------------------------------------------------------------
 
+
 async def _list_column_subscribers(client, args: dict) -> Any:
     compact = args.get("compact", False)
     result = await client.get(f"/columns/{args['column_id']}/subscribers")
@@ -94,7 +99,11 @@ _tool(
         "type": "object",
         "properties": {
             "column_id": {"type": "integer", "description": "Column ID"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects).", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects).",
+                "default": False,
+            },
         },
         "required": ["column_id"],
     },
@@ -108,9 +117,7 @@ async def _add_column_subscriber(client, args: dict) -> Any:
         body["type"] = args["type"]
     else:
         body["type"] = 1  # default: all notifications
-    return await client.post(
-        f"/columns/{args['column_id']}/subscribers", json=body
-    )
+    return await client.post(f"/columns/{args['column_id']}/subscribers", json=body)
 
 
 _tool(
@@ -121,7 +128,10 @@ _tool(
         "properties": {
             "column_id": {"type": "integer", "description": "Column ID"},
             "user_id": {"type": "integer", "description": "User ID to subscribe"},
-            "type": {"type": "integer", "description": "Subscription type (1=all, 2=mentions only). Default: 1"},
+            "type": {
+                "type": "integer",
+                "description": "Subscription type (1=all, 2=mentions only). Default: 1",
+            },
         },
         "required": ["column_id", "user_id"],
     },
@@ -130,9 +140,7 @@ _tool(
 
 
 async def _remove_column_subscriber(client, args: dict) -> Any:
-    return await client.delete(
-        f"/columns/{args['column_id']}/subscribers/{args['user_id']}"
-    )
+    return await client.delete(f"/columns/{args['column_id']}/subscribers/{args['user_id']}")
 
 
 _tool(

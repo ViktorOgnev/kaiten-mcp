@@ -1,4 +1,4 @@
-"""Tests for KaitenClient – Layer 4 (HTTP transport)."""
+"""Tests for KaitenClient - Layer 4 (HTTP transport)."""
 
 import asyncio
 
@@ -7,11 +7,9 @@ import pytest
 import respx
 
 from kaiten_mcp.client import (
+    RATE_LIMIT_DELAY,
     KaitenApiError,
     KaitenClient,
-    MAX_RETRIES,
-    RATE_LIMIT_DELAY,
-    RETRY_DELAY,
 )
 
 DOMAIN = "test-company"
@@ -23,7 +21,8 @@ BASE = f"https://{DOMAIN}.kaiten.ru/api/latest"
 # Fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+
+@pytest.fixture
 def client():
     """Return a KaitenClient with rate-limit delay neutralised."""
     c = KaitenClient(domain=DOMAIN, token=TOKEN)
@@ -34,6 +33,7 @@ def client():
 # ---------------------------------------------------------------------------
 # Constructor
 # ---------------------------------------------------------------------------
+
 
 class TestConstructor:
     def test_requires_domain(self, monkeypatch):
@@ -56,6 +56,7 @@ class TestConstructor:
 # ---------------------------------------------------------------------------
 # HTTP method delegation
 # ---------------------------------------------------------------------------
+
 
 class TestMethodDelegation:
     @respx.mock
@@ -92,6 +93,7 @@ class TestMethodDelegation:
 # Authorization header
 # ---------------------------------------------------------------------------
 
+
 class TestHeaders:
     @respx.mock
     async def test_bearer_token_sent(self, client):
@@ -104,6 +106,7 @@ class TestHeaders:
 # ---------------------------------------------------------------------------
 # Params filtering
 # ---------------------------------------------------------------------------
+
 
 class TestParamsFiltering:
     @respx.mock
@@ -132,6 +135,7 @@ class TestParamsFiltering:
 # Response handling
 # ---------------------------------------------------------------------------
 
+
 class TestResponseHandling:
     @respx.mock
     async def test_204_returns_none(self, client):
@@ -153,12 +157,11 @@ class TestResponseHandling:
 # Error handling
 # ---------------------------------------------------------------------------
 
+
 class TestErrorHandling:
     @respx.mock
     async def test_400_raises_with_message_field(self, client):
-        respx.post(f"{BASE}/cards").respond(
-            400, json={"message": "Bad request"}
-        )
+        respx.post(f"{BASE}/cards").respond(400, json={"message": "Bad request"})
         with pytest.raises(KaitenApiError) as exc_info:
             await client.post("/cards", json={})
         assert exc_info.value.status_code == 400
@@ -166,9 +169,7 @@ class TestErrorHandling:
 
     @respx.mock
     async def test_404_raises_with_error_field(self, client):
-        respx.get(f"{BASE}/cards/999").respond(
-            404, json={"error": "Not found"}
-        )
+        respx.get(f"{BASE}/cards/999").respond(404, json={"error": "Not found"})
         with pytest.raises(KaitenApiError) as exc_info:
             await client.get("/cards/999")
         assert exc_info.value.status_code == 404
@@ -202,6 +203,7 @@ class TestErrorHandling:
 # ---------------------------------------------------------------------------
 # 429 retry with exponential backoff
 # ---------------------------------------------------------------------------
+
 
 class TestRetry429:
     @respx.mock
@@ -249,12 +251,11 @@ class TestRetry429:
 # Connection errors (httpx.HTTPError)
 # ---------------------------------------------------------------------------
 
+
 class TestConnectionErrors:
     @respx.mock
     async def test_connection_error_on_last_attempt(self, client):
-        respx.get(f"{BASE}/me").mock(
-            side_effect=httpx.ConnectError("refused")
-        )
+        respx.get(f"{BASE}/me").mock(side_effect=httpx.ConnectError("refused"))
         with pytest.raises(KaitenApiError) as exc_info:
             await client.get("/me")
         assert exc_info.value.status_code == 0
@@ -276,6 +277,7 @@ class TestConnectionErrors:
 # Rate limiting
 # ---------------------------------------------------------------------------
 
+
 class TestRateLimit:
     @respx.mock
     async def test_rate_limit_enforced_between_requests(self, client):
@@ -294,9 +296,7 @@ class TestRateLimit:
     async def test_rate_lock_serializes_concurrent_requests(self, client):
         respx.get(f"{BASE}/me").respond(json={})
         # Run two concurrent requests; the lock should serialize them
-        results = await asyncio.gather(
-            client.get("/me"), client.get("/me")
-        )
+        results = await asyncio.gather(client.get("/me"), client.get("/me"))
         assert all(r == {} for r in results)
         # Both should complete; the lock prevents race conditions
         assert client._last_request_time > 0
@@ -320,6 +320,7 @@ class TestRateLimit:
 # ---------------------------------------------------------------------------
 # Client lifecycle
 # ---------------------------------------------------------------------------
+
 
 class TestLifecycle:
     @respx.mock

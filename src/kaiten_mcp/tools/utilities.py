@@ -1,4 +1,5 @@
 """Kaiten Utilities MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
@@ -11,6 +12,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- API Keys ---
+
 
 async def _list_api_keys(client, args: dict) -> Any:
     return await client.get("/api-keys")
@@ -61,6 +63,7 @@ _tool(
 
 
 # --- User Timers ---
+
 
 async def _list_user_timers(client, args: dict) -> Any:
     return await client.get("/user-timers")
@@ -152,6 +155,7 @@ _tool(
 
 # --- Removed Items (Recycle Bin) ---
 
+
 async def _list_removed_cards(client, args: dict) -> Any:
     params = {}
     if args.get("offset") is not None:
@@ -198,6 +202,7 @@ _tool(
 
 # --- Calendars ---
 
+
 async def _list_calendars(client, args: dict) -> Any:
     params = {}
     if args.get("offset") is not None:
@@ -239,6 +244,7 @@ _tool(
 
 
 # --- Company Info ---
+
 
 async def _get_company(client, args: dict) -> Any:
     return await client.get("/companies/current")

@@ -1,7 +1,7 @@
 """Layer 2 handler integration tests for tools/external_links.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.external_links import TOOLS
@@ -12,9 +12,7 @@ class TestListExternalLinks:
         route = mock_api.get("/cards/1/external-links").mock(
             return_value=Response(200, json=[{"id": 7, "url": "https://example.com"}])
         )
-        result = await TOOLS["kaiten_list_external_links"]["handler"](
-            client, {"card_id": 1}
-        )
+        result = await TOOLS["kaiten_list_external_links"]["handler"](client, {"card_id": 1})
         assert route.called
         assert result == [{"id": 7, "url": "https://example.com"}]
 

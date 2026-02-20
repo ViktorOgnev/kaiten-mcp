@@ -1,4 +1,5 @@
 """Kaiten Documents MCP tools."""
+
 import re
 import time
 from typing import Any
@@ -14,10 +15,10 @@ _MARK_ALIASES = {
 }
 
 _INLINE_PATTERNS = [
-    (re.compile(r'\*\*(.+?)\*\*'), "strong"),
-    (re.compile(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)'), "em"),
-    (re.compile(r'~~(.+?)~~'), "strike"),
-    (re.compile(r'`(.+?)`'), "code"),
+    (re.compile(r"\*\*(.+?)\*\*"), "strong"),
+    (re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)"), "em"),
+    (re.compile(r"~~(.+?)~~"), "strike"),
+    (re.compile(r"`(.+?)`"), "code"),
 ]
 
 
@@ -30,11 +31,8 @@ def _extract_text_from_node(node: dict) -> str:
     if not isinstance(node, dict):
         return ""
     if node.get("type") == "text":
-        return node.get("text", "")
-    texts = []
-    for child in node.get("content", []):
-        texts.append(_extract_text_from_node(child))
-    return "".join(texts)
+        return str(node.get("text", ""))
+    return "".join(_extract_text_from_node(child) for child in node.get("content", []))
 
 
 def _parse_inline(text: str) -> list[dict]:
@@ -55,12 +53,14 @@ def _parse_inline(text: str) -> list[dict]:
             nodes.append({"type": "text", "text": text[pos:]})
             break
         if best_match.start() > pos:
-            nodes.append({"type": "text", "text": text[pos:best_match.start()]})
-        nodes.append({
-            "type": "text",
-            "text": best_match.group(1),
-            "marks": [{"type": best_mark}],
-        })
+            nodes.append({"type": "text", "text": text[pos : best_match.start()]})
+        nodes.append(
+            {
+                "type": "text",
+                "text": best_match.group(1),
+                "marks": [{"type": best_mark}],
+            }
+        )
         pos = best_match.end()
     return nodes
 
@@ -88,19 +88,21 @@ def _markdown_to_prosemirror(text: str) -> dict:
             continue
 
         # Heading
-        m = re.match(r'^(#{1,6})\s+(.*)', stripped)
+        m = re.match(r"^(#{1,6})\s+(.*)", stripped)
         if m:
             flush_para()
             level = len(m.group(1))
-            content.append({
-                "type": "heading",
-                "attrs": {"level": level},
-                "content": _parse_inline(m.group(2)),
-            })
+            content.append(
+                {
+                    "type": "heading",
+                    "attrs": {"level": level},
+                    "content": _parse_inline(m.group(2)),
+                }
+            )
             continue
 
         # Horizontal rule
-        if re.match(r'^---+$', stripped):
+        if re.match(r"^---+$", stripped):
             flush_para()
             content.append({"type": "horizontal_rule"})
             continue
@@ -108,10 +110,12 @@ def _markdown_to_prosemirror(text: str) -> dict:
         # Blockquote
         if stripped.startswith("> "):
             flush_para()
-            content.append({
-                "type": "blockquote",
-                "content": [{"type": "paragraph", "content": _parse_inline(stripped[2:])}],
-            })
+            content.append(
+                {
+                    "type": "blockquote",
+                    "content": [{"type": "paragraph", "content": _parse_inline(stripped[2:])}],
+                }
+            )
             continue
 
         para_lines.append(stripped)
@@ -145,10 +149,9 @@ def _sanitize_prosemirror(node: dict) -> dict | list:
             prefix = "• " if node_type == "bullet_list" else f"{i}. "
             text = _extract_text_from_node(item)
             if text:  # Only add non-empty paragraphs
-                paragraphs.append({
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": f"{prefix}{text}"}]
-                })
+                paragraphs.append(
+                    {"type": "paragraph", "content": [{"type": "text", "text": f"{prefix}{text}"}]}
+                )
         return paragraphs if paragraphs else [{"type": "paragraph", "content": []}]
 
     # Sanitize invalid mark names (bold→strong, italic→em, strikethrough→strike)
@@ -175,6 +178,7 @@ def _sanitize_prosemirror(node: dict) -> dict | list:
 
 
 # --- Documents ---
+
 
 async def _list_documents(client, args: dict) -> Any:
     params = {}
@@ -237,7 +241,10 @@ _tool(
                 "Do NOT use 'bold' or 'italic' — they cause API errors.",
             },
             "parent_entity_uid": {"type": "string", "description": "Parent document group UID"},
-            "sort_order": {"type": "integer", "description": "Sort order (auto-generated if not provided)"},
+            "sort_order": {
+                "type": "integer",
+                "description": "Sort order (auto-generated if not provided)",
+            },
             "key": {"type": "string", "description": "Unique key identifier"},
         },
         "required": ["title"],
@@ -327,6 +334,7 @@ _tool(
 
 # --- Document Groups ---
 
+
 async def _list_document_groups(client, args: dict) -> Any:
     params = {}
     for key in ("query", "offset"):
@@ -370,7 +378,10 @@ _tool(
         "properties": {
             "title": {"type": "string", "description": "Group title"},
             "parent_entity_uid": {"type": "string", "description": "Parent group UID for nesting"},
-            "sort_order": {"type": "integer", "description": "Sort order (auto-generated if not provided)"},
+            "sort_order": {
+                "type": "integer",
+                "description": "Sort order (auto-generated if not provided)",
+            },
         },
         "required": ["title"],
     },

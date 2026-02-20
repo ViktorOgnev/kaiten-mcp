@@ -1,4 +1,5 @@
 """Kaiten Spaces MCP tools."""
+
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response
@@ -26,7 +27,11 @@ _tool(
         "type": "object",
         "properties": {
             "archived": {"type": "boolean", "description": "Include archived spaces"},
-            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (avatars, nested user objects)", "default": False},
+            "compact": {
+                "type": "boolean",
+                "description": "Return compact response without heavy fields (avatars, nested user objects)",
+                "default": False,
+            },
         },
     },
     _list_spaces,
@@ -76,7 +81,10 @@ _tool(
                 "description": "Access type (default: for_everyone)",
             },
             "external_id": {"type": "string", "description": "External ID"},
-            "parent_entity_uid": {"type": "string", "description": "Parent entity UID for nesting spaces"},
+            "parent_entity_uid": {
+                "type": "string",
+                "description": "Parent entity UID for nesting spaces",
+            },
             "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["title"],
@@ -111,7 +119,10 @@ _tool(
                 "description": "Access type",
             },
             "external_id": {"type": "string", "description": "External ID"},
-            "parent_entity_uid": {"type": "string", "description": "Parent entity UID for nesting spaces"},
+            "parent_entity_uid": {
+                "type": "string",
+                "description": "Parent entity UID for nesting spaces",
+            },
             "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["space_id"],

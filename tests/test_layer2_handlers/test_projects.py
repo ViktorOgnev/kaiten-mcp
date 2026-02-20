@@ -1,11 +1,10 @@
 """Integration tests for projects handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.projects import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # Projects
@@ -20,9 +19,7 @@ class TestListProjects:
         assert result == []
 
     async def test_list_projects_returns_list(self, client, mock_api):
-        route = mock_api.get("/projects").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
+        route = mock_api.get("/projects").mock(return_value=Response(200, json=[{"id": 1}]))
         result = await TOOLS["kaiten_list_projects"]["handler"](client, {})
         assert route.called
         assert result == [{"id": 1}]
@@ -33,18 +30,14 @@ class TestCreateProject:
         route = mock_api.post("/projects").mock(
             return_value=Response(200, json={"id": 1, "name": "Alpha"})
         )
-        result = await TOOLS["kaiten_create_project"]["handler"](
-            client, {"title": "Alpha"}
-        )
+        result = await TOOLS["kaiten_create_project"]["handler"](client, {"title": "Alpha"})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"name": "Alpha"}
         assert result["name"] == "Alpha"
 
     async def test_create_project_all_args(self, client, mock_api):
-        route = mock_api.post("/projects").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.post("/projects").mock(return_value=Response(200, json={"id": 1}))
         await TOOLS["kaiten_create_project"]["handler"](
             client,
             {
@@ -130,9 +123,7 @@ class TestUpdateProject:
 
 class TestDeleteProject:
     async def test_delete_project_required_only(self, client, mock_api):
-        route = mock_api.delete("/projects/proj-uuid-1").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/projects/proj-uuid-1").mock(return_value=Response(204))
         await TOOLS["kaiten_delete_project"]["handler"](client, {"project_id": "proj-uuid-1"})
         assert route.called
 
@@ -164,9 +155,7 @@ class TestAddProjectCard:
 
 class TestRemoveProjectCard:
     async def test_remove_project_card_required_only(self, client, mock_api):
-        route = mock_api.delete("/projects/proj-uuid-1/cards/99").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/projects/proj-uuid-1/cards/99").mock(return_value=Response(204))
         await TOOLS["kaiten_remove_project_card"]["handler"](
             client, {"project_id": "proj-uuid-1", "card_id": 99}
         )
@@ -186,9 +175,7 @@ class TestListSprints:
         assert result == []
 
     async def test_list_sprints_all_args(self, client, mock_api):
-        route = mock_api.get("/sprints").mock(
-            return_value=Response(200, json=[{"id": 1}])
-        )
+        route = mock_api.get("/sprints").mock(return_value=Response(200, json=[{"id": 1}]))
         await TOOLS["kaiten_list_sprints"]["handler"](
             client, {"active": True, "limit": 5, "offset": 0}
         )
@@ -211,9 +198,7 @@ class TestCreateSprint:
         assert body == {"title": "Sprint 1", "board_id": 10}
 
     async def test_create_sprint_all_args(self, client, mock_api):
-        route = mock_api.post("/sprints").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.post("/sprints").mock(return_value=Response(200, json={"id": 1}))
         await TOOLS["kaiten_create_sprint"]["handler"](
             client,
             {
@@ -236,12 +221,8 @@ class TestCreateSprint:
 
 class TestGetSprint:
     async def test_get_sprint_required_only(self, client, mock_api):
-        route = mock_api.get("/sprints/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
-        result = await TOOLS["kaiten_get_sprint"]["handler"](
-            client, {"sprint_id": 1}
-        )
+        route = mock_api.get("/sprints/1").mock(return_value=Response(200, json={"id": 1}))
+        result = await TOOLS["kaiten_get_sprint"]["handler"](client, {"sprint_id": 1})
         assert route.called
         assert result == {"id": 1}
 
@@ -260,20 +241,14 @@ class TestGetSprint:
 
 class TestUpdateSprint:
     async def test_update_sprint_required_only(self, client, mock_api):
-        route = mock_api.patch("/sprints/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
-        result = await TOOLS["kaiten_update_sprint"]["handler"](
-            client, {"sprint_id": 1}
-        )
+        route = mock_api.patch("/sprints/1").mock(return_value=Response(200, json={"id": 1}))
+        result = await TOOLS["kaiten_update_sprint"]["handler"](client, {"sprint_id": 1})
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {}
 
     async def test_update_sprint_all_args(self, client, mock_api):
-        route = mock_api.patch("/sprints/1").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.patch("/sprints/1").mock(return_value=Response(200, json={"id": 1}))
         await TOOLS["kaiten_update_sprint"]["handler"](
             client,
             {
@@ -299,8 +274,6 @@ class TestUpdateSprint:
 
 class TestDeleteSprint:
     async def test_delete_sprint_required_only(self, client, mock_api):
-        route = mock_api.delete("/sprints/1").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/sprints/1").mock(return_value=Response(204))
         await TOOLS["kaiten_delete_sprint"]["handler"](client, {"sprint_id": 1})
         assert route.called

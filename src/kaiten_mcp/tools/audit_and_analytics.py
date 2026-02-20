@@ -1,7 +1,8 @@
 """Kaiten Audit, Activity & Analytics MCP tools."""
+
 from typing import Any
 
-from kaiten_mcp.tools.compact import compact_response, select_fields, DEFAULT_LIMIT
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response, select_fields
 
 TOOLS: dict[str, dict] = {}
 
@@ -11,6 +12,7 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 # --- Audit Logs ---
+
 
 async def _list_audit_logs(client, args: dict) -> Any:
     params: dict[str, Any] = {}
@@ -76,6 +78,7 @@ _tool(
 
 
 # --- Activity ---
+
 
 async def _get_card_activity(client, args: dict) -> Any:
     params = {}
@@ -150,8 +153,14 @@ _tool(
             },
             "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
-            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
-            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
+            "compact": {
+                "type": "boolean",
+                "description": "Strip heavy fields (avatars, user details). Default true for bulk.",
+            },
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated field names to keep. Strips everything else.",
+            },
         },
         "required": ["space_id"],
     },
@@ -212,8 +221,14 @@ _tool(
             },
             "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
-            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
-            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
+            "compact": {
+                "type": "boolean",
+                "description": "Strip heavy fields (avatars, user details). Default true for bulk.",
+            },
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated field names to keep. Strips everything else.",
+            },
         },
     },
     _get_company_activity,
@@ -221,6 +236,7 @@ _tool(
 
 
 # --- Card History ---
+
 
 async def _get_card_location_history(client, args: dict) -> Any:
     return await client.get(f"/cards/{args['card_id']}/location-history")
@@ -242,6 +258,7 @@ _tool(
 
 # --- Auto-paginating Activity ---
 
+
 async def _get_all_space_activity(client, args: dict) -> Any:
     """Fetch all space activity with automatic pagination."""
     page_size = min(args.get("page_size", 100), 100)
@@ -258,7 +275,8 @@ async def _get_all_space_activity(client, args: dict) -> Any:
         params["limit"] = page_size
         params["offset"] = page * page_size
         result = await client.get(
-            f"/spaces/{args['space_id']}/activity", params=params,
+            f"/spaces/{args['space_id']}/activity",
+            params=params,
         )
         if not result:
             break
@@ -312,8 +330,14 @@ _tool(
                 "type": "integer",
                 "description": "Safety limit on pages to fetch (default 50, max 5000 events)",
             },
-            "compact": {"type": "boolean", "description": "Strip heavy fields (avatars, user details). Default true for bulk."},
-            "fields": {"type": "string", "description": "Comma-separated field names to keep. Strips everything else."},
+            "compact": {
+                "type": "boolean",
+                "description": "Strip heavy fields (avatars, user details). Default true for bulk.",
+            },
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated field names to keep. Strips everything else.",
+            },
         },
         "required": ["space_id"],
     },
@@ -322,6 +346,7 @@ _tool(
 
 
 # --- Saved Filters ---
+
 
 async def _list_saved_filters(client, args: dict) -> Any:
     params = {}
@@ -360,7 +385,10 @@ _tool(
         "properties": {
             "name": {"type": "string", "description": "Filter name"},
             "filter": {"type": "object", "description": "Filter criteria object"},
-            "shared": {"type": "boolean", "description": "Whether the filter is shared with the team"},
+            "shared": {
+                "type": "boolean",
+                "description": "Whether the filter is shared with the team",
+            },
         },
         "required": ["name", "filter"],
     },
@@ -405,7 +433,10 @@ _tool(
             "filter_id": {"type": "integer", "description": "Filter ID"},
             "name": {"type": "string", "description": "Filter name"},
             "filter": {"type": "object", "description": "Filter criteria object"},
-            "shared": {"type": "boolean", "description": "Whether the filter is shared with the team"},
+            "shared": {
+                "type": "boolean",
+                "description": "Whether the filter is shared with the team",
+            },
         },
         "required": ["filter_id"],
     },

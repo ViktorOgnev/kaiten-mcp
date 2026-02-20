@@ -1,11 +1,10 @@
 """Layer 2 handler integration tests for tools/subscribers.py."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.subscribers import TOOLS
-
 
 # ---------------------------------------------------------------------------
 # Card Subscribers
@@ -17,9 +16,7 @@ class TestListCardSubscribers:
         route = mock_api.get("/cards/1/subscribers").mock(
             return_value=Response(200, json=[{"id": 42}])
         )
-        result = await TOOLS["kaiten_list_card_subscribers"]["handler"](
-            client, {"card_id": 1}
-        )
+        result = await TOOLS["kaiten_list_card_subscribers"]["handler"](client, {"card_id": 1})
         assert route.called
         assert result == [{"id": 42}]
 

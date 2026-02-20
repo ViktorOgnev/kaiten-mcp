@@ -1,7 +1,7 @@
 """Integration tests for card_types handler layer."""
+
 import json
 
-import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.card_types import TOOLS
@@ -51,9 +51,7 @@ class TestCreateCardType:
         assert result["name"] == "Feature"
 
     async def test_create_card_type_all_args(self, client, mock_api):
-        route = mock_api.post("/card-types").mock(
-            return_value=Response(200, json={"id": 1})
-        )
+        route = mock_api.post("/card-types").mock(return_value=Response(200, json={"id": 1}))
         await TOOLS["kaiten_create_card_type"]["handler"](
             client,
             {
@@ -74,9 +72,7 @@ class TestCreateCardType:
 
 class TestUpdateCardType:
     async def test_update_card_type_required_only(self, client, mock_api):
-        route = mock_api.patch("/card-types/10").mock(
-            return_value=Response(200, json={"id": 10})
-        )
+        route = mock_api.patch("/card-types/10").mock(return_value=Response(200, json={"id": 10}))
         result = await TOOLS["kaiten_update_card_type"]["handler"](client, {"type_id": 10})
         assert route.called
         body = json.loads(route.calls[0].request.content)
@@ -84,9 +80,7 @@ class TestUpdateCardType:
         assert result == {"id": 10}
 
     async def test_update_card_type_all_args(self, client, mock_api):
-        route = mock_api.patch("/card-types/10").mock(
-            return_value=Response(200, json={"id": 10})
-        )
+        route = mock_api.patch("/card-types/10").mock(return_value=Response(200, json={"id": 10}))
         await TOOLS["kaiten_update_card_type"]["handler"](
             client,
             {
@@ -108,8 +102,6 @@ class TestUpdateCardType:
 
 class TestDeleteCardType:
     async def test_delete_card_type_required_only(self, client, mock_api):
-        route = mock_api.delete("/card-types/10").mock(
-            return_value=Response(204)
-        )
+        route = mock_api.delete("/card-types/10").mock(return_value=Response(204))
         await TOOLS["kaiten_delete_card_type"]["handler"](client, {"type_id": 10})
         assert route.called

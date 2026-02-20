@@ -1,4 +1,31 @@
 services:
+  lint:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.lint
+    volumes:
+      - ../src:/app/src
+      - ../tests:/app/tests
+      - ../pyproject.toml:/app/pyproject.toml:ro
+    entrypoint: ["sh", "-c"]
+    command: >
+      "ruff check src/ tests/ &&
+       ruff format --check src/ tests/ &&
+       mypy src/"
+
+  lint-fix:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.lint
+    volumes:
+      - ../src:/app/src
+      - ../tests:/app/tests
+      - ../pyproject.toml:/app/pyproject.toml:ro
+    entrypoint: ["sh", "-c"]
+    command: >
+      "ruff check --fix src/ tests/ &&
+       ruff format src/ tests/"
+
   test-e2e:
     build:
       context: ..
