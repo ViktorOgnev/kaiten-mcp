@@ -125,6 +125,24 @@ Progress:
 5. For large orgs, limit depth: `kaiten_get_tree(depth=2)` → only 2 levels deep
 6. To see subtree of a specific entity: `kaiten_get_tree(root_uid="entity-uid")`
 
+## Workflow 7: Kanban Metrics Collection
+
+```
+Progress:
+- [ ] Load metrics tools
+- [ ] Fetch all cards (active + archived)
+- [ ] Compute metrics from card fields
+- [ ] (Optional) Fetch server-side charts
+```
+
+1. Load tools: `ToolSearch query: "+kaiten list all cards"` and `select:mcp__kaiten__kaiten_get_compute_job`
+2. Fetch active cards: `kaiten_list_all_cards(space_id=X, condition=1)`
+3. Fetch archived cards: `kaiten_list_all_cards(space_id=X, condition=2)`
+4. Compute metrics from card fields: Lead Time (`last_moved_to_done_at - created`), Cycle Time (`last_moved_to_done_at - first_moved_to_in_progress_at`), Throughput (count completed per period), WIP (count where `state=2`)
+5. (Optional) Request server-side charts: `kaiten_chart_cfd(space_id=X, date_from=..., date_to=...)`, then poll with `kaiten_get_compute_job(job_id=...)`
+
+For full metric formulas, column-level flow analysis, and performance details, see the [`kaiten-metrics` skill](../kaiten-metrics/SKILL.md).
+
 ## Tips for efficiency
 
 1. **Use compact mode** for all list operations: `compact=true` reduces response size by 80-95%

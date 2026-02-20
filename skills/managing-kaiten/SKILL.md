@@ -139,8 +139,13 @@ For creating 10+ cards or links, use background agents to avoid context bloat. P
 - Card `state` is derived from column type, not set directly
 - Default limit is 50 for all list operations
 
+## Kanban metrics
+
+For Kanban metrics collection (Lead Time, Cycle Time, Throughput, WIP, Flow Efficiency), see the [`kaiten-metrics`](../kaiten-metrics/SKILL.md) skill. It covers efficient bulk data fetching, server-side chart computation, and all metric formulas using card fields directly.
+
 ## Reference
 
 **Full tool list by category**: See [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md)
 **ProseMirror document format**: See [PROSEMIRROR.md](PROSEMIRROR.md)
 **Complex workflow examples**: See [WORKFLOWS.md](WORKFLOWS.md)
+**Kanban metrics collection**: See [`kaiten-metrics` skill](../kaiten-metrics/SKILL.md)
