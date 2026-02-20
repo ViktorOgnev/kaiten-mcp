@@ -137,7 +137,7 @@ _tool(
             "checklist_item_date_from": {"type": "string", "description": "Checklist item date range start (ISO 8601)"},
             "checklist_item_date_to": {"type": "string", "description": "Checklist item date range end (ISO 8601)"},
             "due_date": {"type": "string", "description": "Due date filter (ISO 8601)"},
-            "responsible_id": {"type": "string", "description": "Filter by responsible user ID"},
+            "responsible_id": {"type": "integer", "description": "Filter by responsible user ID"},
             "tz_offset": {"type": "integer", "description": "Timezone offset in minutes"},
             "lane_ids": {
                 "type": "array",

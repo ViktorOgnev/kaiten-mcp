@@ -34,9 +34,9 @@ These are confirmed to work without errors:
     {
       "type": "paragraph",
       "content": [
-        {"type": "text", "marks": [{"type": "bold"}], "text": "Bold text"},
+        {"type": "text", "marks": [{"type": "strong"}], "text": "Bold text"},
         {"type": "text", "text": " and "},
-        {"type": "text", "marks": [{"type": "italic"}], "text": "italic text"}
+        {"type": "text", "marks": [{"type": "em"}], "text": "italic text"}
       ]
     }
   ]

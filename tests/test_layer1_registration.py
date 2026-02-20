@@ -1,6 +1,6 @@
 """Layer 1 – Tool Registration & Discovery.
 
-Verify that ALL 178 MCP tools are properly registered and discoverable.
+Verify that ALL 246 MCP tools are properly registered and discoverable.
 """
 import asyncio
 import inspect
