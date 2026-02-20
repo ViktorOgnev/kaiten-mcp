@@ -16,7 +16,7 @@ from kaiten_mcp.tools import (
     checklists, blockers, card_relations, external_links,
     documents, webhooks, automations, projects,
     roles_and_groups, audit_and_analytics, subscribers,
-    service_desk, utilities,
+    service_desk, utilities, tree,
 )
 
 load_dotenv()
@@ -42,7 +42,7 @@ TOOL_MODULES = [
     checklists, blockers, card_relations, external_links,
     documents, webhooks, automations, projects,
     roles_and_groups, audit_and_analytics, subscribers,
-    service_desk, utilities,
+    service_desk, utilities, tree,
 ]
 
 

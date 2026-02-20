@@ -128,13 +128,19 @@ Supported: `list_cards`, `list_users`, `list_spaces`, `list_boards`, `list_comme
 | update_checklist_item | Update item (toggle complete) |
 | delete_checklist_item | Delete item |
 
+## Entity Tree
+| Tool | Description |
+|---|---|
+| list_children | List direct children of an entity (omit `parent_entity_uid` for roots) |
+| get_tree | Build nested entity tree (`root_uid` to start from specific entity, `depth` to limit) |
+
 ## Documents & Groups
 | Tool | Description |
 |---|---|
 | list_documents | List documents (default limit=50) |
-| create_document | Create document (`title` required, `sort_order` auto-generated) |
+| create_document | Create document (`title` required, `text` for markdown, `data` for raw ProseMirror, `sort_order` auto-generated) |
 | get_document | Get document by UID |
-| update_document | Update document (`document_uid`, `data` as ProseMirror JSON). Lists auto-converted. |
+| update_document | Update document (`document_uid`, `text` for markdown or `data` for ProseMirror JSON). Lists auto-converted. |
 | delete_document | Delete document |
 | list_document_groups | List document groups (folders, default limit=50) |
 | create_document_group | Create group (`title` required, `sort_order` auto-generated) |

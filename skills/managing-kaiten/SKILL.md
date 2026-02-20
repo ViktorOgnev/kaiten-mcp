@@ -20,7 +20,9 @@ Always begin a session with `kaiten_get_current_user` to get the user's ID, name
 
 ## Core concepts
 
-**Hierarchy**: Company → Space → Board → Column/Lane → Card
+**Board hierarchy**: Company → Space → Board → Column/Lane → Card
+
+**Sidebar tree**: Spaces, documents, and document groups form a unified tree via `parent_entity_uid`. Any entity can nest under another (cross-nesting allowed). Use `kaiten_list_children` and `kaiten_get_tree` to navigate.
 
 **Card types**: Epic, Story, Task (or custom). Set via `type_id`.
 
@@ -70,25 +72,44 @@ For three-level decomposition (Epic → Story → Task):
 
 ### Creating documents
 
-Two-step process. See [PROSEMIRROR.md](PROSEMIRROR.md) for content format.
+Use the `text` parameter for one-step creation with markdown content, or `data` for raw ProseMirror JSON. See [PROSEMIRROR.md](PROSEMIRROR.md) for advanced format details.
 
+**One-step (recommended)**:
+```
+kaiten_create_document: title, text="## Heading\n\nContent with **bold**"
+```
+
+**Two-step (for complex content)**:
 1. Create document group (optional folder):
    ```
    kaiten_create_document_group: title
    ```
-   Note: `sort_order` is auto-generated if not provided.
 
 2. Create document:
    ```
    kaiten_create_document: title, parent_entity_uid
    ```
-   Note: `sort_order` is auto-generated if not provided.
 
 3. Update with content:
    ```
    kaiten_update_document: document_uid, data (ProseMirror JSON object)
    ```
-   Note: `bullet_list` and `ordered_list` nodes are automatically converted to safe paragraphs.
+
+Notes:
+- `sort_order` is auto-generated if not provided
+- `bullet_list` and `ordered_list` nodes are automatically converted to safe paragraphs
+- `text` param supports: `# headings`, `**bold**`, `*italic*`, `~~strike~~`, `` `code` ``, `> quotes`, `---` rules
+
+### Navigating the entity tree
+
+Use tree tools to discover what's nested where in the sidebar:
+
+```
+kaiten_list_children                         → root-level entities
+kaiten_list_children: parent_entity_uid=X    → children of entity X
+kaiten_get_tree                              → full nested tree
+kaiten_get_tree: root_uid=X, depth=2         → subtree with depth limit
+```
 
 ## Handling large responses
 

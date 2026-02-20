@@ -1,6 +1,8 @@
 # ProseMirror Document Format for Kaiten
 
-Kaiten documents use ProseMirror JSON format in the `data` field of `kaiten_update_document`.
+**Preferred**: Use the `text` parameter on `kaiten_create_document` / `kaiten_update_document` to pass markdown content. It auto-converts to ProseMirror. Supports: `# headings`, `**bold**`, `*italic*`, `~~strike~~`, `` `code` ``, `> quotes`, `---` rules.
+
+**Advanced**: For full control, use the `data` field with raw ProseMirror JSON (described below).
 
 ## Working node types
 
@@ -73,9 +75,15 @@ Ordered lists are converted with numbered prefixes (1., 2., 3., etc.).
 
 Large documents (30+ nodes) in a single update may cause HTTP 500. Keep documents under ~20 content nodes per update. If more content is needed, make the text denser rather than adding more nodes.
 
-## Two-step creation
+## Creating documents with content
 
-1. `kaiten_create_document` — creates empty document, returns `uid`
+**One-step (recommended):**
+```
+kaiten_create_document: title="My Doc", text="## Hello\n\nContent here"
+```
+
+**Two-step (for raw ProseMirror JSON):**
+1. `kaiten_create_document` — creates document, returns `uid`
    - `sort_order` is auto-generated if not provided
 2. `kaiten_update_document` — sets content via `data` parameter (ProseMirror JSON object, NOT a string)
 

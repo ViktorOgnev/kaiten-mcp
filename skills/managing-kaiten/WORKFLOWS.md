@@ -100,6 +100,7 @@ Note: `sort_order` is auto-generated if not provided. See [PROSEMIRROR.md](PROSE
 | Cards | `+kaiten cards` |
 | Boards & columns | `+kaiten board column` |
 | Documents | `+kaiten document` |
+| Entity tree | `+kaiten tree children` |
 | Card relationships | `+kaiten child parent` |
 | Users & members | `+kaiten users members` |
 | Card types | `select:mcp__kaiten__kaiten_list_card_types` |
@@ -107,6 +108,22 @@ Note: `sort_order` is auto-generated if not provided. See [PROSEMIRROR.md](PROSE
 | Tags | `+kaiten tags` |
 | Time logs | `+kaiten time log` |
 | Projects & sprints | `+kaiten project sprint` |
+
+## Workflow 6: Navigating the entity tree
+
+```
+Progress:
+- [ ] Load tree tools
+- [ ] List root entities or get full tree
+- [ ] Explore specific subtree if needed
+```
+
+1. Load tools: `ToolSearch query: "+kaiten tree children"` or `select:mcp__kaiten__kaiten_get_tree`
+2. See what's at the top level: `kaiten_list_children()` → root entities
+3. Explore a specific folder: `kaiten_list_children(parent_entity_uid="group-uid")`
+4. Or get the full nested tree: `kaiten_get_tree()` → recursive tree with children arrays
+5. For large orgs, limit depth: `kaiten_get_tree(depth=2)` → only 2 levels deep
+6. To see subtree of a specific entity: `kaiten_get_tree(root_uid="entity-uid")`
 
 ## Tips for efficiency
 
