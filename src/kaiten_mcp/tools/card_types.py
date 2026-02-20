@@ -111,18 +111,45 @@ _tool(
 
 
 async def _delete_card_type(client, args: dict) -> Any:
-    return await client.delete(f"/card-types/{args['type_id']}")
+    body: dict[str, Any] = {}
+    if args.get("replace_type_id") is not None:
+        body["replace_type_id"] = args["replace_type_id"]
+    for key in (
+        "has_to_replace_in_automation",
+        "has_to_replace_in_restriction",
+        "has_to_replace_in_workflow",
+    ):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    return await client.delete(f"/card-types/{args['type_id']}", json=body or None)
 
 
 _tool(
     "kaiten_delete_card_type",
-    "Delete a Kaiten card type.",
+    "Delete a Kaiten card type. Requires replace_type_id — the substitute type to "
+    "reassign existing cards to. Without it the API returns 500.",
     {
         "type": "object",
         "properties": {
-            "type_id": {"type": "integer", "description": "Card type ID"},
+            "type_id": {"type": "integer", "description": "Card type ID to delete"},
+            "replace_type_id": {
+                "type": "integer",
+                "description": "Card type ID to reassign cards to (required by Kaiten API)",
+            },
+            "has_to_replace_in_automation": {
+                "type": "boolean",
+                "description": "Replace this type in automations (default: false)",
+            },
+            "has_to_replace_in_restriction": {
+                "type": "boolean",
+                "description": "Replace this type in column restrictions (default: false)",
+            },
+            "has_to_replace_in_workflow": {
+                "type": "boolean",
+                "description": "Replace this type in workflows (default: false)",
+            },
         },
-        "required": ["type_id"],
+        "required": ["type_id", "replace_type_id"],
     },
     _delete_card_type,
 )

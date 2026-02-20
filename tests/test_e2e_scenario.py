@@ -399,10 +399,27 @@ async def _cleanup_all(client) -> None:
                 )
             )
 
-    # -- Card types (company-level) --
-    for ct_id in [S.card_type_bug_id, S.card_type_feature_id, S.card_type_task_id]:
-        if ct_id:
-            await _safe_delete(_h(CTYPE_T, "kaiten_delete_card_type")(client, {"type_id": ct_id}))
+    # -- Card types (company-level, need replace_type_id) --
+    our_ct_ids = [
+        i for i in [S.card_type_bug_id, S.card_type_feature_id, S.card_type_task_id] if i
+    ]
+    if our_ct_ids:
+        all_types = await _safe_delete(
+            _h(CTYPE_T, "kaiten_list_card_types")(client, {"limit": 100})
+        )
+        default_type_id = None
+        if isinstance(all_types, list):
+            for ct in all_types:
+                if ct.get("id") not in our_ct_ids:
+                    default_type_id = ct["id"]
+                    break
+        if default_type_id:
+            for ct_id in our_ct_ids:
+                await _safe_delete(
+                    _h(CTYPE_T, "kaiten_delete_card_type")(
+                        client, {"type_id": ct_id, "replace_type_id": default_type_id}
+                    )
+                )
 
     logger.info("=== FIXTURE CLEANUP COMPLETE ===")
 

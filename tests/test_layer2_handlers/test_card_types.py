@@ -103,5 +103,40 @@ class TestUpdateCardType:
 class TestDeleteCardType:
     async def test_delete_card_type_required_only(self, client, mock_api):
         route = mock_api.delete("/card-types/10").mock(return_value=Response(204))
-        await TOOLS["kaiten_delete_card_type"]["handler"](client, {"type_id": 10})
+        await TOOLS["kaiten_delete_card_type"]["handler"](
+            client, {"type_id": 10, "replace_type_id": 1}
+        )
         assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"replace_type_id": 1}
+
+    async def test_delete_card_type_all_args(self, client, mock_api):
+        route = mock_api.delete("/card-types/10").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_card_type"]["handler"](
+            client,
+            {
+                "type_id": 10,
+                "replace_type_id": 2,
+                "has_to_replace_in_automation": True,
+                "has_to_replace_in_restriction": True,
+                "has_to_replace_in_workflow": False,
+            },
+        )
+        assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {
+            "replace_type_id": 2,
+            "has_to_replace_in_automation": True,
+            "has_to_replace_in_restriction": True,
+            "has_to_replace_in_workflow": False,
+        }
+
+    async def test_delete_card_type_no_body_when_no_optional(self, client, mock_api):
+        """When only replace_type_id is given, body contains only that field."""
+        route = mock_api.delete("/card-types/5").mock(return_value=Response(204))
+        await TOOLS["kaiten_delete_card_type"]["handler"](
+            client, {"type_id": 5, "replace_type_id": 3}
+        )
+        body = json.loads(route.calls[0].request.content)
+        assert "has_to_replace_in_automation" not in body
+        assert body == {"replace_type_id": 3}
