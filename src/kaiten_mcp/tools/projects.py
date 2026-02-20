@@ -31,6 +31,12 @@ async def _create_project(client, args: dict) -> Any:
     body = {"name": args["title"]}
     if args.get("description") is not None:
         body["description"] = args["description"]
+    for key in ("work_calendar_id",):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("settings", "properties"):
+        if key in args:
+            body[key] = args[key]
     return await client.post("/projects", json=body)
 
 
@@ -40,8 +46,20 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "title": {"type": "string", "description": "Project title"},
+            "title": {"type": "string", "description": "Project title (stored as 'name')"},
             "description": {"type": "string", "description": "Project description"},
+            "work_calendar_id": {
+                "type": "string",
+                "description": "Work calendar UUID to attach to the project",
+            },
+            "settings": {
+                "type": "object",
+                "description": "Project settings (e.g. timeline configuration: {timeline: {startHour, endHour, workDays}})",
+            },
+            "properties": {
+                "type": "object",
+                "description": "Custom property values as {id_<N>: value} pairs",
+            },
         },
         "required": ["title"],
     },
@@ -50,7 +68,10 @@ _tool(
 
 
 async def _get_project(client, args: dict) -> Any:
-    return await client.get(f"/projects/{args['project_id']}")
+    params = {}
+    if args.get("with_cards_data") is not None:
+        params["with_cards_data"] = args["with_cards_data"]
+    return await client.get(f"/projects/{args['project_id']}", params=params or None)
 
 
 _tool(
@@ -60,6 +81,10 @@ _tool(
         "type": "object",
         "properties": {
             "project_id": {"type": "string", "description": "Project ID (UUID)"},
+            "with_cards_data": {
+                "type": "boolean",
+                "description": "Include full card data with path info and custom properties",
+            },
         },
         "required": ["project_id"],
     },
@@ -73,8 +98,12 @@ async def _update_project(client, args: dict) -> Any:
         body["name"] = args["title"]
     if args.get("description") is not None:
         body["description"] = args["description"]
-    if args.get("condition") is not None:
-        body["condition"] = args["condition"]
+    for key in ("condition", "work_calendar_id"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("settings", "properties"):
+        if key in args:
+            body[key] = args[key]
     return await client.patch(f"/projects/{args['project_id']}", json=body)
 
 
@@ -85,12 +114,24 @@ _tool(
         "type": "object",
         "properties": {
             "project_id": {"type": "string", "description": "Project ID (UUID)"},
-            "title": {"type": "string", "description": "Project title"},
+            "title": {"type": "string", "description": "Project title (stored as 'name')"},
             "description": {"type": "string", "description": "Project description"},
             "condition": {
                 "type": "string",
                 "enum": ["active", "inactive"],
                 "description": "Project condition (active or inactive)",
+            },
+            "work_calendar_id": {
+                "type": "string",
+                "description": "Work calendar UUID to attach to the project",
+            },
+            "settings": {
+                "type": "object",
+                "description": "Project settings (e.g. timeline configuration: {timeline: {startHour, endHour, workDays}})",
+            },
+            "properties": {
+                "type": "object",
+                "description": "Custom property values as {id_<N>: value} pairs; set a key to null to clear it",
             },
         },
         "required": ["project_id"],
@@ -233,16 +274,23 @@ _tool(
 
 
 async def _get_sprint(client, args: dict) -> Any:
-    return await client.get(f"/sprints/{args['sprint_id']}")
+    params = {}
+    if args.get("exclude_deleted_cards") is not None:
+        params["exclude_deleted_cards"] = args["exclude_deleted_cards"]
+    return await client.get(f"/sprints/{args['sprint_id']}", params=params or None)
 
 
 _tool(
     "kaiten_get_sprint",
-    "Get a Kaiten sprint by ID.",
+    "Get a Kaiten sprint by ID. Returns sprint summary with cards, path data, and custom properties.",
     {
         "type": "object",
         "properties": {
             "sprint_id": {"type": "integer", "description": "Sprint ID"},
+            "exclude_deleted_cards": {
+                "type": "boolean",
+                "description": "Exclude deleted cards from the sprint summary",
+            },
         },
         "required": ["sprint_id"],
     },
@@ -255,12 +303,16 @@ async def _update_sprint(client, args: dict) -> Any:
     for key in ("title", "goal", "start_date", "finish_date"):
         if args.get(key) is not None:
             body[key] = args[key]
+    if "active" in args:
+        body["active"] = args["active"]
+    if "archive_done_cards" in args:
+        body["archive_done_cards"] = args["archive_done_cards"]
     return await client.patch(f"/sprints/{args['sprint_id']}", json=body)
 
 
 _tool(
     "kaiten_update_sprint",
-    "Update a Kaiten sprint.",
+    "Update a Kaiten sprint. Set active=false to finish/complete the sprint.",
     {
         "type": "object",
         "properties": {
@@ -269,6 +321,14 @@ _tool(
             "goal": {"type": "string", "description": "Sprint goal"},
             "start_date": {"type": "string", "description": "Start date (ISO 8601)"},
             "finish_date": {"type": "string", "description": "Finish date (ISO 8601)"},
+            "active": {
+                "type": "boolean",
+                "description": "Set to false to finish/complete the sprint",
+            },
+            "archive_done_cards": {
+                "type": "boolean",
+                "description": "Archive completed cards when finishing a sprint (default true, only used when active=false)",
+            },
         },
         "required": ["sprint_id"],
     },

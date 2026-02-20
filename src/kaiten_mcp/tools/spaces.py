@@ -53,7 +53,10 @@ _tool(
 
 async def _create_space(client, args: dict) -> Any:
     body = {"title": args["title"]}
-    for key in ("description", "access"):
+    for key in ("description", "access", "external_id", "parent_entity_uid"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("sort_order",):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.post("/spaces", json=body)
@@ -72,6 +75,9 @@ _tool(
                 "enum": ["for_everyone", "by_invite"],
                 "description": "Access type (default: for_everyone)",
             },
+            "external_id": {"type": "string", "description": "External ID"},
+            "parent_entity_uid": {"type": "string", "description": "Parent entity UID for nesting spaces"},
+            "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["title"],
     },
@@ -81,7 +87,10 @@ _tool(
 
 async def _update_space(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "description"):
+    for key in ("title", "description", "access", "external_id", "parent_entity_uid"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("sort_order",):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/spaces/{args['space_id']}", json=body)
@@ -96,6 +105,14 @@ _tool(
             "space_id": {"type": "integer", "description": "Space ID"},
             "title": {"type": "string", "description": "New title"},
             "description": {"type": "string", "description": "New description"},
+            "access": {
+                "type": "string",
+                "enum": ["for_everyone", "by_invite"],
+                "description": "Access type",
+            },
+            "external_id": {"type": "string", "description": "External ID"},
+            "parent_entity_uid": {"type": "string", "description": "Parent entity UID for nesting spaces"},
+            "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["space_id"],
     },

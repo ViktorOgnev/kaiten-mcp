@@ -37,11 +37,26 @@ class TestCreateLane:
         )
         result = await TOOLS["kaiten_create_lane"]["handler"](
             client,
-            {"board_id": 10, "title": "Feature Lane", "sort_order": 1.5},
+            {
+                "board_id": 10,
+                "title": "Feature Lane",
+                "sort_order": 1.5,
+                "row_count": 2,
+                "wip_limit": 5,
+                "wip_limit_type": 1,
+                "default_card_type_id": 3,
+            },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Feature Lane", "sort_order": 1.5}
+        assert body == {
+            "title": "Feature Lane",
+            "sort_order": 1.5,
+            "row_count": 2,
+            "wip_limit": 5,
+            "wip_limit_type": 1,
+            "default_card_type_id": 3,
+        }
 
 
 class TestUpdateLane:
@@ -62,11 +77,29 @@ class TestUpdateLane:
         )
         result = await TOOLS["kaiten_update_lane"]["handler"](
             client,
-            {"board_id": 10, "lane_id": 3, "title": "Renamed Lane", "sort_order": 5.0},
+            {
+                "board_id": 10,
+                "lane_id": 3,
+                "title": "Renamed Lane",
+                "sort_order": 5.0,
+                "row_count": 3,
+                "wip_limit": 10,
+                "wip_limit_type": 2,
+                "default_card_type_id": 6,
+                "condition": 2,
+            },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Renamed Lane", "sort_order": 5.0}
+        assert body == {
+            "title": "Renamed Lane",
+            "sort_order": 5.0,
+            "row_count": 3,
+            "wip_limit": 10,
+            "wip_limit_type": 2,
+            "default_card_type_id": 6,
+            "condition": 2,
+        }
 
 
 class TestDeleteLane:

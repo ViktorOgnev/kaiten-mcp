@@ -63,6 +63,9 @@ class TestCreateSpace:
                 "title": "Full Space",
                 "description": "A description",
                 "access": "by_invite",
+                "external_id": "ext-space-1",
+                "parent_entity_uid": "uid-parent-1",
+                "sort_order": 2.5,
             },
         )
         assert route.called
@@ -71,6 +74,9 @@ class TestCreateSpace:
             "title": "Full Space",
             "description": "A description",
             "access": "by_invite",
+            "external_id": "ext-space-1",
+            "parent_entity_uid": "uid-parent-1",
+            "sort_order": 2.5,
         }
 
 
@@ -93,11 +99,26 @@ class TestUpdateSpace:
         )
         result = await TOOLS["kaiten_update_space"]["handler"](
             client,
-            {"space_id": 5, "title": "Renamed", "description": "Updated desc"},
+            {
+                "space_id": 5,
+                "title": "Renamed",
+                "description": "Updated desc",
+                "access": "for_everyone",
+                "external_id": "ext-space-5",
+                "parent_entity_uid": "uid-parent-5",
+                "sort_order": 1.0,
+            },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Renamed", "description": "Updated desc"}
+        assert body == {
+            "title": "Renamed",
+            "description": "Updated desc",
+            "access": "for_everyone",
+            "external_id": "ext-space-5",
+            "parent_entity_uid": "uid-parent-5",
+            "sort_order": 1.0,
+        }
 
 
 class TestDeleteSpace:

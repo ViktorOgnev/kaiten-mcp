@@ -101,6 +101,9 @@ async def _create_card(client, args: dict) -> Any:
         "size_text", "owner_id", "type_id", "external_id",
         "sort_order", "position", "properties", "tags",
         "sprint_id", "planned_start", "planned_end",
+        "responsible_id", "condition", "due_date_time_present",
+        "expires_later", "estimate_workload",
+        "child_card_ids", "parent_card_ids", "project_id",
     ]
     for key in opt_keys:
         if args.get(key) is not None:
@@ -132,6 +135,14 @@ _tool(
             "sprint_id": {"type": "integer", "description": "Sprint ID to assign card to"},
             "planned_start": {"type": ["string", "null"], "description": "Planned start date (ISO 8601)"},
             "planned_end": {"type": ["string", "null"], "description": "Planned end date (ISO 8601)"},
+            "responsible_id": {"type": "integer", "description": "Responsible user ID"},
+            "condition": {"type": "integer", "enum": [1, 2], "description": "1=active, 2=archived"},
+            "due_date_time_present": {"type": "boolean", "description": "True if due_date includes time component"},
+            "expires_later": {"type": "boolean", "description": "Expires later flag"},
+            "estimate_workload": {"type": "integer", "description": "Estimated workload in minutes (resource planning)"},
+            "child_card_ids": {"type": "array", "items": {"type": "integer"}, "description": "Child card IDs to link (max 1)"},
+            "parent_card_ids": {"type": "array", "items": {"type": "integer"}, "description": "Parent card IDs to link (max 1)"},
+            "project_id": {"type": "string", "description": "Project UUID to attach card to"},
         },
         "required": ["title", "board_id"],
     },
@@ -147,6 +158,8 @@ async def _update_card(client, args: dict) -> Any:
     for key in [
         "title", "board_id", "column_id", "lane_id", "sort_order",
         "owner_id", "type_id", "condition", "asap", "blocked", "properties",
+        "state", "due_date_time_present", "expires_later",
+        "estimate_workload", "child_card_ids", "parent_card_ids",
     ]:
         if args.get(key) is not None:
             body[key] = args[key]
@@ -154,6 +167,7 @@ async def _update_card(client, args: dict) -> Any:
     for key in [
         "description", "due_date", "size_text", "external_id",
         "sprint_id", "planned_start", "planned_end",
+        "block_reason", "locked",
     ]:
         if key in args:
             body[key] = args[key]
@@ -185,6 +199,14 @@ _tool(
             "sprint_id": {"type": ["integer", "null"], "description": "Sprint ID (null to remove)"},
             "planned_start": {"type": ["string", "null"], "description": "Planned start date (ISO 8601)"},
             "planned_end": {"type": ["string", "null"], "description": "Planned end date (ISO 8601)"},
+            "state": {"type": "integer", "enum": [1, 2, 3], "description": "Card state: 1=queued, 2=inProgress, 3=done"},
+            "block_reason": {"type": ["string", "null"], "description": "Block reason text (null to clear)"},
+            "locked": {"type": ["string", "null"], "description": "Lock identifier (null to unlock)"},
+            "due_date_time_present": {"type": "boolean", "description": "True if due_date includes time component"},
+            "expires_later": {"type": "boolean", "description": "Expires later flag"},
+            "estimate_workload": {"type": "integer", "description": "Estimated workload in minutes (resource planning)"},
+            "child_card_ids": {"type": "array", "items": {"type": "integer"}, "description": "Child card IDs to link"},
+            "parent_card_ids": {"type": "array", "items": {"type": "integer"}, "description": "Parent card IDs to link"},
         },
         "required": ["card_id"],
     },

@@ -51,8 +51,12 @@ _tool(
 
 async def _create_board(client, args: dict) -> Any:
     body = {"title": args["title"]}
-    if args.get("description") is not None:
-        body["description"] = args["description"]
+    for key in ("description", "external_id"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("top", "left", "sort_order", "default_card_type_id"):
+        if args.get(key) is not None:
+            body[key] = args[key]
     return await client.post(f"/spaces/{args['space_id']}/boards", json=body)
 
 
@@ -65,6 +69,11 @@ _tool(
             "space_id": {"type": "integer", "description": "Space ID"},
             "title": {"type": "string", "description": "Board title"},
             "description": {"type": "string", "description": "Board description"},
+            "external_id": {"type": "string", "description": "External ID"},
+            "top": {"type": "number", "description": "Top position (px)"},
+            "left": {"type": "number", "description": "Left position (px)"},
+            "sort_order": {"type": "number", "description": "Sort order"},
+            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards"},
         },
         "required": ["space_id", "title"],
     },
@@ -74,7 +83,10 @@ _tool(
 
 async def _update_board(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "description"):
+    for key in ("title", "description", "external_id"):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    for key in ("top", "left", "sort_order", "default_card_type_id"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(
@@ -92,6 +104,11 @@ _tool(
             "board_id": {"type": "integer", "description": "Board ID"},
             "title": {"type": "string", "description": "New title"},
             "description": {"type": "string", "description": "New description"},
+            "external_id": {"type": "string", "description": "External ID"},
+            "top": {"type": "number", "description": "Top position (px)"},
+            "left": {"type": "number", "description": "Left position (px)"},
+            "sort_order": {"type": "number", "description": "Sort order"},
+            "default_card_type_id": {"type": "integer", "description": "Default card type ID for new cards"},
         },
         "required": ["space_id", "board_id"],
     },

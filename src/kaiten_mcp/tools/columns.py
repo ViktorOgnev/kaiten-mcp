@@ -28,7 +28,7 @@ _tool(
 
 async def _create_column(client, args: dict) -> Any:
     body = {"title": args["title"], "type": args["type"]}
-    for key in ("wip_limit", "sort_order"):
+    for key in ("wip_limit", "wip_limit_type", "col_count", "sort_order"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.post(f"/boards/{args['board_id']}/columns", json=body)
@@ -47,7 +47,9 @@ _tool(
                 "enum": [1, 2, 3],
                 "description": "Column type: 1=queue, 2=in_progress, 3=done",
             },
-            "wip_limit": {"type": "integer", "description": "WIP limit (optional)"},
+            "wip_limit": {"type": "integer", "description": "WIP limit"},
+            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
+            "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["board_id", "title", "type"],
@@ -58,7 +60,7 @@ _tool(
 
 async def _update_column(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "type", "wip_limit", "sort_order"):
+    for key in ("title", "type", "wip_limit", "wip_limit_type", "col_count", "sort_order"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(
@@ -77,6 +79,8 @@ _tool(
             "title": {"type": "string", "description": "New title"},
             "type": {"type": "integer", "enum": [1, 2, 3], "description": "Column type"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
+            "wip_limit_type": {"type": "integer", "description": "WIP limit type (1=cards count, 2=size sum)"},
+            "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
         },
         "required": ["board_id", "column_id"],
@@ -130,7 +134,7 @@ _tool(
 
 async def _create_subcolumn(client, args: dict) -> Any:
     body = {"title": args["title"]}
-    for key in ("sort_order", "wip_limit"):
+    for key in ("sort_order", "wip_limit", "col_count"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.post(f"/columns/{args['column_id']}/subcolumns", json=body)
@@ -146,6 +150,7 @@ _tool(
             "title": {"type": "string", "description": "Subcolumn title"},
             "sort_order": {"type": "number", "description": "Sort order"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
+            "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
         },
         "required": ["column_id", "title"],
     },
@@ -155,7 +160,7 @@ _tool(
 
 async def _update_subcolumn(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "sort_order", "wip_limit"):
+    for key in ("title", "sort_order", "wip_limit", "col_count"):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(
@@ -174,6 +179,7 @@ _tool(
             "title": {"type": "string", "description": "New title"},
             "sort_order": {"type": "number", "description": "Sort order"},
             "wip_limit": {"type": "integer", "description": "WIP limit"},
+            "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
         },
         "required": ["column_id", "subcolumn_id"],
     },

@@ -49,11 +49,28 @@ class TestCreateBoard:
         )
         result = await TOOLS["kaiten_create_board"]["handler"](
             client,
-            {"space_id": 1, "title": "Full Board", "description": "Board desc"},
+            {
+                "space_id": 1,
+                "title": "Full Board",
+                "description": "Board desc",
+                "external_id": "ext-1",
+                "top": 100.0,
+                "left": 200.0,
+                "sort_order": 3.5,
+                "default_card_type_id": 7,
+            },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Full Board", "description": "Board desc"}
+        assert body == {
+            "title": "Full Board",
+            "description": "Board desc",
+            "external_id": "ext-1",
+            "top": 100.0,
+            "left": 200.0,
+            "sort_order": 3.5,
+            "default_card_type_id": 7,
+        }
 
 
 class TestUpdateBoard:
@@ -79,11 +96,24 @@ class TestUpdateBoard:
                 "board_id": 10,
                 "title": "Renamed Board",
                 "description": "New desc",
+                "external_id": "ext-2",
+                "top": 50.0,
+                "left": 75.0,
+                "sort_order": 2.0,
+                "default_card_type_id": 4,
             },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Renamed Board", "description": "New desc"}
+        assert body == {
+            "title": "Renamed Board",
+            "description": "New desc",
+            "external_id": "ext-2",
+            "top": 50.0,
+            "left": 75.0,
+            "sort_order": 2.0,
+            "default_card_type_id": 4,
+        }
 
 
 class TestDeleteBoard:

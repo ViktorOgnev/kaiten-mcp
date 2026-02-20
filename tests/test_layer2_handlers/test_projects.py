@@ -46,10 +46,23 @@ class TestCreateProject:
             return_value=Response(200, json={"id": 1})
         )
         await TOOLS["kaiten_create_project"]["handler"](
-            client, {"title": "Alpha", "description": "Main project"}
+            client,
+            {
+                "title": "Alpha",
+                "description": "Main project",
+                "work_calendar_id": "cal-uuid-1",
+                "settings": {"timeline": {"startHour": 9, "endHour": 18}},
+                "properties": {"id_1": "value1"},
+            },
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Alpha", "description": "Main project"}
+        assert body == {
+            "name": "Alpha",
+            "description": "Main project",
+            "work_calendar_id": "cal-uuid-1",
+            "settings": {"timeline": {"startHour": 9, "endHour": 18}},
+            "properties": {"id_1": "value1"},
+        }
 
 
 class TestGetProject:
@@ -62,6 +75,18 @@ class TestGetProject:
         )
         assert route.called
         assert result == {"id": 1}
+
+    async def test_get_project_with_cards_data(self, client, mock_api):
+        route = mock_api.get("/projects/proj-uuid-1").mock(
+            return_value=Response(200, json={"id": 1, "cards": []})
+        )
+        result = await TOOLS["kaiten_get_project"]["handler"](
+            client, {"project_id": "proj-uuid-1", "with_cards_data": True}
+        )
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "with_cards_data" in url
+        assert result == {"id": 1, "cards": []}
 
 
 class TestUpdateProject:
@@ -82,10 +107,25 @@ class TestUpdateProject:
         )
         await TOOLS["kaiten_update_project"]["handler"](
             client,
-            {"project_id": "proj-uuid-1", "title": "Beta", "description": "Updated desc", "condition": "inactive"},
+            {
+                "project_id": "proj-uuid-1",
+                "title": "Beta",
+                "description": "Updated desc",
+                "condition": "inactive",
+                "work_calendar_id": "cal-uuid-2",
+                "settings": {"timeline": {"startHour": 10}},
+                "properties": {"id_2": "value2"},
+            },
         )
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "Beta", "description": "Updated desc", "condition": "inactive"}
+        assert body == {
+            "name": "Beta",
+            "description": "Updated desc",
+            "condition": "inactive",
+            "work_calendar_id": "cal-uuid-2",
+            "settings": {"timeline": {"startHour": 10}},
+            "properties": {"id_2": "value2"},
+        }
 
 
 class TestDeleteProject:
@@ -205,6 +245,18 @@ class TestGetSprint:
         assert route.called
         assert result == {"id": 1}
 
+    async def test_get_sprint_exclude_deleted_cards(self, client, mock_api):
+        route = mock_api.get("/sprints/1").mock(
+            return_value=Response(200, json={"id": 1, "cards": []})
+        )
+        result = await TOOLS["kaiten_get_sprint"]["handler"](
+            client, {"sprint_id": 1, "exclude_deleted_cards": True}
+        )
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "exclude_deleted_cards" in url
+        assert result == {"id": 1, "cards": []}
+
 
 class TestUpdateSprint:
     async def test_update_sprint_required_only(self, client, mock_api):
@@ -230,6 +282,8 @@ class TestUpdateSprint:
                 "goal": "Updated goal",
                 "start_date": "2025-01-02",
                 "finish_date": "2025-01-15",
+                "active": False,
+                "archive_done_cards": True,
             },
         )
         body = json.loads(route.calls[0].request.content)
@@ -238,6 +292,8 @@ class TestUpdateSprint:
             "goal": "Updated goal",
             "start_date": "2025-01-02",
             "finish_date": "2025-01-15",
+            "active": False,
+            "archive_done_cards": True,
         }
 
 
