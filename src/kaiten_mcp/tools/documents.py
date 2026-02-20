@@ -191,7 +191,8 @@ async def _list_documents(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_documents",
-    "List Kaiten documents.",
+    "List Kaiten documents. Response includes: uid, title, public, archived, "
+    "updated_at, created_at, parent_entity_uid.",
     {
         "type": "object",
         "properties": {

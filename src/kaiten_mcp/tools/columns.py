@@ -15,7 +15,9 @@ async def _list_columns(client, args: dict) -> Any:
 
 _tool(
     "kaiten_list_columns",
-    "List columns on a Kaiten board. Column types: 1=queue, 2=in_progress, 3=done.",
+    "List columns on a Kaiten board. Column types: 1=queue, 2=in_progress, 3=done. "
+    "Response includes: wip_limit, wip_limit_type (1=cards count, 2=size sum), "
+    "last_moved_warning_after_days, archive_after_days, card_hide_after_days.",
     {
         "type": "object",
         "properties": {

@@ -503,7 +503,10 @@ _tool(
         "For basic Kanban metrics, the returned cards already contain timing fields: "
         "created, first_moved_to_in_progress_at, last_moved_to_done_at, "
         "time_spent_sum, time_blocked_sum — no need to call "
-        "kaiten_get_card_location_history for each card."
+        "kaiten_get_card_location_history for each card. "
+        "Audit-relevant response fields: last_moved_at, column_changed_at, "
+        "comment_last_added_at, completed_at, public, share_id, "
+        "owner_id, responsible_id, goals_total, goals_done, comments_total, version."
     ),
     {
         "type": "object",
@@ -564,7 +567,7 @@ _tool(
             },
             "fields": {
                 "type": "string",
-                "description": "Comma-separated field names to return per card. For metrics: 'id,title,type_id,created,first_moved_to_in_progress_at,last_moved_to_done_at,time_spent_sum,time_blocked_sum,state,condition,due_date,column_id,lane_id,board_id'",
+                "description": "Comma-separated field names to return per card. For metrics: 'id,title,type_id,created,first_moved_to_in_progress_at,last_moved_to_done_at,time_spent_sum,time_blocked_sum,state,condition,due_date,column_id,lane_id,board_id'. For audit: 'id,title,state,board_id,column_id,last_moved_at,column_changed_at,comment_last_added_at,updated_at,created,due_date,owner_id,responsible_id,public,share_id,goals_total,goals_done,comments_total'",
             },
         },
     },

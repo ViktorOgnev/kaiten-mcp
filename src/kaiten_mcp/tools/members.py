@@ -136,7 +136,10 @@ async def _list_users(client, args: dict) -> Any:
 
 _tool(
     name="kaiten_list_users",
-    description=("List company users. Supports search, pagination, and filtering inactive users."),
+    description=(
+        "List company users. Supports search, pagination, and filtering inactive users. "
+        "Response includes: last_request_date, activated, role, created."
+    ),
     schema={
         "type": "object",
         "properties": {
