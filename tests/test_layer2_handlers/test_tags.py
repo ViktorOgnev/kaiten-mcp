@@ -26,7 +26,7 @@ class TestListTags:
             return_value=Response(200, json=[])
         )
         result = await TOOLS["kaiten_list_tags"]["handler"](
-            client, {"query": "feat", "limit": 5, "offset": 10}
+            client, {"query": "feat", "limit": 5, "offset": 10, "space_id": 1, "ids": "1,2"}
         )
         assert route.called
         req = route.calls[0].request
@@ -48,21 +48,34 @@ class TestCreateTag:
         assert body == {"name": "bug"}
         assert result == {"id": 1, "name": "bug"}
 
-    async def test_all_args(self, client, mock_api):
-        route = mock_api.post("/tags").mock(
-            return_value=Response(200, json={"id": 2, "name": "urgent", "color": "#FF0000"})
+
+class TestUpdateTag:
+    async def test_required_only(self, client, mock_api):
+        route = mock_api.patch("/company/tags/1").mock(
+            return_value=Response(200, json={"id": 1, "name": "bug"})
         )
-        result = await TOOLS["kaiten_create_tag"]["handler"](
-            client, {"name": "urgent", "color": "#FF0000"}
+        result = await TOOLS["kaiten_update_tag"]["handler"](
+            client, {"tag_id": 1}
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"name": "urgent", "color": "#FF0000"}
+        assert body == {}
+
+    async def test_all_args(self, client, mock_api):
+        route = mock_api.patch("/company/tags/1").mock(
+            return_value=Response(200, json={"id": 1, "name": "urgent", "color": 5})
+        )
+        result = await TOOLS["kaiten_update_tag"]["handler"](
+            client, {"tag_id": 1, "name": "urgent", "color": 5}
+        )
+        assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"name": "urgent", "color": 5}
 
 
 class TestDeleteTag:
     async def test_required_only(self, client, mock_api):
-        route = mock_api.delete("/tags/1").mock(
+        route = mock_api.delete("/company/tags/1").mock(
             return_value=Response(200, json={})
         )
         result = await TOOLS["kaiten_delete_tag"]["handler"](

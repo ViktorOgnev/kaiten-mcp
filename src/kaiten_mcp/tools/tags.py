@@ -12,9 +12,11 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 async def _list_tags(client, args: dict) -> Any:
     params = {}
-    for key in ("query", "offset"):
+    for key in ("query", "offset", "space_id"):
         if args.get(key) is not None:
             params[key] = args[key]
+    if args.get("ids") is not None:
+        params["ids"] = args["ids"]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
     return await client.get("/tags", params=params)
 
@@ -25,7 +27,9 @@ _tool(
     {
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search filter"},
+            "query": {"type": "string", "description": "Search filter (matches by name)"},
+            "space_id": {"type": "integer", "description": "Filter tags by space (only tags used on cards in this space)"},
+            "ids": {"type": "string", "description": "Comma-separated tag IDs to fetch specific tags"},
             "limit": {"type": "integer", "description": "Max results"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
@@ -36,19 +40,16 @@ _tool(
 
 async def _create_tag(client, args: dict) -> Any:
     body = {"name": args["name"]}
-    if args.get("color") is not None:
-        body["color"] = args["color"]
     return await client.post("/tags", json=body)
 
 
 _tool(
     "kaiten_create_tag",
-    "Create a new Kaiten tag.",
+    "Create a new Kaiten tag. Color is assigned randomly by the server (1-17).",
     {
         "type": "object",
         "properties": {
-            "name": {"type": "string", "description": "Tag name"},
-            "color": {"type": "string", "description": "Color in HEX format (e.g. #FF0000)"},
+            "name": {"type": "string", "description": "Tag name (1-255 chars, must be unique within the company)"},
         },
         "required": ["name"],
     },
@@ -56,13 +57,39 @@ _tool(
 )
 
 
+async def _update_tag(client, args: dict) -> Any:
+    body = {}
+    for key in ("name",):
+        if args.get(key) is not None:
+            body[key] = args[key]
+    if args.get("color") is not None:
+        body["color"] = args["color"]
+    return await client.patch(f"/company/tags/{args['tag_id']}", json=body)
+
+
+_tool(
+    "kaiten_update_tag",
+    "Update a Kaiten tag (name and/or color). Requires company tag management permission.",
+    {
+        "type": "object",
+        "properties": {
+            "tag_id": {"type": "integer", "description": "Tag ID"},
+            "name": {"type": "string", "description": "New tag name (1-255 chars)"},
+            "color": {"type": "integer", "description": "Color index (1-17)", "minimum": 1, "maximum": 17},
+        },
+        "required": ["tag_id"],
+    },
+    _update_tag,
+)
+
+
 async def _delete_tag(client, args: dict) -> Any:
-    return await client.delete(f"/tags/{args['tag_id']}")
+    return await client.delete(f"/company/tags/{args['tag_id']}")
 
 
 _tool(
     "kaiten_delete_tag",
-    "Delete a Kaiten tag.",
+    "Delete a Kaiten tag. Requires company tag management permission. May be blocked if an async operation is in progress.",
     {
         "type": "object",
         "properties": {
