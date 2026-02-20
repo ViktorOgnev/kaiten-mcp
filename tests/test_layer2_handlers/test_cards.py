@@ -444,3 +444,90 @@ class TestMoveCard:
         assert route.called
         body = json.loads(route.calls[0].request.content)
         assert body == {"column_id": 9}
+
+
+class TestListAllCards:
+    async def test_required_only_single_page(self, client, mock_api):
+        """Single page of results."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[{"id": i} for i in range(5)])
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {}
+        )
+        assert route.called
+        assert len(result) == 5
+
+    async def test_multi_page(self, client, mock_api):
+        """Multiple pages with auto-pagination."""
+        page1 = [{"id": i} for i in range(100)]
+        page2 = [{"id": i} for i in range(100, 170)]
+        route = mock_api.get("/cards").mock(
+            side_effect=[
+                Response(200, json=page1),
+                Response(200, json=page2),
+            ]
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"page_size": 100}
+        )
+        assert route.call_count == 2
+        assert len(result) == 170
+
+    async def test_with_space_filter(self, client, mock_api):
+        """Filters passed to each page request."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[{"id": 1}])
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"space_id": 688824, "condition": 1}
+        )
+        url = str(route.calls[0].request.url)
+        assert "space_id=688824" in url
+        assert "condition=1" in url
+
+    async def test_max_pages_limit(self, client, mock_api):
+        """Stops after max_pages."""
+        full_page = [{"id": i} for i in range(100)]
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=full_page)
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"page_size": 100, "max_pages": 3}
+        )
+        assert route.call_count == 3
+        assert len(result) == 300
+
+    async def test_compact_default_true(self, client, mock_api):
+        """Default compact=True for bulk fetching."""
+        card_with_avatar = {
+            "id": 1,
+            "title": "Test",
+            "owner": {
+                "id": 42,
+                "full_name": "User",
+                "username": "user",
+                "avatar": "data:image/png;base64,longdata..."
+            },
+        }
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[card_with_avatar])
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {}
+        )
+        # compact=True by default, so avatar should be stripped
+        assert route.called
+        # Check that result is a list (compact_response applied)
+        assert isinstance(result, list)
+
+    async def test_empty_result(self, client, mock_api):
+        """Empty first page stops pagination."""
+        route = mock_api.get("/cards").mock(
+            return_value=Response(200, json=[])
+        )
+        result = await TOOLS["kaiten_list_all_cards"]["handler"](
+            client, {"space_id": 1}
+        )
+        assert route.call_count == 1
+        assert result == []

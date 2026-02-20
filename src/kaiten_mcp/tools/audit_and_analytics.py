@@ -103,20 +103,50 @@ _tool(
 
 async def _get_space_activity(client, args: dict) -> Any:
     params = {}
-    if args.get("offset") is not None:
-        params["offset"] = args["offset"]
+    for key in ("offset", "author_id"):
+        if args.get(key) is not None:
+            params[key] = args[key]
+    for key in ("actions", "created_after", "created_before"):
+        if args.get(key) is not None:
+            params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
     return await client.get(f"/spaces/{args['space_id']}/activity", params=params)
 
 
 _tool(
     "kaiten_get_space_activity",
-    "Get activity feed for a Kaiten space.",
+    (
+        "Get activity feed for a Kaiten space. "
+        "EFFICIENT BULK ALTERNATIVE: Use actions='card_add,card_move,card_archive,"
+        "card_join_board,card_revive' to get all location history for ALL cards in a space. "
+        "Paginate with offset to get complete history — much more efficient than calling "
+        "kaiten_get_card_location_history for each card individually."
+    ),
     {
         "type": "object",
         "properties": {
             "space_id": {"type": "integer", "description": "Space ID"},
-            "limit": {"type": "integer", "description": "Max results"},
+            "actions": {
+                "type": "string",
+                "description": (
+                    "Comma-separated action types to filter (card_add, card_move, "
+                    "card_archive, card_join_board, card_revive, card_delete, "
+                    "comment_add, checklist_add, member_add, etc.)"
+                ),
+            },
+            "created_after": {
+                "type": "string",
+                "description": "Filter activities after this datetime (ISO 8601)",
+            },
+            "created_before": {
+                "type": "string",
+                "description": "Filter activities before this datetime (ISO 8601)",
+            },
+            "author_id": {
+                "type": "integer",
+                "description": "Filter by author user ID",
+            },
+            "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
         "required": ["space_id"],
@@ -127,19 +157,54 @@ _tool(
 
 async def _get_company_activity(client, args: dict) -> Any:
     params = {}
-    if args.get("offset") is not None:
-        params["offset"] = args["offset"]
+    for key in ("offset", "author_id", "cursor_id"):
+        if args.get(key) is not None:
+            params[key] = args[key]
+    for key in ("actions", "created_after", "created_before", "cursor_created"):
+        if args.get(key) is not None:
+            params[key] = args[key]
     params["limit"] = args.get("limit", DEFAULT_LIMIT)
     return await client.get("/company/activity", params=params)
 
 
 _tool(
     "kaiten_get_company_activity",
-    "Get company-wide activity feed.",
+    "Get company-wide activity feed. Supports cursor-based pagination for large datasets.",
     {
         "type": "object",
         "properties": {
-            "limit": {"type": "integer", "description": "Max results"},
+            "actions": {
+                "type": "string",
+                "description": (
+                    "Comma-separated action types to filter (card_add, card_move, "
+                    "card_archive, card_join_board, card_revive, card_delete, "
+                    "comment_add, checklist_add, member_add, etc.)"
+                ),
+            },
+            "created_after": {
+                "type": "string",
+                "description": "Filter activities after this datetime (ISO 8601)",
+            },
+            "created_before": {
+                "type": "string",
+                "description": "Filter activities before this datetime (ISO 8601)",
+            },
+            "author_id": {
+                "type": "integer",
+                "description": "Filter by author user ID",
+            },
+            "cursor_created": {
+                "type": "string",
+                "description": (
+                    "Cursor-based pagination: datetime of last item "
+                    "(more efficient than offset for large datasets)"
+                ),
+            },
+            "cursor_id": {
+                "type": "integer",
+                "description": "Cursor-based pagination: ID of last item (use with cursor_created)",
+            },
+            "limit": {"type": "integer", "description": "Max results (default 50, max 100)"},
             "offset": {"type": "integer", "description": "Pagination offset"},
         },
     },
@@ -164,6 +229,83 @@ _tool(
         "required": ["card_id"],
     },
     _get_card_location_history,
+)
+
+
+# --- Auto-paginating Activity ---
+
+async def _get_all_space_activity(client, args: dict) -> Any:
+    """Fetch all space activity with automatic pagination."""
+    page_size = min(args.get("page_size", 100), 100)
+    max_pages = args.get("max_pages", 50)
+
+    params: dict[str, Any] = {}
+    for key in ("actions", "created_after", "created_before", "author_id"):
+        if args.get(key) is not None:
+            params[key] = args[key]
+
+    all_activity: list = []
+    for page in range(max_pages):
+        params["limit"] = page_size
+        params["offset"] = page * page_size
+        result = await client.get(
+            f"/spaces/{args['space_id']}/activity", params=params,
+        )
+        if not result:
+            break
+        all_activity.extend(result)
+        if len(result) < page_size:
+            break
+
+    return all_activity
+
+
+_tool(
+    "kaiten_get_all_space_activity",
+    (
+        "Fetch ALL activity for a space with automatic pagination. "
+        "Use actions filter to get specific event types. "
+        "For complete card flow history: actions='card_add,card_move,card_archive,"
+        "card_join_board,card_revive'. "
+        "Safety limit: 50 pages (5000 events). "
+        "This is the EFFICIENT way to get location history for all cards in a space — "
+        "one paginated endpoint instead of hundreds of individual card requests."
+    ),
+    {
+        "type": "object",
+        "properties": {
+            "space_id": {"type": "integer", "description": "Space ID"},
+            "actions": {
+                "type": "string",
+                "description": (
+                    "Comma-separated action types "
+                    "(card_add, card_move, card_archive, card_join_board, card_revive, etc.)"
+                ),
+            },
+            "created_after": {
+                "type": "string",
+                "description": "Filter activities after this datetime (ISO 8601)",
+            },
+            "created_before": {
+                "type": "string",
+                "description": "Filter activities before this datetime (ISO 8601)",
+            },
+            "author_id": {
+                "type": "integer",
+                "description": "Filter by author user ID",
+            },
+            "page_size": {
+                "type": "integer",
+                "description": "Events per page (default 100, max 100)",
+            },
+            "max_pages": {
+                "type": "integer",
+                "description": "Safety limit on pages to fetch (default 50, max 5000 events)",
+            },
+        },
+        "required": ["space_id"],
+    },
+    _get_all_space_activity,
 )
 
 

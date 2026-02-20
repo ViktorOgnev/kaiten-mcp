@@ -78,11 +78,22 @@ class TestGetSpaceActivity:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_get_space_activity"]["handler"](
-            client, {"space_id": 1, "limit": 20, "offset": 0}
+            client, {
+                "space_id": 1,
+                "limit": 20,
+                "offset": 0,
+                "actions": "card_move,card_add",
+                "created_after": "2025-01-01T00:00:00Z",
+                "created_before": "2025-12-31T23:59:59Z",
+                "author_id": 42,
+            }
         )
         url = str(route.calls[0].request.url)
         assert "limit=20" in url
         assert "offset=0" in url
+        assert "actions=card_move" in url
+        assert "created_after=" in url
+        assert "author_id=42" in url
 
 
 class TestGetCompanyActivity:
@@ -99,11 +110,97 @@ class TestGetCompanyActivity:
             return_value=Response(200, json=[{"id": 1}])
         )
         await TOOLS["kaiten_get_company_activity"]["handler"](
-            client, {"limit": 100, "offset": 50}
+            client, {
+                "limit": 100,
+                "offset": 50,
+                "actions": "card_move",
+                "created_after": "2025-01-01T00:00:00Z",
+                "created_before": "2025-06-01T00:00:00Z",
+                "author_id": 10,
+                "cursor_created": "2025-05-15T12:00:00Z",
+                "cursor_id": 999,
+            }
         )
         url = str(route.calls[0].request.url)
         assert "limit=100" in url
         assert "offset=50" in url
+        assert "actions=card_move" in url
+        assert "cursor_created=" in url
+        assert "cursor_id=999" in url
+
+
+# ---------------------------------------------------------------------------
+# Auto-paginating Activity
+# ---------------------------------------------------------------------------
+
+
+class TestGetAllSpaceActivity:
+    async def test_required_only_single_page(self, client, mock_api):
+        """Single page of results (less than page_size)."""
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=[{"id": i} for i in range(5)])
+        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
+            client, {"space_id": 1}
+        )
+        assert route.called
+        assert len(result) == 5
+
+    async def test_multi_page(self, client, mock_api):
+        """Multiple pages with auto-pagination."""
+        page1 = [{"id": i} for i in range(100)]
+        page2 = [{"id": i} for i in range(100, 150)]
+        route = mock_api.get("/spaces/1/activity").mock(
+            side_effect=[
+                Response(200, json=page1),
+                Response(200, json=page2),
+            ]
+        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
+            client, {"space_id": 1, "page_size": 100}
+        )
+        assert route.call_count == 2
+        assert len(result) == 150
+
+    async def test_with_actions_filter(self, client, mock_api):
+        """Activity with actions filter passed to each page."""
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=[{"id": 1, "action": "card_move"}])
+        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
+            client, {
+                "space_id": 1,
+                "actions": "card_move,card_add",
+                "created_after": "2025-01-01T00:00:00Z",
+            }
+        )
+        assert route.called
+        url = str(route.calls[0].request.url)
+        assert "actions=card_move" in url
+        assert "created_after=" in url
+
+    async def test_max_pages_limit(self, client, mock_api):
+        """Stops after max_pages even if more data exists."""
+        full_page = [{"id": i} for i in range(100)]
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=full_page)
+        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
+            client, {"space_id": 1, "page_size": 100, "max_pages": 2}
+        )
+        assert route.call_count == 2
+        assert len(result) == 200
+
+    async def test_empty_result(self, client, mock_api):
+        """Empty first page stops pagination."""
+        route = mock_api.get("/spaces/1/activity").mock(
+            return_value=Response(200, json=[])
+        )
+        result = await TOOLS["kaiten_get_all_space_activity"]["handler"](
+            client, {"space_id": 1}
+        )
+        assert route.call_count == 1
+        assert result == []
 
 
 # ---------------------------------------------------------------------------

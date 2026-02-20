@@ -280,3 +280,90 @@ _tool(
     },
     _move_card,
 )
+
+
+# --- Auto-paginating card listing ---
+
+async def _list_all_cards(client, args: dict) -> Any:
+    """Fetch all cards matching filters with automatic pagination."""
+    page_size = min(args.get("page_size", 100), 100)
+    max_pages = args.get("max_pages", 50)  # Safety limit: 50 pages * 100 = 5000 cards max
+    compact = args.get("compact", True)  # Default compact for bulk
+
+    # Build filter params (same as _list_cards)
+    params: dict[str, Any] = {}
+    str_keys = [
+        "query", "tag_ids", "member_ids", "owner_ids", "responsible_ids",
+        "states", "column_ids", "type_ids", "external_id",
+        "created_after", "created_before", "updated_after", "updated_before",
+        "due_date_after", "due_date_before",
+    ]
+    int_keys = [
+        "space_id", "board_id", "column_id", "lane_id", "condition",
+        "type_id", "owner_id", "responsible_id",
+    ]
+    bool_keys = ["overdue", "asap", "archived"]
+    for key in str_keys + int_keys + bool_keys:
+        if args.get(key) is not None:
+            params[key] = args[key]
+
+    all_cards: list = []
+    for page in range(max_pages):
+        params["limit"] = page_size
+        params["offset"] = page * page_size
+        result = await client.get("/cards", params=params)
+        if not result:
+            break
+        all_cards.extend(result)
+        if len(result) < page_size:
+            break
+
+    return compact_response(all_cards, compact)
+
+
+_tool(
+    "kaiten_list_all_cards",
+    (
+        "Fetch ALL cards matching filters with automatic pagination. "
+        "Returns combined results from all pages. Default safety limit: 50 pages (5000 cards). "
+        "For basic Kanban metrics, the returned cards already contain timing fields: "
+        "created, first_moved_to_in_progress_at, last_moved_to_done_at, "
+        "time_spent_sum, time_blocked_sum — no need to call "
+        "kaiten_get_card_location_history for each card."
+    ),
+    {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Full-text search query"},
+            "space_id": {"type": "integer", "description": "Filter by space ID"},
+            "board_id": {"type": "integer", "description": "Filter by board ID"},
+            "column_id": {"type": "integer", "description": "Filter by column ID"},
+            "lane_id": {"type": "integer", "description": "Filter by lane ID"},
+            "condition": {"type": "integer", "enum": [1, 2], "description": "1=active, 2=archived"},
+            "type_id": {"type": "integer", "description": "Filter by card type ID"},
+            "owner_id": {"type": "integer", "description": "Filter by owner user ID"},
+            "responsible_id": {"type": "integer", "description": "Filter by responsible user ID"},
+            "tag_ids": {"type": "string", "description": "Comma-separated tag IDs"},
+            "member_ids": {"type": "string", "description": "Comma-separated member IDs"},
+            "owner_ids": {"type": "string", "description": "Comma-separated owner IDs"},
+            "responsible_ids": {"type": "string", "description": "Comma-separated responsible IDs"},
+            "states": {"type": "string", "description": "Comma-separated states (1=queued,2=inProgress,3=done)"},
+            "column_ids": {"type": "string", "description": "Comma-separated column IDs"},
+            "type_ids": {"type": "string", "description": "Comma-separated type IDs"},
+            "created_after": {"type": "string", "description": "ISO datetime filter"},
+            "created_before": {"type": "string", "description": "ISO datetime filter"},
+            "updated_after": {"type": "string", "description": "ISO datetime filter"},
+            "updated_before": {"type": "string", "description": "ISO datetime filter"},
+            "due_date_after": {"type": "string", "description": "ISO datetime filter"},
+            "due_date_before": {"type": "string", "description": "ISO datetime filter"},
+            "external_id": {"type": "string", "description": "External ID filter"},
+            "overdue": {"type": "boolean", "description": "Filter overdue cards"},
+            "asap": {"type": "boolean", "description": "Filter ASAP cards"},
+            "archived": {"type": "boolean", "description": "Include archived"},
+            "page_size": {"type": "integer", "description": "Cards per page (default 100, max 100)"},
+            "max_pages": {"type": "integer", "description": "Safety limit on pages to fetch (default 50, max 5000 cards)"},
+            "compact": {"type": "boolean", "description": "Return compact response without heavy fields (default true for bulk)", "default": True},
+        },
+    },
+    _list_all_cards,
+)
