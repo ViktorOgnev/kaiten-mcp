@@ -1,5 +1,4 @@
 """Kaiten card blockers MCP tools."""
-from __future__ import annotations
 
 from typing import Any
 
@@ -95,6 +94,8 @@ async def _get_card_blocker(client, args: dict) -> Any:
     # The Kaiten API does not support GET /cards/{id}/blockers/{blocker_id}.
     # Fetch the full list and filter client-side.
     blockers = await client.get(f"/cards/{card_id}/blockers")
+    if not isinstance(blockers, list):
+        return blockers
     for b in blockers:
         if b.get("id") == blocker_id:
             return b

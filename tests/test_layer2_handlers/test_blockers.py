@@ -72,6 +72,17 @@ class TestGetCardBlocker:
         assert route.called
         assert result is None
 
+    async def test_non_list_response(self, client, mock_api):
+        """Returns raw response when API returns non-list (e.g. error object)."""
+        route = mock_api.get("/cards/1/blockers").mock(
+            return_value=Response(200, json={"error": "unexpected"})
+        )
+        result = await TOOLS["kaiten_get_card_blocker"]["handler"](
+            client, {"card_id": 1, "blocker_id": 3}
+        )
+        assert route.called
+        assert result == {"error": "unexpected"}
+
 
 class TestUpdateCardBlocker:
     async def test_required_only(self, client, mock_api):
