@@ -25,28 +25,75 @@ make lint        # Запустить линтеры (Docker)
 
 ## Подключение к Claude Code
 
-Пользователь должен предоставить два значения:
+Пользователь должен предоставить два значения и записать их в `.env` файл в директории проекта:
 - `KAITEN_DOMAIN` — поддомен компании (например `mycompany` для `mycompany.kaiten.ru`)
 - `KAITEN_TOKEN` — API-токен из настроек Kaiten
+
+```bash
+cp /path/to/kaiten-mcp/.env.example /path/to/kaiten-mcp/.env
+# Отредактировать .env — вписать KAITEN_DOMAIN и KAITEN_TOKEN
+```
+
+**Принцип: credentials живут в `.env`, а НЕ в команде `claude mcp add`.** Смена домена/токена = редактирование `.env` + перезапуск Claude Code. Не нужно перерегистрировать MCP.
 
 Спроси у пользователя способ запуска.
 
 ---
 
-### Способ 1: Docker dev (рекомендуется для разработчиков)
+### Способ 1: Docker Compose (рекомендуется)
 
-Контейнер содержит только Python и зависимости. Исходный код монтируется volume — изменения мгновенные без пересборки.
+Docker Compose автоматически читает `.env` из директории проекта. Credentials нигде не хардкодятся.
 
-**Шаг 1 — Собрать deps-only образ (однократно):**
+**Шаг 1 — Собрать образ (однократно):**
 
 ```bash
-docker build --target deps -t kaiten-mcp:dev /path/to/kaiten-mcp
+docker compose --project-directory /path/to/kaiten-mcp build kaiten-mcp-dev
 ```
 
-Пересборка нужна только при изменении зависимостей в `pyproject.toml`.
+Для dev-режима (volume-mount, мгновенные изменения кода):
+```bash
+docker compose --project-directory /path/to/kaiten-mcp build kaiten-mcp-dev
+```
 
-**Шаг 2 — Зарегистрировать MCP-сервер:**
+Для baked-режима (всё в образе):
+```bash
+docker compose --project-directory /path/to/kaiten-mcp build kaiten-mcp
+```
 
+**Шаг 2 — Зарегистрировать MCP-сервер (без `-e` флагов!):**
+
+Dev-режим (исходный код монтируется volume):
+```bash
+claude mcp add kaiten \
+  -- docker compose --project-directory /path/to/kaiten-mcp run --rm -T kaiten-mcp-dev
+```
+
+Baked-режим (всё в образе):
+```bash
+claude mcp add kaiten \
+  -- docker compose --project-directory /path/to/kaiten-mcp run --rm -T kaiten-mcp
+```
+
+**Шаг 3 — Перезапустить Claude Code** (`/exit` и запусти заново).
+
+**Смена домена/токена:** отредактируй `.env` → перезапусти Claude Code. Перерегистрация НЕ нужна.
+
+**После изменения кода (dev):** перезапусти Claude Code. Пересборка НЕ нужна.
+**После изменения кода (baked):** пересобери образ + перезапусти Claude Code.
+
+Почему `--project-directory`:
+- Без него Docker Compose ищет `.env`, `docker-compose.yml` и build context относительно CWD.
+- `--project-directory` указывает на корень проекта — всё находится корректно.
+- `-T` отключает TTY (обязательно для MCP stdio transport).
+- `-f` **НЕ решает проблему** — он задаёт только путь к yml, но CWD для `.env` не меняется.
+
+---
+
+### Способ 2: Docker run (с -e флагами)
+
+Для `docker run` без Compose credentials передаются через `-e`. Это менее удобно — при смене домена нужна перерегистрация.
+
+Dev-режим:
 ```bash
 claude mcp add kaiten \
   -e KAITEN_DOMAIN=ДОМЕН \
@@ -59,26 +106,7 @@ claude mcp add kaiten \
      kaiten-mcp:dev
 ```
 
-Замени `ДОМЕН`, `ТОКЕН` и `/path/to/kaiten-mcp` на реальные значения.
-
-**Шаг 3 — Перезапустить Claude Code** (`/exit` и запусти заново).
-
-**После изменения кода:** просто перезапусти Claude Code. Пересборка НЕ нужна.
-
----
-
-### Способ 2: Docker baked (для конечных пользователей)
-
-Всё запечатано в образе. Self-contained, без volume mount.
-
-**Шаг 1 — Собрать полный образ:**
-
-```bash
-docker build --target baked -t kaiten-mcp:latest /path/to/kaiten-mcp
-```
-
-**Шаг 2 — Зарегистрировать MCP-сервер:**
-
+Baked-режим:
 ```bash
 claude mcp add kaiten \
   -e KAITEN_DOMAIN=ДОМЕН \
@@ -90,22 +118,22 @@ claude mcp add kaiten \
      kaiten-mcp:latest
 ```
 
-**Шаг 3 — Перезапустить Claude Code.**
-
-**После изменения кода:** пересобери образ (`docker build --target baked ...`) и перезапусти.
+Для сборки образов:
+```bash
+docker build --target deps -t kaiten-mcp:dev /path/to/kaiten-mcp    # dev
+docker build --target baked -t kaiten-mcp:latest /path/to/kaiten-mcp # baked
+```
 
 ---
 
 ### Способ 3: Python (venv)
 
-**Шаг 1 — Создать venv и установить пакет:**
+Для venv credentials тоже читаются из `.env` автоматически (server.py вызывает `load_dotenv()`). Но `.env` должен быть в CWD откуда Claude Code запускает процесс, поэтому надёжнее передать через `-e`:
 
 ```bash
 python3 -m venv /path/to/kaiten-mcp/.venv
 /path/to/kaiten-mcp/.venv/bin/pip install -e /path/to/kaiten-mcp
 ```
-
-**Шаг 2 — Зарегистрировать MCP-сервер:**
 
 ```bash
 claude mcp add kaiten \
@@ -114,9 +142,7 @@ claude mcp add kaiten \
   -- /path/to/kaiten-mcp/.venv/bin/kaiten-mcp
 ```
 
-**Шаг 3 — Перезапустить Claude Code.**
-
-**После изменения кода:** просто перезапусти Claude Code (editable install подхватывает изменения).
+**После изменения кода:** перезапусти Claude Code (editable install подхватывает изменения).
 
 ---
 
@@ -126,28 +152,8 @@ claude mcp add kaiten \
 
 ```bash
 claude mcp add kaiten -s user \
-  -e KAITEN_DOMAIN=ДОМЕН \
-  -e KAITEN_TOKEN=ТОКЕН \
-  -- ...
-```
-
----
-
-### Альтернатива: Docker Compose
-
-Для разработки с docker compose **обязательно** используй `--project-directory` и `-T`:
-
-```bash
-claude mcp add kaiten \
-  -e KAITEN_DOMAIN=ДОМЕН \
-  -e KAITEN_TOKEN=ТОКЕН \
   -- docker compose --project-directory /path/to/kaiten-mcp run --rm -T kaiten-mcp-dev
 ```
-
-Почему именно так:
-- `--project-directory` — без него Docker Compose ищет файлы относительно CWD, а не директории проекта.
-- `-T` — отключает TTY. Без этого `docker compose run` выделяет pseudo-TTY, ломая JSON-RPC.
-- `-f` **НЕ решает проблему** — он задаёт только путь к yml-файлу, но CWD не меняется.
 
 ---
 
@@ -173,6 +179,8 @@ claude mcp list
 | `MCP server kaiten already exists` | Уже зарегистрирован | `claude mcp remove kaiten` и заново |
 | Код изменился, но сервер использует старый | Docker baked: код в образе | Dev mode: volume mount. Baked: пересобери образ |
 | Permission denied в контейнере | Non-root user + read-only | Ожидаемо; для записи используй отдельный mount |
+| Нужно сменить домен/токен (Compose) | Credentials в `.env` | Отредактируй `.env` → перезапусти Claude Code. Перерегистрация НЕ нужна |
+| Нужно сменить домен/токен (docker run) | Credentials в `-e` флагах | `claude mcp remove kaiten` → `claude mcp add` с новыми значениями |
 
 ## Переменные окружения
 

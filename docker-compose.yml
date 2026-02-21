@@ -1,5 +1,6 @@
 services:
   # Development mode: source mounted from host, instant code changes
+  # Credentials read from .env automatically (no hardcoding in claude mcp add)
   kaiten-mcp-dev:
     build:
       context: .
@@ -16,13 +17,12 @@ services:
       - ALL
     pids_limit: 256
     mem_limit: 512m
+    env_file: .env
     volumes:
       - ./src:/app/src:ro
-    environment:
-      - KAITEN_DOMAIN=${KAITEN_DOMAIN}
-      - KAITEN_TOKEN=${KAITEN_TOKEN}
 
   # Production mode: everything baked into image
+  # Credentials read from .env automatically
   kaiten-mcp:
     build:
       context: .
@@ -39,6 +39,4 @@ services:
       - ALL
     pids_limit: 256
     mem_limit: 512m
-    environment:
-      - KAITEN_DOMAIN=${KAITEN_DOMAIN}
-      - KAITEN_TOKEN=${KAITEN_TOKEN}
+    env_file: .env

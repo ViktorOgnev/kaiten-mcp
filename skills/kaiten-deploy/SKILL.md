@@ -80,21 +80,25 @@ Where should the MCP server be registered?
 
 Store as `$SCOPE` = `project` | `user`.
 
-## Phase 3: Credentials
+## Phase 3: Credentials (.env file)
+
+Credentials live in `.env`, NOT in the `claude mcp add` command. This means changing domain/token = edit `.env` + restart Claude Code. No re-registration needed.
 
 ```
-Kaiten API credentials:
-
-  KAITEN_DOMAIN -- company subdomain (e.g. "mycompany" for mycompany.kaiten.ru)
-  {if detected from .env: "Found: {domain}"}
-
-  KAITEN_TOKEN -- API token from https://{domain}.kaiten.ru/settings/api-keys
-  {if detected from .env: "Found: ***"}
+# Check if .env exists
+if $SOURCE_DIR/.env exists:
+  "Found .env with KAITEN_DOMAIN={domain}. Use these credentials? [Y/n]"
+else:
+  "Create .env from template:"
+  cp $SOURCE_DIR/.env.example $SOURCE_DIR/.env
+  "Edit .env -- set KAITEN_DOMAIN and KAITEN_TOKEN"
 ```
 
-Validate:
+Validate `.env` contents:
 - `KAITEN_DOMAIN`: non-empty, no dots/slashes. Strip `https://` and `.kaiten.ru` if pasted.
 - `KAITEN_TOKEN`: non-empty, 20+ characters.
+
+For python mode (no Docker Compose), credentials must be passed via `-e` flags since `load_dotenv()` depends on CWD.
 
 ## Phase 4: Source Location
 
@@ -103,56 +107,54 @@ Validate: `{path}/pyproject.toml` exists and contains `name = "kaiten-mcp"`.
 
 ## Phase 5: Execute
 
-### Mode: docker-dev
+### Mode: docker-dev (RECOMMENDED)
+
+Docker Compose reads `.env` automatically. No `-e` flags in `claude mcp add`.
 
 ```bash
 # Step 1: Build deps-only image
-docker build --target deps -t kaiten-mcp:dev $SOURCE_DIR
+docker compose --project-directory $SOURCE_DIR build kaiten-mcp-dev
 
-# Step 2: Register MCP server
+# Step 2: Register MCP server (NO -e flags -- credentials from .env)
 claude mcp add kaiten \
   -s $SCOPE \
-  -e KAITEN_DOMAIN=$DOMAIN \
-  -e KAITEN_TOKEN=$TOKEN \
-  -- docker run --rm -i \
-     --read-only --tmpfs /tmp:noexec,nosuid,size=64m \
-     --security-opt=no-new-privileges:true --cap-drop=ALL \
-     -v $SOURCE_DIR/src:/app/src:ro \
-     -e KAITEN_DOMAIN -e KAITEN_TOKEN \
-     kaiten-mcp:dev
+  -- docker compose --project-directory $SOURCE_DIR run --rm -T kaiten-mcp-dev
 ```
 
 After code changes: just restart Claude Code. No rebuild needed.
-After dependency changes (pyproject.toml): run `docker build --target deps -t kaiten-mcp:dev $SOURCE_DIR`.
+After dependency changes (pyproject.toml): `docker compose --project-directory $SOURCE_DIR build kaiten-mcp-dev`.
+After credential changes: edit `.env` → restart Claude Code. No re-registration.
 
 ### Mode: docker-baked
 
+Docker Compose reads `.env` automatically.
+
 ```bash
 # Step 1: Build full image
-docker build --target baked -t kaiten-mcp:latest $SOURCE_DIR
+docker compose --project-directory $SOURCE_DIR build kaiten-mcp
 
-# Step 2: Register MCP server
+# Step 2: Register MCP server (NO -e flags)
 claude mcp add kaiten \
   -s $SCOPE \
-  -e KAITEN_DOMAIN=$DOMAIN \
-  -e KAITEN_TOKEN=$TOKEN \
-  -- docker run --rm -i \
-     --read-only --tmpfs /tmp:noexec,nosuid,size=64m \
-     --security-opt=no-new-privileges:true --cap-drop=ALL \
-     -e KAITEN_DOMAIN -e KAITEN_TOKEN \
-     kaiten-mcp:latest
+  -- docker compose --project-directory $SOURCE_DIR run --rm -T kaiten-mcp
 ```
 
-After code changes: `docker build --target baked -t kaiten-mcp:latest $SOURCE_DIR` then restart Claude Code.
+After code changes: `docker compose --project-directory $SOURCE_DIR build kaiten-mcp` then restart Claude Code.
+After credential changes: edit `.env` → restart Claude Code.
 
 ### Mode: python
+
+For venv mode, credentials are passed via `-e` (since `load_dotenv()` CWD is unpredictable):
 
 ```bash
 # Step 1: Create venv and install
 python3 -m venv $SOURCE_DIR/.venv
 $SOURCE_DIR/.venv/bin/pip install -e $SOURCE_DIR
 
-# Step 2: Register MCP server
+# Step 2: Read credentials from .env
+# Parse KAITEN_DOMAIN and KAITEN_TOKEN from $SOURCE_DIR/.env
+
+# Step 3: Register MCP server
 claude mcp add kaiten \
   -s $SCOPE \
   -e KAITEN_DOMAIN=$DOMAIN \
@@ -196,7 +198,8 @@ After restart, try: "Show me my Kaiten user info"
 |-------------|-----------|-------------|--------|
 | Source code | Restart Claude Code | `make build` + restart | Restart Claude Code |
 | Dependencies | `make dev-build` + restart | `make build` + restart | `pip install -e .` + restart |
-| Credentials | `claude mcp remove kaiten` + re-register | same | same |
+| Credentials (Compose) | Edit `.env` → restart Claude Code | same | N/A |
+| Credentials (python) | N/A | N/A | `claude mcp remove` + re-register with new `-e` |
 | Scope | `claude mcp remove kaiten -s $OLD` + re-register | same | same |
 
 ## Docker Security Flags
