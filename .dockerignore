@@ -1,0 +1,53 @@
+# Secrets — NEVER bake into image
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# Tests (not needed in production image)
+tests/
+.pytest_cache/
+coverage_html/
+coverage.xml
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code / Swarm
+.claude/
+.claude-flow/
+.swarm/
+.mcp.json
+CLAUDE.md
+
+# Documentation (not runtime)
+README.md
+docs/
+skills/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker / Build
+.docker/
+Makefile
+docker-compose.yml

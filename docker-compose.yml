@@ -1,8 +1,44 @@
 services:
-  kaiten-mcp:
-    build: .
+  # Development mode: source mounted from host, instant code changes
+  kaiten-mcp-dev:
+    build:
+      context: .
+      target: deps
+    image: kaiten-mcp:dev
     stdin_open: true
     tty: false
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    volumes:
+      - ./src:/app/src:ro
+    environment:
+      - KAITEN_DOMAIN=${KAITEN_DOMAIN}
+      - KAITEN_TOKEN=${KAITEN_TOKEN}
+
+  # Production mode: everything baked into image
+  kaiten-mcp:
+    build:
+      context: .
+      target: baked
+    image: kaiten-mcp:latest
+    stdin_open: true
+    tty: false
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
     environment:
       - KAITEN_DOMAIN=${KAITEN_DOMAIN}
       - KAITEN_TOKEN=${KAITEN_TOKEN}
