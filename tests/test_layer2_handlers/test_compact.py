@@ -7,6 +7,7 @@ from kaiten_mcp.tools.compact import (
     _simplify_user,
     compact_response,
     select_fields,
+    strip_base64,
 )
 
 
@@ -357,3 +358,107 @@ class TestSelectFields:
         """select_fields should pass through primitive values unchanged."""
         assert select_fields("hello", "id") == "hello"
         assert select_fields(42, "id") == 42
+
+
+class TestStripBase64:
+    """Tests for strip_base64() — always-on base64 data URI stripping."""
+
+    def test_strips_data_uri_from_any_key(self):
+        """strip_base64 should replace data: URIs regardless of key name."""
+        data = {
+            "id": 1,
+            "avatar_url": "data:image/png;base64,iVBORw0KGgo=",
+            "photo": "data:image/jpeg;base64,/9j/4AAQ",
+        }
+        result, count = strip_base64(data)
+        assert result["id"] == 1
+        assert result["avatar_url"].startswith("[base64 ~")
+        assert result["photo"].startswith("[base64 ~")
+        assert count == 2
+
+    def test_keeps_http_urls(self):
+        """strip_base64 should not touch HTTP/HTTPS URLs."""
+        data = {"avatar_url": "https://example.com/avatar.png", "id": 1}
+        result, count = strip_base64(data)
+        assert result["avatar_url"] == "https://example.com/avatar.png"
+        assert count == 0
+
+    def test_strips_nested(self):
+        """strip_base64 should work recursively in nested dicts."""
+        data = {
+            "id": 1,
+            "card": {
+                "owner": {
+                    "avatar_url": "data:image/png;base64,xxx",
+                },
+            },
+        }
+        result, count = strip_base64(data)
+        assert result["card"]["owner"]["avatar_url"].startswith("[base64 ~")
+        assert count == 1
+
+    def test_strips_in_list_of_dicts(self):
+        """strip_base64 should work in a list of dicts."""
+        data = [
+            {"id": 1, "avatar": "data:image/png;base64,aaa"},
+            {"id": 2, "avatar": "data:image/png;base64,bbb"},
+            {"id": 3, "avatar": "https://example.com/a.png"},
+        ]
+        result, count = strip_base64(data)
+        assert result[0]["avatar"].startswith("[base64 ~")
+        assert result[1]["avatar"].startswith("[base64 ~")
+        assert result[2]["avatar"] == "https://example.com/a.png"
+        assert count == 2
+
+    def test_returns_count(self):
+        """strip_base64 should count all stripped fields correctly."""
+        data = {
+            "a": "data:x",
+            "b": "data:y",
+            "c": {"d": "data:z"},
+            "e": [{"f": "data:w"}],
+        }
+        _, count = strip_base64(data)
+        assert count == 4
+
+    def test_no_strip_returns_zero(self):
+        """strip_base64 should return count=0 when nothing to strip."""
+        data = {"id": 1, "title": "Card", "url": "https://example.com"}
+        result, count = strip_base64(data)
+        assert result == data
+        assert count == 0
+
+    def test_placeholder_shows_size(self):
+        """Placeholder should contain approximate size in KB."""
+        blob = "data:image/png;base64," + "A" * 5120  # ~5KB
+        data = {"avatar": blob}
+        result, count = strip_base64(data)
+        assert "~5KB" in result["avatar"]
+        assert count == 1
+
+    def test_handles_nested_lists_with_mixed_types(self):
+        """strip_base64 should handle nested lists with dicts and primitives."""
+        data = [
+            [{"avatar": "data:image/png;base64,abc"}, "plain_string", 42],
+            [1, 2, 3],
+        ]
+        result, count = strip_base64(data)
+        assert result[0][0]["avatar"].startswith("[base64 ~")
+        assert result[0][1] == "plain_string"
+        assert result[0][2] == 42
+        assert result[1] == [1, 2, 3]
+        assert count == 1
+
+    def test_primitives_passthrough(self):
+        """strip_base64 should pass through primitives unchanged."""
+        result_str, count_str = strip_base64("hello")
+        assert result_str == "hello"
+        assert count_str == 0
+
+        result_int, count_int = strip_base64(42)
+        assert result_int == 42
+        assert count_int == 0
+
+        result_none, count_none = strip_base64(None)
+        assert result_none is None
+        assert count_none == 0

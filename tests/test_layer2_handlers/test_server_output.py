@@ -1,4 +1,4 @@
-"""Tests for server.py compact JSON and file-based output (Phase 8)."""
+"""Tests for server.py compact JSON, file-based output, base64 stripping, and error resilience."""
 
 import json
 import os
@@ -183,3 +183,122 @@ class TestFileBasedOutput:
             # Small result should be returned directly, not as file summary
             assert isinstance(parsed, list)
             assert parsed == [{"id": 1}]
+
+
+class TestBase64AutoStripping:
+    """Test that base64 data URIs are automatically stripped from all tool responses."""
+
+    async def test_base64_auto_stripped_in_call_tool(self):
+        """call_tool should auto-strip base64 data URIs from handler results."""
+        data_with_avatar = {
+            "id": 1,
+            "title": "Card",
+            "avatar_url": "data:image/png;base64," + "A" * 2048,
+        }
+        handler = AsyncMock(return_value=data_with_avatar)
+        with patch.dict(
+            ALL_TOOLS,
+            {
+                "test_tool": {
+                    "handler": handler,
+                    "description": "t",
+                    "inputSchema": {"type": "object", "properties": {}},
+                },
+            },
+        ):
+            result = await call_tool("test_tool", {})
+        text = _text(result)
+        assert "data:image" not in text
+        assert "[base64 ~" in text
+
+    async def test_strip_note_appended(self):
+        """When base64 fields are stripped, a note should be appended to the response."""
+        data_with_avatars = [
+            {"id": 1, "avatar": "data:image/png;base64,aaa"},
+            {"id": 2, "avatar": "data:image/png;base64,bbb"},
+        ]
+        handler = AsyncMock(return_value=data_with_avatars)
+        with patch.dict(
+            ALL_TOOLS,
+            {
+                "test_tool": {
+                    "handler": handler,
+                    "description": "t",
+                    "inputSchema": {"type": "object", "properties": {}},
+                },
+            },
+        ):
+            result = await call_tool("test_tool", {})
+        text = _text(result)
+        assert "[Omitted 2 base64-encoded field(s)" in text
+
+    async def test_no_note_when_clean(self):
+        """When no base64 fields are present, no note should be appended."""
+        clean_data = {"id": 1, "title": "Card", "url": "https://example.com/avatar.png"}
+        handler = AsyncMock(return_value=clean_data)
+        with patch.dict(
+            ALL_TOOLS,
+            {
+                "test_tool": {
+                    "handler": handler,
+                    "description": "t",
+                    "inputSchema": {"type": "object", "properties": {}},
+                },
+            },
+        ):
+            result = await call_tool("test_tool", {})
+        text = _text(result)
+        assert "[Omitted" not in text
+
+
+class TestErrorResilience:
+    """Test that call_tool never crashes the MCP server."""
+
+    async def test_error_in_get_client_returns_error(self):
+        """ValueError from get_client() should return error result, not crash."""
+        handler = AsyncMock()
+        with (
+            patch.dict(
+                ALL_TOOLS,
+                {
+                    "test_tool": {
+                        "handler": handler,
+                        "description": "t",
+                        "inputSchema": {"type": "object", "properties": {}},
+                    },
+                },
+            ),
+            patch(
+                "kaiten_mcp.server.get_client", side_effect=ValueError("KAITEN_DOMAIN is required")
+            ),
+        ):
+            result = await call_tool("test_tool", {})
+        text = _text(result)
+        assert result.isError is True
+        assert "ValueError" in text
+        assert "KAITEN_DOMAIN" in text
+
+    async def test_handler_type_error_returns_error(self):
+        """TypeError in handler (wrong argument type) should return error, not crash."""
+        handler = AsyncMock(side_effect=TypeError("expected int, got str"))
+        with patch.dict(
+            ALL_TOOLS,
+            {
+                "test_tool": {
+                    "handler": handler,
+                    "description": "t",
+                    "inputSchema": {"type": "object", "properties": {}},
+                },
+            },
+        ):
+            result = await call_tool("test_tool", {})
+        text = _text(result)
+        assert result.isError is True
+        assert "TypeError" in text
+
+    async def test_unknown_tool_returns_error_not_crash(self):
+        """Unknown tool name should return text error, not exception."""
+        result = await call_tool("nonexistent_tool_xyz", {})
+        text = _text(result)
+        assert "Unknown tool" in text
+        assert "nonexistent_tool_xyz" in text

@@ -108,6 +108,61 @@ def compact_response(data: Any, compact: bool = False) -> Any:
         return data
 
 
+def _strip_b64_value(value: str) -> str:
+    """Replace data URI with size placeholder."""
+    size_kb = len(value) // 1024
+    return f"[base64 ~{size_kb}KB, omitted]"
+
+
+def _strip_b64_dict(data: dict[str, Any], counter: list[int]) -> dict[str, Any]:
+    """Strip base64 data URIs from a dictionary."""
+    result: dict[str, Any] = {}
+    for key, value in data.items():
+        if isinstance(value, str) and value.startswith("data:"):
+            result[key] = _strip_b64_value(value)
+            counter[0] += 1
+        elif isinstance(value, dict):
+            result[key] = _strip_b64_dict(value, counter)
+        elif isinstance(value, list):
+            result[key] = _strip_b64_list(value, counter)
+        else:
+            result[key] = value
+    return result
+
+
+def _strip_b64_list(data: list[Any], counter: list[int]) -> list[Any]:
+    """Strip base64 data URIs from a list."""
+    result: list[Any] = []
+    for item in data:
+        if isinstance(item, dict):
+            result.append(_strip_b64_dict(item, counter))
+        elif isinstance(item, list):
+            result.append(_strip_b64_list(item, counter))
+        else:
+            result.append(item)
+    return result
+
+
+def strip_base64(data: Any) -> tuple[Any, int]:
+    """Strip base64 data URIs from any field in API response.
+
+    Always applied to all tool responses — unlike compact_response which is opt-in.
+    Replaces data: URIs with a size placeholder like "[base64 ~5KB, omitted]".
+
+    Args:
+        data: API response data (dict, list, or primitive)
+
+    Returns:
+        Tuple of (sanitized_data, count_of_stripped_fields)
+    """
+    counter = [0]
+    if isinstance(data, dict):
+        return _strip_b64_dict(data, counter), counter[0]
+    elif isinstance(data, list):
+        return _strip_b64_list(data, counter), counter[0]
+    return data, 0
+
+
 def select_fields(data: Any, fields_str: str | None) -> Any:
     """Keep only specified fields from each item in a list.
 

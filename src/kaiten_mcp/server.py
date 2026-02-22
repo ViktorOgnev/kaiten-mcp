@@ -41,6 +41,7 @@ from kaiten_mcp.tools import (
     utilities,
     webhooks,
 )
+from kaiten_mcp.tools.compact import strip_base64
 
 load_dotenv()
 
@@ -121,13 +122,16 @@ async def list_tools() -> list[Tool]:
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> CallToolResult:
-    if name not in ALL_TOOLS:
-        return CallToolResult(content=[TextContent(type="text", text=f"Unknown tool: {name}")])
-    handler = ALL_TOOLS[name]["handler"]
-    client = get_client()
     try:
+        if name not in ALL_TOOLS:
+            return CallToolResult(content=[TextContent(type="text", text=f"Unknown tool: {name}")])
+        handler = ALL_TOOLS[name]["handler"]
+        client = get_client()
         result = await handler(client, arguments)
+
+        # Auto-strip base64 data URIs (avatars, etc.) from all responses
         if isinstance(result, (dict, list)):
+            result, stripped = strip_base64(result)
             text = json.dumps(result, ensure_ascii=False, indent=2, default=str)
             if len(text) > COMPACT_JSON_THRESHOLD:
                 text = json.dumps(result, ensure_ascii=False, separators=(",", ":"), default=str)
@@ -154,6 +158,8 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
                     default=str,
                 )
                 text = summary
+            if stripped:
+                text += f"\n\n[Omitted {stripped} base64-encoded field(s). Data available via Kaiten web UI.]"
         else:
             text = str(result) if result is not None else "OK"
         return CallToolResult(content=[TextContent(type="text", text=text)])
@@ -165,7 +171,7 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
             isError=True,
         )
     except Exception as e:
-        logger.exception("Tool execution error")
+        logger.exception("Unhandled error in call_tool")
         return CallToolResult(
             content=[TextContent(type="text", text=f"Error: {type(e).__name__}: {e}")],
             isError=True,
