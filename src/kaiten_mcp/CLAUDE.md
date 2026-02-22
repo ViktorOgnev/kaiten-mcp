@@ -23,11 +23,20 @@ make test        # Запустить тесты (Docker)
 make lint        # Запустить линтеры (Docker)
 ```
 
+## Безопасность ключей (КРИТИЧНО)
+
+API-ключи **НИКОГДА** не запекаются в Docker-образ. Все три способа запуска получают ключи **только в runtime**:
+- **Docker Compose**: читает `.env` из `--project-directory` при каждом запуске контейнера
+- **Docker run**: получает через `-e` флаги при запуске контейнера
+- **Python venv**: получает через `-e` флаги или `load_dotenv()` из CWD
+
+`.dockerignore` исключает `.env` из build context. В Dockerfile нет `COPY .env` или `ENV KAITEN_*`.
+
 ## Подключение к Claude Code
 
 Пользователь должен предоставить два значения и записать их в `.env` файл в директории проекта:
 - `KAITEN_DOMAIN` — поддомен компании (например `mycompany` для `mycompany.kaiten.ru`)
-- `KAITEN_TOKEN` — API-токен из настроек Kaiten
+- `KAITEN_TOKEN` — API-токен из настроек Kaiten (Настройки → API → Создать токен)
 
 ```bash
 cp /path/to/kaiten-mcp/.env.example /path/to/kaiten-mcp/.env
@@ -225,6 +234,30 @@ claude mcp list
 2. `kaiten_list_card_blockers(card_id=X)` — блокировки
 3. `kaiten_list_comments(card_id=X)` — обсуждение
 4. `kaiten_move_card(card_id=X, column_id=Y)` — перемещение
+
+## Переключение аккаунта Kaiten
+
+Если пользователь хочет подключиться к другому аккаунту Kaiten:
+
+**Случай 1: Другая компания, та же почта.** API-токен в Kaiten привязан к email, а не к компании. Если у пользователя несколько организаций на одной почте — достаточно сменить `KAITEN_DOMAIN` в `.env`. Токен остаётся прежним.
+
+```
+# Было: KAITEN_DOMAIN=company-a
+# Стало: KAITEN_DOMAIN=company-b
+# KAITEN_TOKEN остаётся тот же
+```
+
+**Случай 2: Аккаунт на другой почте.** Другой email = другой пользователь = другой API-токен. Нужно сменить и `KAITEN_DOMAIN`, и `KAITEN_TOKEN`.
+
+**Как применить изменения:**
+
+| Способ запуска | Действие |
+|---------------|----------|
+| Docker Compose | Отредактируй `.env` → перезапусти Claude Code. Перерегистрация НЕ нужна |
+| Docker run | `claude mcp remove kaiten` → `claude mcp add` с новыми `-e` значениями |
+| Python venv | `claude mcp remove kaiten` → `claude mcp add` с новыми `-e` значениями |
+
+Сообщи пользователю об этих правилах, когда он спрашивает про смену аккаунта. **Не делай лишних действий** — если пользователь просто меняет организацию при той же почте, достаточно сменить KAITEN_DOMAIN.
 
 ## Важные ограничения
 

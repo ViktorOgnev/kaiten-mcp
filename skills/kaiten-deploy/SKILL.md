@@ -1,196 +1,321 @@
 ---
 name: kaiten-deploy
 description: Deploy Kaiten MCP server with guided setup wizard
-version: 1.0.0
+version: 2.0.0
 ---
 
-# Kaiten MCP Server Deployment
+# Kaiten MCP Server — Interactive Deployment Wizard
 
-This skill guides the user through deploying the Kaiten MCP server for Claude Code. It supports three deployment modes, two scopes, and includes auto-detection of existing setups.
+This skill is an interactive wizard. At every decision point, use the `AskUserQuestion` tool to present choices. Never assume — always ask.
 
-## Anti-patterns (NEVER DO THIS)
+## Security Invariant
 
-- **NEVER** use `-t` flag with `docker run` -- TTY breaks MCP's JSON-RPC stdio protocol
-- **NEVER** bake `.env` or API tokens into Docker images -- use `-e` flags or `--env-file`
-- **NEVER** use `docker compose run` without `-T` -- allocates pseudo-TTY
-- **NEVER** use relative paths in `claude mcp add` -- Claude Code may launch from any CWD
-- **NEVER** run `pip install` into the system Python -- always use venv
+API keys are **NEVER** baked into Docker images. Verified by:
+- `.dockerignore` excludes `.env` and `.env.*`
+- Dockerfile has no `COPY .env` or `ENV KAITEN_*`
+- All modes receive credentials **only at runtime** (env_file, -e flags, or load_dotenv)
 
-## Phase 0: Auto-Detection
+## Step 1: Auto-Detection (silent)
 
-Before asking questions, silently probe the environment. Run all checks in parallel:
+Run ALL checks in parallel (no user interaction):
 
-```
-1. Glob for pyproject.toml with name="kaiten-mcp" in CWD
-   -> $SOURCE_DIR or null
+```bash
+# 1. Find kaiten-mcp source directory
+Glob("**/pyproject.toml") -> check for name="kaiten-mcp" -> $SOURCE_DIR
 
-2. docker images kaiten-mcp --format '{{.Repository}}:{{.Tag}}'
-   -> existing image tags or null
+# 2. Check existing Docker images
+Bash("docker images kaiten-mcp --format '{{.Repository}}:{{.Tag}}' 2>/dev/null")
 
-3. Check for .venv/bin/kaiten-mcp relative to $SOURCE_DIR
-   -> $VENV_PATH or null
+# 3. Check existing venv
+Glob("$SOURCE_DIR/.venv/bin/kaiten-mcp") if $SOURCE_DIR found
 
-4. claude mcp list 2>/dev/null | grep kaiten
-   -> existing registration or null
+# 4. Check existing MCP registration
+Bash("claude mcp list 2>/dev/null | grep -i kaiten")
 
-5. Read $SOURCE_DIR/.env if found
-   -> pre-filled KAITEN_DOMAIN and KAITEN_TOKEN or null
-```
-
-If MCP server is already registered, ask:
-
-```
-Kaiten MCP is already registered ({scope}, {status}).
-  1. Reconfigure -- remove and set up again
-  2. Cancel -- keep current setup
+# 5. Read .env if found
+Read("$SOURCE_DIR/.env") if exists
 ```
 
-If "Reconfigure": `claude mcp remove kaiten` then continue.
+Store all findings for use in subsequent steps.
 
-## Phase 1: Choose Mode
+## Step 2: Existing Registration Check
 
-Ask the user:
+**If MCP server `kaiten` is already registered**, use `AskUserQuestion`:
 
 ```
-How do you want to run the Kaiten MCP server?
-
-  1. Docker (dev) -- source mounted via volume, code changes are instant
-     Best for: developers who edit kaiten-mcp source
-     {if image found: "Existing image detected: kaiten-mcp:dev"}
-
-  2. Docker (baked) -- everything in the image, self-contained
-     Best for: end users who just want the 246 tools
-     {if image found: "Existing image detected: kaiten-mcp:latest"}
-
-  3. Local Python -- install to venv, no Docker needed
-     Best for: quick setup, Python 3.11+ required
-     {if venv found: "Existing venv detected"}
+AskUserQuestion:
+  question: "Kaiten MCP is already registered ({scope}). What would you like to do?"
+  header: "MCP Status"
+  options:
+    - label: "Reconfigure"
+      description: "Remove current registration and set up from scratch"
+    - label: "Switch account"
+      description: "Change Kaiten credentials only (edit .env, no re-registration)"
+    - label: "Cancel"
+      description: "Keep current setup, do nothing"
 ```
+
+- **Reconfigure**: run `claude mcp remove kaiten`, then continue to Step 3.
+- **Switch account**: jump directly to Step 5 (Credentials).
+- **Cancel**: stop, inform user that no changes were made.
+
+**If NOT registered**, proceed to Step 3.
+
+## Step 3: Choose Run Mode
+
+Use `AskUserQuestion`:
+
+```
+AskUserQuestion:
+  question: "How do you want to run the Kaiten MCP server?"
+  header: "Run mode"
+  options:
+    - label: "Docker dev (Recommended)"
+      description: "Source mounted via volume — code changes apply instantly. Best for developers."
+    - label: "Docker baked"
+      description: "Everything in the image, self-contained. Best for end users who just want 246 tools."
+    - label: "Local Python"
+      description: "Install to venv, no Docker needed. Requires Python 3.11+."
+```
+
+If existing image/venv was detected in Step 1, mention it in the description (e.g. "Existing image detected: kaiten-mcp:dev").
 
 Store as `$MODE` = `docker-dev` | `docker-baked` | `python`.
 
-## Phase 2: Choose Scope
+## Step 4: Choose Scope
+
+Use `AskUserQuestion`:
 
 ```
-Where should the MCP server be registered?
-
-  1. Project -- only when working in {CWD}
-  2. Global -- available in all projects
+AskUserQuestion:
+  question: "Where should the MCP server be available?"
+  header: "Scope"
+  options:
+    - label: "This project only (Recommended)"
+      description: "MCP server available only when working in this directory"
+    - label: "All projects (global)"
+      description: "MCP server available everywhere in Claude Code"
 ```
 
-Store as `$SCOPE` = `project` | `user`.
+Store as `$SCOPE`: first option = omit `-s` flag (default project), second option = `-s user`.
 
-## Phase 3: Credentials (.env file)
+## Step 5: Credentials
 
-Credentials live in `.env`, NOT in the `claude mcp add` command. This means changing domain/token = edit `.env` + restart Claude Code. No re-registration needed.
+### If `.env` already exists with values
+
+Use `AskUserQuestion`:
 
 ```
-# Check if .env exists
-if $SOURCE_DIR/.env exists:
-  "Found .env with KAITEN_DOMAIN={domain}. Use these credentials? [Y/n]"
-else:
-  "Create .env from template:"
-  cp $SOURCE_DIR/.env.example $SOURCE_DIR/.env
-  "Edit .env -- set KAITEN_DOMAIN and KAITEN_TOKEN"
+AskUserQuestion:
+  question: "Found .env with KAITEN_DOMAIN={domain}. Use these credentials?"
+  header: "Credentials"
+  options:
+    - label: "Yes, use existing"
+      description: "Keep current domain and API token from .env"
+    - label: "Enter new credentials"
+      description: "I want to connect to a different Kaiten account"
 ```
 
-Validate `.env` contents:
-- `KAITEN_DOMAIN`: non-empty, no dots/slashes. Strip `https://` and `.kaiten.ru` if pasted.
-- `KAITEN_TOKEN`: non-empty, 20+ characters.
+### If no `.env`, or user chose "Enter new credentials"
 
-For python mode (no Docker Compose), credentials must be passed via `-e` flags since `load_dotenv()` depends on CWD.
+Use `AskUserQuestion` for domain:
 
-## Phase 4: Source Location
+```
+AskUserQuestion:
+  question: "Enter your Kaiten company subdomain (the 'xxx' part of xxx.kaiten.ru):"
+  header: "Domain"
+  options:
+    - label: "Type subdomain"
+      description: "Just the subdomain, e.g. 'mycompany' — not the full URL"
+    - label: "I have the full URL"
+      description: "Paste full URL like https://mycompany.kaiten.ru — domain will be extracted"
+```
 
-If `$SOURCE_DIR` detected: confirm. Otherwise ask for absolute path.
-Validate: `{path}/pyproject.toml` exists and contains `name = "kaiten-mcp"`.
+Then ask the user to provide the actual value. Validate:
+- Strip `https://`, `.kaiten.ru`, `.kaiten.io` if pasted as full URL
+- Must be non-empty, no dots, no slashes
 
-## Phase 5: Execute
+Use `AskUserQuestion` for token:
 
-### Mode: docker-dev (RECOMMENDED)
+```
+AskUserQuestion:
+  question: "Enter your Kaiten API token:"
+  header: "API Token"
+  options:
+    - label: "I have a token"
+      description: "Paste your API token (Settings → My Profile → API tokens → Create)"
+    - label: "How to get a token?"
+      description: "Open Kaiten → Settings → My Profile → API tokens → Create token"
+```
 
-Docker Compose reads `.env` automatically. No `-e` flags in `claude mcp add`.
+If "How to get a token?" — explain the steps, then ask again.
+
+Write validated values to `$SOURCE_DIR/.env`:
+```bash
+# Create .env from template if needed
+cp $SOURCE_DIR/.env.example $SOURCE_DIR/.env  # if .env doesn't exist
+# Write KAITEN_DOMAIN=value and KAITEN_TOKEN=value
+```
+
+### After saving credentials, always inform:
+
+```
+Credentials saved to .env.
+
+How accounts work in Kaiten:
+- API token is tied to your email, not the company
+- Multiple organizations on same email → same token, just change KAITEN_DOMAIN
+- Different email → different token, change both KAITEN_DOMAIN and KAITEN_TOKEN
+- To switch later: edit .env → restart Claude Code (/exit then claude)
+- Docker Compose mode: no MCP re-registration needed when switching
+```
+
+## Step 6: Source Location
+
+If `$SOURCE_DIR` was auto-detected in Step 1:
+
+```
+AskUserQuestion:
+  question: "Kaiten MCP source found at {$SOURCE_DIR}. Use this location?"
+  header: "Source"
+  options:
+    - label: "Yes, use {$SOURCE_DIR}"
+      description: "Detected kaiten-mcp project at this path"
+    - label: "Use a different path"
+      description: "I want to specify another directory"
+```
+
+If not detected or user chose different path — ask for absolute path, then validate:
+- `{path}/pyproject.toml` exists
+- Contains `name = "kaiten-mcp"`
+
+## Step 7: Build & Register
+
+Show the user what will happen before executing:
+
+```
+Ready to set up Kaiten MCP:
+  Mode:   {$MODE}
+  Scope:  {$SCOPE}
+  Domain: {$DOMAIN}
+  Source: {$SOURCE_DIR}
+
+Executing...
+```
+
+### Mode: docker-dev
 
 ```bash
-# Step 1: Build deps-only image
+# Build deps-only image
 docker compose --project-directory $SOURCE_DIR build kaiten-mcp-dev
 
-# Step 2: Register MCP server (NO -e flags -- credentials from .env)
+# Register (NO -e flags — credentials from .env via env_file)
 claude mcp add kaiten \
-  -s $SCOPE \
+  [-s user] \
   -- docker compose --project-directory $SOURCE_DIR run --rm -T kaiten-mcp-dev
 ```
 
-After code changes: just restart Claude Code. No rebuild needed.
-After dependency changes (pyproject.toml): `docker compose --project-directory $SOURCE_DIR build kaiten-mcp-dev`.
-After credential changes: edit `.env` → restart Claude Code. No re-registration.
-
 ### Mode: docker-baked
 
-Docker Compose reads `.env` automatically.
-
 ```bash
-# Step 1: Build full image
+# Build full image
 docker compose --project-directory $SOURCE_DIR build kaiten-mcp
 
-# Step 2: Register MCP server (NO -e flags)
+# Register (NO -e flags)
 claude mcp add kaiten \
-  -s $SCOPE \
+  [-s user] \
   -- docker compose --project-directory $SOURCE_DIR run --rm -T kaiten-mcp
 ```
 
-After code changes: `docker compose --project-directory $SOURCE_DIR build kaiten-mcp` then restart Claude Code.
-After credential changes: edit `.env` → restart Claude Code.
-
 ### Mode: python
 
-For venv mode, credentials are passed via `-e` (since `load_dotenv()` CWD is unpredictable):
-
 ```bash
-# Step 1: Create venv and install
+# Create venv and install
 python3 -m venv $SOURCE_DIR/.venv
 $SOURCE_DIR/.venv/bin/pip install -e $SOURCE_DIR
 
-# Step 2: Read credentials from .env
 # Parse KAITEN_DOMAIN and KAITEN_TOKEN from $SOURCE_DIR/.env
 
-# Step 3: Register MCP server
+# Register (with -e flags — load_dotenv CWD is unpredictable)
 claude mcp add kaiten \
-  -s $SCOPE \
+  [-s user] \
   -e KAITEN_DOMAIN=$DOMAIN \
   -e KAITEN_TOKEN=$TOKEN \
   -- $SOURCE_DIR/.venv/bin/kaiten-mcp
 ```
 
-After code changes: just restart Claude Code (editable install picks up changes).
-After dependency changes: `$SOURCE_DIR/.venv/bin/pip install -e $SOURCE_DIR`.
-
-## Phase 6: Verify
+## Step 8: Verify & Finish
 
 ```bash
 claude mcp list
 ```
 
-Tell user:
+Final message:
+
 ```
-Setup complete. Restart Claude Code to activate 246 Kaiten tools:
+Setup complete! Kaiten MCP server is registered.
+
+To activate 246 tools:
   1. Type /exit
   2. Run `claude` again
+  3. Try: "Show me my Kaiten user info"
 
-After restart, try: "Show me my Kaiten user info"
+Quick reference:
+  - Switch company (same email): edit KAITEN_DOMAIN in .env → restart Claude Code
+  - Switch account (different email): edit both values in .env → restart Claude Code
+  - Docker Compose mode: no MCP re-registration needed for credential changes
+  - Update code (dev mode): restart Claude Code — changes apply instantly
+  - Update code (baked mode): make build → restart Claude Code
 ```
+
+## Account Switching Flow
+
+When user asks to switch accounts (outside of initial setup), use `AskUserQuestion`:
+
+```
+AskUserQuestion:
+  question: "How is the new Kaiten account different from current?"
+  header: "Account"
+  options:
+    - label: "Different company, same email"
+      description: "API token stays the same — only KAITEN_DOMAIN changes"
+    - label: "Different email entirely"
+      description: "Both KAITEN_DOMAIN and KAITEN_TOKEN need to change"
+```
+
+### Same email, different company
+
+1. Read current `.env` to find $SOURCE_DIR
+2. Edit `.env` — change only `KAITEN_DOMAIN`
+3. Inform: "Restart Claude Code (/exit then claude). Token stays the same, no re-registration needed."
+
+### Different email
+
+1. Read current `.env` to find $SOURCE_DIR
+2. Ask for new `KAITEN_DOMAIN` and `KAITEN_TOKEN` (same as Step 5)
+3. Write to `.env`
+4. For Docker Compose: "Restart Claude Code. No re-registration needed."
+5. For docker run / python: `claude mcp remove kaiten` → re-register with new `-e` values.
+
+## Anti-patterns (NEVER DO THIS)
+
+- **NEVER** `claude mcp remove` + `claude mcp add` just to change credentials in Compose mode — edit `.env` instead
+- **NEVER** use `-t` flag with `docker run` — TTY breaks MCP stdio protocol
+- **NEVER** use `docker compose run` without `-T`
+- **NEVER** hardcode credentials in `claude mcp add -e` for Docker Compose — Compose reads `.env` via `env_file`
 
 ## Troubleshooting
 
 | Problem | Cause | Solution |
 |---------|-------|---------|
 | Server registered but tools not visible | Tools load at session start | Restart Claude Code: /exit then claude |
-| `command not found: timeout` | TTY enabled in docker compose | Add `-T` flag to `docker compose run` |
+| `command not found: timeout` | TTY in docker compose | Add `-T` flag to `docker compose run` |
 | `MCP server kaiten already exists` | Already registered | `claude mcp remove kaiten` then re-register |
 | Docker build fails | Network or cache issue | `docker build --no-cache --target deps .` |
 | `externally-managed-environment` | System Python protected | Use venv: `python3 -m venv .venv` |
-| Server hangs / no response | TTY allocated (`-t` flag) | Remove `-t`, ensure only `-i` is used |
-| Permission denied in container | Non-root user + read-only mount | Expected behavior for security; output dir needs separate mount |
+| Server hangs / no response | TTY allocated | Remove `-t`, ensure only `-i` is used |
+| Credentials not picked up (Compose) | `.env` not in project dir | Ensure `.env` is in kaiten-mcp root; use `--project-directory` |
+| Credentials not picked up (python) | CWD mismatch | Use `-e` flags in `claude mcp add` |
 
 ## Update Paths
 
@@ -198,32 +323,6 @@ After restart, try: "Show me my Kaiten user info"
 |-------------|-----------|-------------|--------|
 | Source code | Restart Claude Code | `make build` + restart | Restart Claude Code |
 | Dependencies | `make dev-build` + restart | `make build` + restart | `pip install -e .` + restart |
-| Credentials (Compose) | Edit `.env` → restart Claude Code | same | N/A |
-| Credentials (python) | N/A | N/A | `claude mcp remove` + re-register with new `-e` |
+| Credentials (Compose) | Edit `.env` → restart | Edit `.env` → restart | N/A |
+| Credentials (python) | N/A | N/A | `claude mcp remove` + re-register |
 | Scope | `claude mcp remove kaiten -s $OLD` + re-register | same | same |
-
-## Docker Security Flags
-
-All Docker commands use hardened security flags:
-
-| Flag | Purpose |
-|------|---------|
-| `--read-only` | Container filesystem is read-only |
-| `--tmpfs /tmp:noexec,nosuid,size=64m` | Writable temp only, no executables |
-| `--security-opt=no-new-privileges:true` | No privilege escalation |
-| `--cap-drop=ALL` | Drop all Linux capabilities |
-| `-v src:/app/src:ro` | Source code read-only (dev mode) |
-| `-i` (no `-t`) | Stdin open, no TTY |
-
-## Makefile Shortcuts
-
-If the user is in the kaiten-mcp directory, they can use Make:
-
-```bash
-make help        # Show all targets
-make dev-build   # Build deps-only image
-make build       # Build full image
-make venv        # Create venv + install
-make test        # Run tests (Docker)
-make lint        # Run linters (Docker)
-```
