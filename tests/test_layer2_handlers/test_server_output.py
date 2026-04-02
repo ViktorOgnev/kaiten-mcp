@@ -22,7 +22,7 @@ def _text(result: CallToolResult) -> str:
 @pytest.fixture(autouse=True)
 def _inject_client():
     """Inject a mock client so get_client() does not create a real one."""
-    with patch("kaiten_mcp.server._client", object()):
+    with patch("kaiten_mcp.runtime._client", object()):
         yield
 
 
@@ -269,7 +269,8 @@ class TestErrorResilience:
                 },
             ),
             patch(
-                "kaiten_mcp.server.get_client", side_effect=ValueError("KAITEN_DOMAIN is required")
+                "kaiten_mcp.runtime.get_client",
+                side_effect=ValueError("KAITEN_DOMAIN is required"),
             ),
         ):
             result = await call_tool("test_tool", {})
