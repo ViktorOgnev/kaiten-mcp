@@ -31,6 +31,41 @@ run: build  ## Run baked MCP server
 		-e KAITEN_DOMAIN -e KAITEN_TOKEN \
 		$(IMAGE):latest
 
+# --- HTTP mode (remote deployment) ---
+
+.PHONY: http-dev-build
+http-dev-build:  ## Build deps-only HTTP image for development
+	docker build --target deps-http -t $(IMAGE)-http:dev .
+
+.PHONY: http-dev-run
+http-dev-run: http-dev-build  ## Run HTTP MCP server with source mounted (dev mode)
+	docker run --rm \
+		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
+		--security-opt=no-new-privileges:true --cap-drop=ALL \
+		-v $(SRC_DIR):/app/src:ro \
+		-p $${MCP_HTTP_PORT:-8000}:$${MCP_HTTP_PORT:-8000} \
+		-e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
+		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
+		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
+		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \
+		$(IMAGE)-http:dev
+
+.PHONY: http-build
+http-build:  ## Build full HTTP image for remote deployment
+	docker build --target baked-http -t $(IMAGE)-http:latest .
+
+.PHONY: http-run
+http-run: http-build  ## Run baked HTTP MCP server
+	docker run --rm \
+		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
+		--security-opt=no-new-privileges:true --cap-drop=ALL \
+		-p $${MCP_HTTP_PORT:-8000}:$${MCP_HTTP_PORT:-8000} \
+		-e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
+		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
+		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
+		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \
+		$(IMAGE)-http:latest
+
 # --- Local Python (venv, no Docker) ---
 
 .PHONY: venv
@@ -61,7 +96,7 @@ lint-fix:  ## Auto-fix lint issues
 .PHONY: clean
 clean:  ## Remove build artifacts and Docker images
 	rm -rf build/ dist/ src/*.egg-info
-	docker rmi $(IMAGE):dev $(IMAGE):latest 2>/dev/null || true
+	docker rmi $(IMAGE):dev $(IMAGE):latest $(IMAGE)-http:dev $(IMAGE)-http:latest 2>/dev/null || true
 
 .PHONY: help
 help:  ## Show available targets
@@ -78,6 +113,12 @@ help:  ## Show available targets
 	@echo "  Local Python (no Docker):"
 	@echo "    venv          Create venv and install package"
 	@echo "    local-run     Run MCP server from venv"
+	@echo ""
+	@echo "  HTTP mode (remote deployment):"
+	@echo "    http-dev-build Build deps-only HTTP image"
+	@echo "    http-dev-run   Run HTTP server with source mounted from host"
+	@echo "    http-build     Build baked HTTP image"
+	@echo "    http-run       Run baked HTTP image"
 	@echo ""
 	@echo "  Testing:"
 	@echo "    test          Run all tests with coverage (Docker)"

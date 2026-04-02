@@ -1,6 +1,5 @@
 services:
-  # Development mode: source mounted from host, instant code changes
-  # Credentials read from .env automatically (no hardcoding in claude mcp add)
+  # Development mode: stdio transport with source mounted from host
   kaiten-mcp-dev:
     build:
       context: .
@@ -21,8 +20,7 @@ services:
     volumes:
       - ./src:/app/src:ro
 
-  # Production mode: everything baked into image
-  # Credentials read from .env automatically
+  # Production mode: stdio transport with all source baked into the image
   kaiten-mcp:
     build:
       context: .
@@ -40,3 +38,79 @@ services:
     pids_limit: 256
     mem_limit: 512m
     env_file: .env
+
+  # Development mode: HTTP transport with source mounted from host
+  kaiten-mcp-http-dev:
+    build:
+      context: .
+      target: deps-http
+    image: kaiten-mcp-http:dev
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    env_file: .env
+    environment:
+      MCP_HTTP_HOST: ${MCP_HTTP_HOST:-0.0.0.0}
+      MCP_HTTP_PORT: ${MCP_HTTP_PORT:-8000}
+      MCP_HTTP_BASE_PATH: ${MCP_HTTP_BASE_PATH:-/mcp}
+    volumes:
+      - ./src:/app/src:ro
+    ports:
+      - "${MCP_HTTP_PORT:-8000}:${MCP_HTTP_PORT:-8000}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import os,urllib.request; port=os.environ.get('MCP_HTTP_PORT','8000'); urllib.request.urlopen(f'http://127.0.0.1:{port}/readyz').read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    profiles: ["http"]
+
+  # Production mode: HTTP transport with all source baked into the image
+  kaiten-mcp-http:
+    build:
+      context: .
+      target: baked-http
+    image: kaiten-mcp-http:latest
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    env_file: .env
+    environment:
+      MCP_HTTP_HOST: ${MCP_HTTP_HOST:-0.0.0.0}
+      MCP_HTTP_PORT: ${MCP_HTTP_PORT:-8000}
+      MCP_HTTP_BASE_PATH: ${MCP_HTTP_BASE_PATH:-/mcp}
+    ports:
+      - "${MCP_HTTP_PORT:-8000}:${MCP_HTTP_PORT:-8000}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import os,urllib.request; port=os.environ.get('MCP_HTTP_PORT','8000'); urllib.request.urlopen(f'http://127.0.0.1:{port}/readyz').read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    profiles: ["http"]

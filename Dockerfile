@@ -1,7 +1,5 @@
-# ---- deps: Python + pip dependencies only (dev/volume-mount mode) ----
-# Build: docker build --target deps -t kaiten-mcp:dev .
-# Run:   docker run --rm -i -v ./src:/app/src:ro -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:dev
-FROM python:3.12-slim AS deps
+# ---- base: shared Python environment and package dependencies ----
+FROM python:3.12-slim AS base-deps
 
 WORKDIR /app
 
@@ -11,7 +9,6 @@ RUN mkdir -p src/kaiten_mcp && \
     pip install --no-cache-dir -e . && \
     rm src/kaiten_mcp/__init__.py
 
-# Non-root user
 RUN groupadd --gid 1000 mcp && \
     useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin mcp && \
     mkdir -p /app/output && \
@@ -19,13 +16,25 @@ RUN groupadd --gid 1000 mcp && \
 
 USER mcp
 ENV PYTHONUNBUFFERED=1
+
+
+# ---- deps-stdio: dev image with source mounted from host ----
+FROM base-deps AS deps-stdio
 ENTRYPOINT ["kaiten-mcp"]
 
 
-# ---- baked: full image with source code (distribution mode) ----
-# Build: docker build --target baked -t kaiten-mcp:latest .
-# Run:   docker run --rm -i -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:latest
-FROM python:3.12-slim AS baked
+# ---- deps: backward-compatible alias for stdio dev image ----
+FROM deps-stdio AS deps
+
+
+# ---- deps-http: dev image with source mounted from host ----
+FROM base-deps AS deps-http
+EXPOSE 8000
+ENTRYPOINT ["kaiten-mcp-http"]
+
+
+# ---- baked-base: full image with source code ----
+FROM python:3.12-slim AS baked-base
 
 WORKDIR /app
 
@@ -34,7 +43,6 @@ COPY src/ src/
 RUN pip install --no-cache-dir . && \
     rm -rf /root/.cache
 
-# Non-root user
 RUN groupadd --gid 1000 mcp && \
     useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin mcp && \
     mkdir -p /app/output && \
@@ -42,4 +50,18 @@ RUN groupadd --gid 1000 mcp && \
 
 USER mcp
 ENV PYTHONUNBUFFERED=1
+
+
+# ---- baked-http: self-contained HTTP image ----
+FROM baked-base AS baked-http
+EXPOSE 8000
+ENTRYPOINT ["kaiten-mcp-http"]
+
+
+# ---- baked-stdio: self-contained stdio image ----
+FROM baked-base AS baked-stdio
 ENTRYPOINT ["kaiten-mcp"]
+
+
+# ---- baked: backward-compatible alias for stdio baked image ----
+FROM baked-stdio AS baked
