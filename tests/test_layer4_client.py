@@ -10,11 +10,13 @@ from kaiten_mcp.client import (
     RATE_LIMIT_DELAY,
     KaitenApiError,
     KaitenClient,
+    build_api_base_url,
 )
 
 DOMAIN = "test-company"
 TOKEN = "test-token-12345"
 BASE = f"https://{DOMAIN}.kaiten.ru/api/latest"
+STAND_BASE = "https://kaiten.kaiten-stand-b.ru/api/latest"
 
 
 # ---------------------------------------------------------------------------
@@ -37,8 +39,10 @@ def client():
 
 class TestConstructor:
     def test_requires_domain(self, monkeypatch):
+        monkeypatch.delenv("KAITEN_SUBDOMAIN", raising=False)
         monkeypatch.delenv("KAITEN_DOMAIN", raising=False)
-        with pytest.raises(ValueError, match="KAITEN_DOMAIN is required"):
+        monkeypatch.delenv("KAITEN_BASE_URL", raising=False)
+        with pytest.raises(ValueError, match="Kaiten host configuration is required"):
             KaitenClient(domain="", token="tok")
 
     def test_requires_token(self, monkeypatch):
@@ -49,8 +53,64 @@ class TestConstructor:
     def test_base_url_built_correctly(self, client):
         assert client.base_url == BASE
 
+    def test_base_url_built_from_base_domain(self):
+        client = KaitenClient(domain="kaiten", base_domain="kaiten-stand-b.ru", token=TOKEN)
+        assert client.base_url == STAND_BASE
+
+    def test_base_url_override_takes_priority(self, monkeypatch):
+        monkeypatch.setenv("KAITEN_SUBDOMAIN", "ignored")
+        monkeypatch.setenv("KAITEN_BASE_DOMAIN", "ignored.example")
+        client = KaitenClient(base_url="https://custom.example", token=TOKEN)
+        assert client.base_url == "https://custom.example/api/latest"
+
+    def test_base_url_override_normalized(self):
+        client = KaitenClient(base_url="https://custom.example/api", token=TOKEN)
+        assert client.base_url == "https://custom.example/api/latest"
+
+    def test_reads_new_env_names(self, monkeypatch):
+        monkeypatch.setenv("KAITEN_SUBDOMAIN", "kaiten")
+        monkeypatch.setenv("KAITEN_BASE_DOMAIN", "kaiten-stand-b.ru")
+        client = KaitenClient(token=TOKEN)
+        assert client.base_url == STAND_BASE
+
+    def test_falls_back_to_legacy_domain_env(self, monkeypatch):
+        monkeypatch.delenv("KAITEN_SUBDOMAIN", raising=False)
+        monkeypatch.setenv("KAITEN_DOMAIN", "legacy-company")
+        client = KaitenClient(token=TOKEN)
+        assert client.base_url == "https://legacy-company.kaiten.ru/api/latest"
+
+    def test_invalid_subdomain_rejected(self):
+        with pytest.raises(ValueError, match="KAITEN_SUBDOMAIN"):
+            KaitenClient(domain="https://bad.example", token=TOKEN)
+
+    def test_invalid_base_domain_rejected(self):
+        with pytest.raises(ValueError, match="KAITEN_BASE_DOMAIN"):
+            KaitenClient(domain="acme", base_domain="https://bad.example", token=TOKEN)
+
+    def test_invalid_base_url_rejected(self):
+        with pytest.raises(ValueError, match="KAITEN_BASE_URL"):
+            KaitenClient(base_url="custom.example", token=TOKEN)
+
     def test_lazy_client_init(self, client):
         assert client._client is None
+
+
+class TestBaseUrlBuilder:
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("https://custom.example", "https://custom.example/api/latest"),
+            ("https://custom.example/", "https://custom.example/api/latest"),
+            ("https://custom.example/api", "https://custom.example/api/latest"),
+            ("https://custom.example/api/latest", "https://custom.example/api/latest"),
+            (
+                "https://custom.example/nested",
+                "https://custom.example/nested/api/latest",
+            ),
+        ],
+    )
+    def test_normalizes_absolute_base_url(self, raw, expected):
+        assert build_api_base_url(base_url=raw) == expected
 
 
 # ---------------------------------------------------------------------------

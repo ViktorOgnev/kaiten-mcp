@@ -9,8 +9,8 @@ and finally tears everything down in reverse dependency order.
 
 Prerequisites
 -------------
-* KAITEN_DOMAIN and KAITEN_TOKEN environment variables must be set pointing
-  at a live Kaiten instance.
+* Host config (`KAITEN_SUBDOMAIN` or `KAITEN_BASE_URL`) and `KAITEN_TOKEN`
+  environment variables must be set pointing at a live Kaiten instance.
 * The token must belong to a user with admin/owner permissions so that
   spaces, card types, custom properties and automations can be created.
 
@@ -76,6 +76,14 @@ TS = str(int(time.time()))
 PREFIX = f"E2E-{TS}"
 
 
+def _has_host_config() -> bool:
+    return bool(
+        os.environ.get("KAITEN_BASE_URL")
+        or os.environ.get("KAITEN_SUBDOMAIN")
+        or os.environ.get("KAITEN_DOMAIN")
+    )
+
+
 def _h(tools: dict, name: str):
     """Return the handler function for tool *name*."""
     return tools[name]["handler"]
@@ -96,7 +104,7 @@ async def _safe_delete(coro):
 
 @pytest.fixture(scope="function")
 async def client():
-    """Real KaitenClient -- requires KAITEN_E2E=1 + KAITEN_DOMAIN + KAITEN_TOKEN.
+    """Real KaitenClient -- requires KAITEN_E2E=1 + host config + KAITEN_TOKEN.
 
     Function-scoped to match pytest-asyncio's per-test event loop.
     Each test gets a fresh client (KaitenClient is cheap to create).
@@ -104,11 +112,10 @@ async def client():
     """
     if not os.environ.get("KAITEN_E2E"):
         pytest.skip("KAITEN_E2E not set -- skipping E2E (set KAITEN_E2E=1 to enable)")
-    domain = os.environ.get("KAITEN_DOMAIN")
     token = os.environ.get("KAITEN_TOKEN")
-    if not domain or not token:
-        pytest.skip("KAITEN_DOMAIN / KAITEN_TOKEN not set -- skipping E2E")
-    c = KaitenClient(domain=domain, token=token)
+    if not _has_host_config() or not token:
+        pytest.skip("Host config / KAITEN_TOKEN not set -- skipping E2E")
+    c = KaitenClient(token=token)
     yield c
     await c.close()
 
@@ -125,13 +132,12 @@ def _e2e_cleanup():
         return
     import asyncio
 
-    domain = os.environ.get("KAITEN_DOMAIN", "")
     token = os.environ.get("KAITEN_TOKEN", "")
-    if not domain or not token:
+    if not _has_host_config() or not token:
         return
     loop = asyncio.new_event_loop()
     try:
-        c = KaitenClient(domain=domain, token=token)
+        c = KaitenClient(token=token)
         loop.run_until_complete(_cleanup_all(c))
         loop.run_until_complete(c.close())
     finally:
@@ -511,7 +517,7 @@ S = _State()
 
 @pytest.mark.skipif(
     not os.environ.get("KAITEN_E2E"),
-    reason="E2E requires KAITEN_E2E=1 (plus KAITEN_DOMAIN and KAITEN_TOKEN)",
+    reason="E2E requires KAITEN_E2E=1 (plus host config and KAITEN_TOKEN)",
 )
 class TestE2EScenario:
     """Ordered E2E scenario exercising ~100+ tool handler calls."""

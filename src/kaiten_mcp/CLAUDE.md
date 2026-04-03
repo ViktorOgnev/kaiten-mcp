@@ -34,16 +34,39 @@ API-ключи **НИКОГДА** не запекаются в Docker-образ
 
 ## Подключение к Claude Code
 
-Пользователь должен предоставить два значения и записать их в `.env` файл в директории проекта:
-- `KAITEN_DOMAIN` — поддомен компании (например `mycompany` для `mycompany.kaiten.ru`)
+Пользователь должен предоставить хост-конфиг и токен, затем записать их в `.env` файл в директории проекта:
+- `KAITEN_SUBDOMAIN` — основной явный поддомен компании (например `mycompany` для `mycompany.kaiten.ru`)
+- `KAITEN_BASE_DOMAIN` — опциональный базовый домен, если это не `kaiten.ru`
+- `KAITEN_BASE_URL` — опциональный полный override URL API-хоста, если домен собирается нестандартно
 - `KAITEN_TOKEN` — API-токен из настроек Kaiten (Настройки → API → Создать токен)
 
 ```bash
 cp /path/to/kaiten-mcp/.env.example /path/to/kaiten-mcp/.env
-# Отредактировать .env — вписать KAITEN_DOMAIN и KAITEN_TOKEN
+# Отредактировать .env — вписать KAITEN_SUBDOMAIN/KAITEN_BASE_URL и KAITEN_TOKEN
 ```
 
-**Принцип: credentials живут в `.env`, а НЕ в команде `claude mcp add`.** Смена домена/токена = редактирование `.env` + перезапуск Claude Code. Не нужно перерегистрировать MCP.
+Обычный SaaS:
+```dotenv
+KAITEN_SUBDOMAIN=mycompany
+KAITEN_TOKEN=...
+```
+
+Стенд с кастомным доменом:
+```dotenv
+KAITEN_SUBDOMAIN=kaiten
+KAITEN_BASE_DOMAIN=kaiten.ru
+KAITEN_TOKEN=...
+```
+
+Полный override:
+```dotenv
+KAITEN_BASE_URL=https://kaiten.kaiten.ru
+KAITEN_TOKEN=...
+```
+
+`KAITEN_DOMAIN` остаётся как deprecated fallback для обратной совместимости, но в новых настройках используй `KAITEN_SUBDOMAIN`.
+
+**Принцип: credentials живут в `.env`, а НЕ в команде `claude mcp add`.** Смена домена/токена = редактирование `.env` + перезапуск Claude Code. Не нужно перерегистрировать MCP. Переменные процесса при запуске имеют приоритет над `.env`.
 
 Спроси у пользователя способ запуска.
 
@@ -105,25 +128,25 @@ claude mcp add kaiten \
 Dev-режим:
 ```bash
 claude mcp add kaiten \
-  -e KAITEN_DOMAIN=ДОМЕН \
+  -e KAITEN_SUBDOMAIN=ДОМЕН \
   -e KAITEN_TOKEN=ТОКЕН \
   -- docker run --rm -i \
      --read-only --tmpfs /tmp:noexec,nosuid,size=64m \
      --security-opt=no-new-privileges:true --cap-drop=ALL \
      -v /path/to/kaiten-mcp/src:/app/src:ro \
-     -e KAITEN_DOMAIN -e KAITEN_TOKEN \
+     -e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
      kaiten-mcp:dev
 ```
 
 Baked-режим:
 ```bash
 claude mcp add kaiten \
-  -e KAITEN_DOMAIN=ДОМЕН \
+  -e KAITEN_SUBDOMAIN=ДОМЕН \
   -e KAITEN_TOKEN=ТОКЕН \
   -- docker run --rm -i \
      --read-only --tmpfs /tmp:noexec,nosuid,size=64m \
      --security-opt=no-new-privileges:true --cap-drop=ALL \
-     -e KAITEN_DOMAIN -e KAITEN_TOKEN \
+     -e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
      kaiten-mcp:latest
 ```
 
@@ -146,7 +169,7 @@ python3 -m venv /path/to/kaiten-mcp/.venv
 
 ```bash
 claude mcp add kaiten \
-  -e KAITEN_DOMAIN=ДОМЕН \
+  -e KAITEN_SUBDOMAIN=ДОМЕН \
   -e KAITEN_TOKEN=ТОКЕН \
   -- /path/to/kaiten-mcp/.venv/bin/kaiten-mcp
 ```
@@ -195,7 +218,10 @@ claude mcp list
 
 | Переменная | Обязательна | Описание |
 |------------|-------------|----------|
-| `KAITEN_DOMAIN` | Да | Поддомен компании (`mycompany` для `mycompany.kaiten.ru`) |
+| `KAITEN_SUBDOMAIN` | Да* | Поддомен компании (`mycompany` для `mycompany.kaiten.ru`) |
+| `KAITEN_BASE_DOMAIN` | Нет | Базовый домен, по умолчанию `kaiten.ru` |
+| `KAITEN_BASE_URL` | Нет | Полный override URL API-хоста; имеет приоритет над `KAITEN_SUBDOMAIN`/`KAITEN_BASE_DOMAIN` |
+| `KAITEN_DOMAIN` | Нет | Устаревший fallback вместо `KAITEN_SUBDOMAIN` |
 | `KAITEN_TOKEN` | Да | API-токен из настроек пользователя Kaiten |
 | `KAITEN_MCP_OUTPUT_DIR` | Нет | Директория для сохранения больших ответов API (>200KB) |
 | `LOG_LEVEL` | Нет | Уровень логирования Python (по умолчанию: `INFO`) |
@@ -239,15 +265,15 @@ claude mcp list
 
 Если пользователь хочет подключиться к другому аккаунту Kaiten:
 
-**Случай 1: Другая компания, та же почта.** API-токен в Kaiten привязан к email, а не к компании. Если у пользователя несколько организаций на одной почте — достаточно сменить `KAITEN_DOMAIN` в `.env`. Токен остаётся прежним.
+**Случай 1: Другая компания, та же почта.** API-токен в Kaiten привязан к email, а не к компании. Если у пользователя несколько организаций на одной почте — достаточно сменить `KAITEN_SUBDOMAIN`/`KAITEN_BASE_DOMAIN` или `KAITEN_BASE_URL` в `.env`. Токен остаётся прежним.
 
 ```
-# Было: KAITEN_DOMAIN=company-a
-# Стало: KAITEN_DOMAIN=company-b
+# Было: KAITEN_SUBDOMAIN=company-a
+# Стало: KAITEN_SUBDOMAIN=company-b
 # KAITEN_TOKEN остаётся тот же
 ```
 
-**Случай 2: Аккаунт на другой почте.** Другой email = другой пользователь = другой API-токен. Нужно сменить и `KAITEN_DOMAIN`, и `KAITEN_TOKEN`.
+**Случай 2: Аккаунт на другой почте.** Другой email = другой пользователь = другой API-токен. Нужно сменить host-конфиг (`KAITEN_SUBDOMAIN`/`KAITEN_BASE_DOMAIN` или `KAITEN_BASE_URL`) и `KAITEN_TOKEN`.
 
 **Как применить изменения:**
 
@@ -257,7 +283,7 @@ claude mcp list
 | Docker run | `claude mcp remove kaiten` → `claude mcp add` с новыми `-e` значениями |
 | Python venv | `claude mcp remove kaiten` → `claude mcp add` с новыми `-e` значениями |
 
-Сообщи пользователю об этих правилах, когда он спрашивает про смену аккаунта. **Не делай лишних действий** — если пользователь просто меняет организацию при той же почте, достаточно сменить KAITEN_DOMAIN.
+Сообщи пользователю об этих правилах, когда он спрашивает про смену аккаунта. **Не делай лишних действий** — если пользователь просто меняет организацию при той же почте, достаточно сменить host-конфиг.
 
 ## Важные ограничения
 
@@ -279,7 +305,7 @@ docker compose -f tests/docker-compose.test.yml up --build test-overseer
 # Линтеры
 make lint
 
-# E2E-тесты (нужен .env с реальными KAITEN_DOMAIN и KAITEN_TOKEN)
+# E2E-тесты (нужен .env с реальными KAITEN_SUBDOMAIN/KAITEN_BASE_URL и KAITEN_TOKEN)
 docker compose -f tests/docker-compose.test.yml up --build test-e2e-expanded
 ```
 

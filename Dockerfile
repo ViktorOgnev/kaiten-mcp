@@ -1,6 +1,6 @@
 # ---- deps: Python + pip dependencies only (dev/volume-mount mode) ----
 # Build: docker build --target deps -t kaiten-mcp:dev .
-# Run:   docker run --rm -i -v ./src:/app/src:ro -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:dev
+# Run:   docker run --rm -i -v ./src:/app/src:ro -e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:dev
 FROM python:3.12-slim AS deps
 
 WORKDIR /app
@@ -24,7 +24,7 @@ ENTRYPOINT ["kaiten-mcp"]
 
 # ---- baked: full image with source code (distribution mode) ----
 # Build: docker build --target baked -t kaiten-mcp:latest .
-# Run:   docker run --rm -i -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:latest
+# Run:   docker run --rm -i -e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN kaiten-mcp:latest
 FROM python:3.12-slim AS baked
 
 WORKDIR /app

@@ -107,11 +107,11 @@ Use `AskUserQuestion`:
 
 ```
 AskUserQuestion:
-  question: "Found .env with KAITEN_DOMAIN={domain}. Use these credentials?"
+  question: "Found .env with Kaiten host config. Use these credentials?"
   header: "Credentials"
   options:
     - label: "Yes, use existing"
-      description: "Keep current domain and API token from .env"
+      description: "Keep current host settings and API token from .env"
     - label: "Enter new credentials"
       description: "I want to connect to a different Kaiten account"
 ```
@@ -154,7 +154,8 @@ Write validated values to `$SOURCE_DIR/.env`:
 ```bash
 # Create .env from template if needed
 cp $SOURCE_DIR/.env.example $SOURCE_DIR/.env  # if .env doesn't exist
-# Write KAITEN_DOMAIN=value and KAITEN_TOKEN=value
+# Write KAITEN_SUBDOMAIN=value and KAITEN_TOKEN=value
+# Optional: KAITEN_BASE_DOMAIN=value or KAITEN_BASE_URL=value
 ```
 
 ### After saving credentials, always inform:
@@ -164,8 +165,8 @@ Credentials saved to .env.
 
 How accounts work in Kaiten:
 - API token is tied to your email, not the company
-- Multiple organizations on same email → same token, just change KAITEN_DOMAIN
-- Different email → different token, change both KAITEN_DOMAIN and KAITEN_TOKEN
+- Multiple organizations on same email → same token, just change host config
+- Different email → different token, change host config and KAITEN_TOKEN
 - To switch later: edit .env → restart Claude Code (/exit then claude)
 - Docker Compose mode: no MCP re-registration needed when switching
 ```
@@ -234,12 +235,12 @@ claude mcp add kaiten \
 python3 -m venv $SOURCE_DIR/.venv
 $SOURCE_DIR/.venv/bin/pip install -e $SOURCE_DIR
 
-# Parse KAITEN_DOMAIN and KAITEN_TOKEN from $SOURCE_DIR/.env
+# Parse KAITEN_SUBDOMAIN/KAITEN_BASE_DOMAIN/KAITEN_BASE_URL and KAITEN_TOKEN from $SOURCE_DIR/.env
 
 # Register (with -e flags — load_dotenv CWD is unpredictable)
 claude mcp add kaiten \
   [-s user] \
-  -e KAITEN_DOMAIN=$DOMAIN \
+  -e KAITEN_SUBDOMAIN=$DOMAIN \
   -e KAITEN_TOKEN=$TOKEN \
   -- $SOURCE_DIR/.venv/bin/kaiten-mcp
 ```
@@ -261,7 +262,7 @@ To activate 246 tools:
   3. Try: "Show me my Kaiten user info"
 
 Quick reference:
-  - Switch company (same email): edit KAITEN_DOMAIN in .env → restart Claude Code
+  - Switch company (same email): edit host config in .env → restart Claude Code
   - Switch account (different email): edit both values in .env → restart Claude Code
   - Docker Compose mode: no MCP re-registration needed for credential changes
   - Update code (dev mode): restart Claude Code — changes apply instantly
@@ -278,21 +279,21 @@ AskUserQuestion:
   header: "Account"
   options:
     - label: "Different company, same email"
-      description: "API token stays the same — only KAITEN_DOMAIN changes"
+      description: "API token stays the same — only host config changes"
     - label: "Different email entirely"
-      description: "Both KAITEN_DOMAIN and KAITEN_TOKEN need to change"
+      description: "Both host config and KAITEN_TOKEN need to change"
 ```
 
 ### Same email, different company
 
 1. Read current `.env` to find $SOURCE_DIR
-2. Edit `.env` — change only `KAITEN_DOMAIN`
+2. Edit `.env` — change only host config (`KAITEN_SUBDOMAIN`/`KAITEN_BASE_DOMAIN` or `KAITEN_BASE_URL`)
 3. Inform: "Restart Claude Code (/exit then claude). Token stays the same, no re-registration needed."
 
 ### Different email
 
 1. Read current `.env` to find $SOURCE_DIR
-2. Ask for new `KAITEN_DOMAIN` and `KAITEN_TOKEN` (same as Step 5)
+2. Ask for new host config and `KAITEN_TOKEN` (same as Step 5)
 3. Write to `.env`
 4. For Docker Compose: "Restart Claude Code. No re-registration needed."
 5. For docker run / python: `claude mcp remove kaiten` → re-register with new `-e` values.

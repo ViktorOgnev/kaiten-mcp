@@ -100,7 +100,7 @@ When `KAITEN_MCP_OUTPUT_DIR` is configured, responses exceeding 200KB are automa
 docker run --rm -i \
   -v ./tmp:/tmp/kaiten-mcp \
   -e KAITEN_MCP_OUTPUT_DIR=/tmp/kaiten-mcp \
-  -e KAITEN_DOMAIN -e KAITEN_TOKEN \
+  -e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
   kaiten-mcp
 ```
 

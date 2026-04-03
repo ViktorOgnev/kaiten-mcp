@@ -14,7 +14,7 @@ dev-run: dev-build  ## Run MCP server with source mounted (dev mode)
 		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
 		-v $(SRC_DIR):/app/src:ro \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
 		$(IMAGE):dev
 
 # --- Baked mode (distribution, self-contained) ---
@@ -28,7 +28,7 @@ run: build  ## Run baked MCP server
 	docker run --rm -i \
 		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
 		$(IMAGE):latest
 
 # --- Local Python (venv, no Docker) ---

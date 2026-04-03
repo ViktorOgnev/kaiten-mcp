@@ -269,14 +269,19 @@ class TestErrorResilience:
                 },
             ),
             patch(
-                "kaiten_mcp.server.get_client", side_effect=ValueError("KAITEN_DOMAIN is required")
+                "kaiten_mcp.server.get_client",
+                side_effect=ValueError(
+                    "Kaiten host configuration is required: set KAITEN_BASE_URL or "
+                    "KAITEN_SUBDOMAIN (KAITEN_DOMAIN is also accepted as a deprecated fallback)"
+                ),
             ),
         ):
             result = await call_tool("test_tool", {})
         text = _text(result)
         assert result.isError is True
         assert "ValueError" in text
-        assert "KAITEN_DOMAIN" in text
+        assert "KAITEN_SUBDOMAIN" in text
+        assert "KAITEN_BASE_URL" in text
 
     async def test_handler_type_error_returns_error(self):
         """TypeError in handler (wrong argument type) should return error, not crash."""
