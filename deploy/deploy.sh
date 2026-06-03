@@ -105,7 +105,7 @@ curl -fsS --retry 12 --retry-delay 5 --retry-connrefused "$local_base_url/health
 ready_json="$(curl -fsS --retry 12 --retry-delay 5 --retry-connrefused "$local_base_url/readyz")"
 echo "$ready_json" | grep -q '"auth_mode":"shared"' || fail "/readyz did not report shared auth mode: $ready_json"
 
-unauth_status="$(curl -sS -o /tmp/kaiten-mcp-unauth-mcp.json -w "%{http_code}" "$local_base_url/mcp")"
+unauth_status="$(curl -sS -o /tmp/kaiten-mcp-unauth-mcp.json -w "%{http_code}" "$local_base_url/mcp/")"
 [[ "$unauth_status" == "401" ]] || fail "Unauthenticated /mcp returned HTTP $unauth_status instead of 401."
 
 auth_status="$(
@@ -113,7 +113,7 @@ auth_status="$(
 		-o /tmp/kaiten-mcp-auth-mcp.json \
 		-w "%{http_code}" \
 		-H "Authorization: Bearer $MCP_AUTH_TOKEN" \
-		"$local_base_url/mcp"
+		"$local_base_url/mcp/"
 )"
 case "$auth_status" in
 	400 | 405 | 406) ;;
