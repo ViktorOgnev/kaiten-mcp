@@ -48,6 +48,8 @@ http-dev-run: http-dev-build  ## Run HTTP MCP server with source mounted (dev mo
 		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
 		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
 		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \
+		-e MCP_HTTP_AUTH_MODE -e MCP_PUBLIC_URL -e MCP_OAUTH_ISSUER_URL \
+		-e MCP_RESOURCE_METADATA_URL -e MCP_ALLOWED_ORIGINS -e MCP_REQUIRED_SCOPES \
 		$(IMAGE)-http:dev
 
 .PHONY: http-build
@@ -64,6 +66,8 @@ http-run: http-build  ## Run baked HTTP MCP server
 		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
 		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
 		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \
+		-e MCP_HTTP_AUTH_MODE -e MCP_PUBLIC_URL -e MCP_OAUTH_ISSUER_URL \
+		-e MCP_RESOURCE_METADATA_URL -e MCP_ALLOWED_ORIGINS -e MCP_REQUIRED_SCOPES \
 		$(IMAGE)-http:latest
 
 # --- Local Python (venv, no Docker) ---

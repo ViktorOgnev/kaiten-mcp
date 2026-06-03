@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.types import CallToolResult, TextContent, Tool
 
+from kaiten_mcp.auth import current_kaiten_credential
 from kaiten_mcp.client import KaitenApiError, KaitenClient
 from kaiten_mcp.tools import (
     audit_and_analytics,
@@ -83,6 +84,17 @@ _client: KaitenClient | None = None
 
 
 def get_client() -> KaitenClient:
+    credential = current_kaiten_credential()
+    if credential is not None:
+        client = KaitenClient(
+            domain=credential.subdomain or None,
+            token=credential.token,
+            base_domain=credential.base_domain,
+            base_url=credential.base_url,
+        )
+        client._mcp_request_scoped = True  # type: ignore[attr-defined]
+        return client
+
     global _client
     if _client is None:
         _client = KaitenClient()
@@ -94,6 +106,11 @@ async def close_client() -> None:
     if _client is not None:
         await _client.close()
         _client = None
+
+
+async def close_request_client(client: KaitenClient) -> None:
+    if getattr(client, "_mcp_request_scoped", False):
+        await client.close()
 
 
 def _collect_tools() -> dict[str, dict]:
@@ -167,7 +184,10 @@ async def call_tool(name: str, arguments: dict) -> CallToolResult:
 
         handler = ALL_TOOLS[name]["handler"]
         client = get_client()
-        result = await handler(client, arguments)
+        try:
+            result = await handler(client, arguments)
+        finally:
+            await close_request_client(client)
         text = _serialize_result(name, result)
         return CallToolResult(content=[TextContent(type="text", text=text)])
     except KaitenApiError as e:

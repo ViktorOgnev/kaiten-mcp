@@ -37,7 +37,10 @@ API-ключи **НИКОГДА** не запекаются в Docker-образ
 
 `.dockerignore` исключает `.env` из build context. В Dockerfile нет `COPY .env` или `ENV KAITEN_*`.
 
-Для HTTP transport можно дополнительно задать `MCP_AUTH_TOKEN` — это bearer token для защиты удалённого MCP endpoint.
+Для shared HTTP transport используй `MCP_HTTP_AUTH_MODE=oauth`: MCP endpoint
+защищается OAuth access token, а персональный Kaiten API key пользователь вводит
+на onboarding-странице. `MCP_AUTH_TOKEN` оставлен только для legacy single-tenant
+режима `MCP_HTTP_AUTH_MODE=shared`.
 
 ## Подключение к Claude Code
 
@@ -208,6 +211,17 @@ claude mcp list
 
 HTTP transport запускается отдельно и не заменяет локальный `stdio`.
 
+Shared OAuth flow:
+
+1. Администратор публикует один общий MCP server с `MCP_HTTP_AUTH_MODE=oauth`.
+2. В production env не задаются `KAITEN_TOKEN` и `MCP_AUTH_TOKEN`.
+3. LLM-клиент читает OAuth metadata, регистрирует client через `/register` и открывает `/authorize`.
+4. Пользователь вводит Kaiten company domain и свой Kaiten API key на onboarding-странице MCP server.
+5. MCP server валидирует ключ через Kaiten `/users/current`, хранит credential только в памяти и выдаёт authorization code.
+6. LLM-клиент меняет code на MCP access token через `/token`.
+7. Tool calls используют MCP bearer token; runtime достаёт request-scoped Kaiten client из связанной сессии.
+8. После expiry сессии или рестарта процесса пользователь подключается заново.
+
 Docker Compose:
 
 ```bash
@@ -222,9 +236,11 @@ docker run --rm \
   --read-only --tmpfs /tmp:noexec,nosuid,size=64m \
   --security-opt=no-new-privileges:true --cap-drop=ALL \
   -p 8000:8000 \
-  -e KAITEN_SUBDOMAIN=ДОМЕН \
-  -e KAITEN_TOKEN=ТОКЕН \
-  -e MCP_AUTH_TOKEN=HTTP_ТОКЕН \
+  -e MCP_HTTP_AUTH_MODE=oauth \
+  -e MCP_PUBLIC_URL=https://mcp.example.com/mcp \
+  -e MCP_OAUTH_ISSUER_URL=https://mcp.example.com \
+  -e MCP_RESOURCE_METADATA_URL=https://mcp.example.com/.well-known/oauth-protected-resource \
+  -e MCP_ALLOWED_ORIGINS=https://claude.ai,https://chatgpt.com \
   -e MCP_HTTP_HOST=0.0.0.0 \
   -e MCP_HTTP_PORT=8000 \
   -e MCP_HTTP_BASE_PATH=/mcp \
@@ -243,13 +259,19 @@ Endpoint по умолчанию:
 http://127.0.0.1:8000/mcp
 ```
 
-Если задан `MCP_AUTH_TOKEN`, клиент должен присылать:
+OAuth discovery endpoints:
 
 ```text
-Authorization: Bearer <token>
+/.well-known/oauth-protected-resource
+/.well-known/oauth-authorization-server
+/register
+/authorize
+/token
 ```
 
-`/healthz` проверяет только liveness процесса. `/readyz` используется для readiness и проверяет, что конфигурация Kaiten загружена.
+В HTTP OAuth mode `KAITEN_TOKEN` не задаётся в `.env`: пользовательский ключ
+Kaiten живёт только в памяти активной MCP-сессии. `/healthz` проверяет liveness
+процесса. `/readyz` проверяет готовность MCP service и не требует Kaiten token.
 
 ---
 
@@ -276,12 +298,18 @@ Authorization: Bearer <token>
 | `KAITEN_BASE_DOMAIN` | Нет | Базовый домен, по умолчанию `kaiten.ru` |
 | `KAITEN_BASE_URL` | Нет | Полный override URL API-хоста; имеет приоритет над `KAITEN_SUBDOMAIN`/`KAITEN_BASE_DOMAIN` |
 | `KAITEN_DOMAIN` | Нет | Устаревший fallback вместо `KAITEN_SUBDOMAIN` |
-| `KAITEN_TOKEN` | Да | API-токен из настроек пользователя Kaiten |
+| `KAITEN_TOKEN` | Да* | API-токен пользователя Kaiten для локального `stdio` или legacy shared HTTP |
 | `KAITEN_MCP_OUTPUT_DIR` | Нет | Директория для сохранения больших ответов API (>200KB) |
 | `MCP_HTTP_HOST` | Нет | Хост HTTP transport (по умолчанию `0.0.0.0`) |
 | `MCP_HTTP_PORT` | Нет | Порт HTTP transport (по умолчанию `8000`) |
 | `MCP_HTTP_BASE_PATH` | Нет | Базовый путь HTTP transport (по умолчанию `/mcp`) |
-| `MCP_AUTH_TOKEN` | Нет | Bearer token для HTTP endpoint |
+| `MCP_HTTP_AUTH_MODE` | Нет | `oauth`, `shared` или `none`; для shared server используй `oauth` |
+| `MCP_PUBLIC_URL` | Да* | Публичный URL MCP endpoint |
+| `MCP_OAUTH_ISSUER_URL` | Да* | Публичный URL auth/onboarding server |
+| `MCP_RESOURCE_METADATA_URL` | Нет | Override protected-resource metadata URL |
+| `MCP_ALLOWED_ORIGINS` | Нет | Comma-separated allowlist browser origins |
+| `MCP_REQUIRED_SCOPES` | Нет | OAuth scopes, по умолчанию `kaiten:tools` |
+| `MCP_AUTH_TOKEN` | Нет | Legacy shared bearer token для single-tenant HTTP endpoint |
 | `LOG_LEVEL` | Нет | Уровень логирования Python (по умолчанию: `INFO`) |
 
 ## Безопасность Docker

@@ -40,56 +40,78 @@ def test_healthz_returns_ok():
     assert response.json() == {"status": "ok"}
 
 
-def test_readyz_returns_ready_when_client_config_is_valid():
-    app = create_http_app(session_manager_cls=FakeSessionManager)
-
-    with (
-        patch("kaiten_mcp.http_server.get_client", return_value=object()),
-        TestClient(app) as client,
-    ):
-        response = client.get("/readyz")
+def test_readyz_returns_ready_with_auth_mode():
+    with patch.dict("os.environ", {"MCP_HTTP_AUTH_MODE": "oauth"}, clear=False):
+        app = create_http_app(session_manager_cls=FakeSessionManager)
+        with TestClient(app) as client:
+            response = client.get("/readyz")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
+    assert response.json() == {"status": "ready", "auth_mode": "oauth"}
 
 
-def test_readyz_returns_503_when_client_config_is_invalid():
-    app = create_http_app(session_manager_cls=FakeSessionManager)
+def test_readyz_does_not_require_kaiten_token_in_oauth_mode():
+    with patch.dict("os.environ", {"MCP_HTTP_AUTH_MODE": "oauth"}, clear=False):
+        app = create_http_app(session_manager_cls=FakeSessionManager)
+        with TestClient(app) as client:
+            response = client.get("/readyz")
 
-    with (
-        patch(
-            "kaiten_mcp.http_server.get_client",
-            side_effect=ValueError("KAITEN_TOKEN is required"),
-        ),
-        TestClient(app) as client,
-    ):
-        response = client.get("/readyz")
-
-    assert response.status_code == 503
-    assert response.json() == {"status": "error", "detail": "KAITEN_TOKEN is required"}
+    assert response.status_code == 200
 
 
 def test_http_endpoint_requires_auth_when_token_is_configured():
     with patch.dict("os.environ", {"MCP_AUTH_TOKEN": "secret"}, clear=False):
         app = create_http_app(session_manager_cls=FakeSessionManager)
-
-    with TestClient(app) as client:
-        response = client.get("/mcp")
+        with TestClient(app) as client:
+            response = client.get("/mcp")
 
     assert response.status_code == 401
     assert response.json() == {"error": "Unauthorized"}
 
 
+def test_http_endpoint_explicit_shared_mode_without_token_allows_requests():
+    with patch.dict("os.environ", {"MCP_HTTP_AUTH_MODE": "shared"}, clear=True):
+        app = create_http_app(session_manager_cls=FakeSessionManager)
+        with TestClient(app) as client:
+            response = client.get("/mcp")
+
+    assert response.status_code == 200
+    assert response.json() == {"transport": "http"}
+
+
 def test_http_endpoint_passes_authorized_requests_to_session_manager():
     with patch.dict("os.environ", {"MCP_AUTH_TOKEN": "secret"}, clear=False):
         app = create_http_app(session_manager_cls=FakeSessionManager)
-
-    with TestClient(app) as client:
-        response = client.get("/mcp", headers={"Authorization": "Bearer secret"})
+        with TestClient(app) as client:
+            response = client.get("/mcp", headers={"Authorization": "Bearer secret"})
 
     assert response.status_code == 200
     assert response.json() == {"transport": "http"}
     assert FakeSessionManager.instances[-1].handle_request.await_count == 1
+
+
+def test_http_endpoint_shared_origin_allowlist_blocks_untrusted_origin():
+    with patch.dict(
+        "os.environ",
+        {
+            "MCP_HTTP_AUTH_MODE": "shared",
+            "MCP_AUTH_TOKEN": "secret",
+            "MCP_ALLOWED_ORIGINS": "https://trusted.example.com",
+        },
+        clear=True,
+    ):
+        app = create_http_app(session_manager_cls=FakeSessionManager)
+        with TestClient(app) as client:
+            response = client.get(
+                "/mcp",
+                headers={
+                    "Authorization": "Bearer secret",
+                    "Origin": "https://evil.example.com",
+                },
+            )
+
+    assert response.status_code == 403
+    assert response.json() == {"error": "Forbidden origin"}
 
 
 def test_http_endpoint_uses_custom_mount_path():
@@ -125,8 +147,7 @@ def test_http_endpoint_default_session_manager_handles_authorized_probe_without_
         clear=False,
     ):
         app = create_http_app()
-
-    with TestClient(app) as client:
-        response = client.get("/mcp", headers={"Authorization": "Bearer secret"})
+        with TestClient(app) as client:
+            response = client.get("/mcp", headers={"Authorization": "Bearer secret"})
 
     assert response.status_code in {400, 405, 406}
