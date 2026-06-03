@@ -1,0 +1,73 @@
+services:
+  kaiten-mcp-http:
+    build:
+      context: ..
+      target: baked-http
+    image: kaiten-mcp-http:prod
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: "8000"
+      MCP_HTTP_BASE_PATH: /mcp
+      MCP_HTTP_AUTH_MODE: oauth
+      MCP_PUBLIC_URL: https://${MCP_DOMAIN:?set MCP_DOMAIN}/mcp
+      MCP_OAUTH_ISSUER_URL: https://${MCP_DOMAIN:?set MCP_DOMAIN}
+      MCP_RESOURCE_METADATA_URL: https://${MCP_DOMAIN:?set MCP_DOMAIN}/.well-known/oauth-protected-resource
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+      MCP_REQUIRED_SCOPES: ${MCP_REQUIRED_SCOPES:-kaiten:tools}
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      kaiten-mcp-http:
+        condition: service_healthy
+    environment:
+      MCP_DOMAIN: ${MCP_DOMAIN:?set MCP_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

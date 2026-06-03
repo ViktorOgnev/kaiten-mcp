@@ -214,6 +214,13 @@ HTTP transport запускается отдельно и не заменяет 
 В этом режиме `Authorization: Bearer ...` — это MCP access token, а не Kaiten API key.
 Kaiten API key пользователь вводит на onboarding-странице после OAuth redirect.
 
+Для первого VPS smoke deploy используйте server-side инструкции из
+[docs/deployment.md](docs/deployment.md): сервер подтягивает публичную ветку
+`remote-server-transport` из GitHub, runtime-переменные лежат вне репозитория,
+а сервис временно публикуется напрямую на `http://158.160.37.91:8000` в
+`shared` bearer-token режиме. HTTPS/OAuth через Caddy оставлен отдельным
+production-шагом.
+
 ### Как работает авторизация
 
 1. Администратор публикует один общий MCP server с `MCP_HTTP_AUTH_MODE=oauth`.
