@@ -52,7 +52,7 @@ LOG_LEVEL=${LOG_LEVEL:-INFO}
 MCP_HTTP_AUTH_MODE=oauth
 MCP_REQUIRED_SCOPES=${MCP_REQUIRED_SCOPES:-kaiten:tools}
 MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS:-}
-MCP_PUBLIC_URL=${public_base_url}/mcp
+MCP_PUBLIC_URL=${public_base_url}/mcp/
 MCP_OAUTH_ISSUER_URL=${public_base_url}
 MCP_RESOURCE_METADATA_URL=${public_base_url}/.well-known/oauth-protected-resource
 EOF
@@ -139,11 +139,11 @@ ready_json="$(curl -fsS --retry 12 --retry-delay 5 --retry-connrefused "$tunnel_
 echo "$ready_json" | grep -q '"auth_mode":"oauth"' || fail "/readyz did not report oauth auth mode: $ready_json"
 
 metadata_json="$(curl -fsS "$tunnel_url/.well-known/oauth-protected-resource")"
-echo "$metadata_json" | grep -q "\"resource\":\"$tunnel_url/mcp\"" || fail "OAuth metadata resource is wrong: $metadata_json"
+echo "$metadata_json" | grep -q "\"resource\":\"$tunnel_url/mcp/\"" || fail "OAuth metadata resource is wrong: $metadata_json"
 
 mcp_status="$(curl -sS -o /tmp/kaiten-mcp-tunnel-unauth.json -w "%{http_code}" "$tunnel_url/mcp/")"
 [[ "$mcp_status" == "401" ]] || fail "Unauthenticated /mcp/ returned HTTP $mcp_status instead of 401."
 
 trap - ERR
-echo "ChatGPT tunnel ready: $tunnel_url/mcp"
+echo "ChatGPT tunnel ready: $tunnel_url/mcp/"
 echo "Use this URL in ChatGPT Developer mode app settings."

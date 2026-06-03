@@ -125,7 +125,38 @@ The script:
   the same compose project;
 - starts a temporary `cloudflared` quick tunnel;
 - writes OAuth public URLs to `/etc/kaiten-mcp/kaiten-mcp-chatgpt.env`;
-- prints a `https://*.trycloudflare.com/mcp` URL for ChatGPT.
+- prints a `https://*.trycloudflare.com/mcp/` URL for ChatGPT.
 
-Use the printed URL in ChatGPT Apps settings. The tunnel URL is temporary and can
-change after container restart.
+Use the printed URL in ChatGPT Apps settings. The trailing slash avoids an extra
+HTTP redirect on MCP POST requests. The tunnel URL is temporary and can change
+after container restart.
+
+Expected unauthenticated probe:
+
+```bash
+curl -i https://<trycloudflare-host>/mcp/
+```
+
+Expected status is `401`, with a `WWW-Authenticate` header pointing to
+`/.well-known/oauth-protected-resource`. That is normal: ChatGPT should use
+OAuth, not a shared bearer token.
+
+Create the ChatGPT app with:
+
+- Connector name: `Kaiten MCP`
+- Connector URL: the printed `https://*.trycloudflare.com/mcp/`
+- Authentication: `OAuth`
+- OAuth client type: public client / DCR when the UI asks for it
+
+To verify the same path outside the UI, run a full OAuth DCR smoke with a valid
+Kaiten API key in the environment:
+
+```bash
+KAITEN_SUBDOMAIN=<company> KAITEN_TOKEN=<kaiten-api-token> \
+  /opt/kaiten-mcp/current/deploy/verify-chatgpt-oauth.py \
+  --mcp-url https://<trycloudflare-host>/mcp/
+```
+
+The verification script performs metadata discovery, dynamic client
+registration, authorization code + PKCE exchange, MCP `initialize`, and
+`tools/list`. It does not print Kaiten or OAuth tokens.

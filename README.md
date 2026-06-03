@@ -225,6 +225,7 @@ production-шагом.
 [docs/deployment.md](docs/deployment.md): ChatGPT Developer mode подключает
 remote MCP apps по SSE/streaming HTTP с OAuth/No Auth/Mixed Auth, поэтому
 plain HTTP `shared` endpoint на `:8000` нужен только как низкоуровневый smoke.
+Для ChatGPT указывайте tunnel URL с trailing slash: `https://.../mcp/`.
 
 ### Как работает авторизация
 
