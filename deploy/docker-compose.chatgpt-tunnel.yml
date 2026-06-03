@@ -1,0 +1,52 @@
+services:
+  kaiten-mcp-http:
+    build:
+      context: ..
+      target: baked-http
+    image: kaiten-mcp-http:chatgpt-tunnel
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: "8000"
+      MCP_HTTP_BASE_PATH: /mcp
+      MCP_HTTP_AUTH_MODE: oauth
+      MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL}
+      MCP_OAUTH_ISSUER_URL: ${MCP_OAUTH_ISSUER_URL:?set MCP_OAUTH_ISSUER_URL}
+      MCP_RESOURCE_METADATA_URL: ${MCP_RESOURCE_METADATA_URL:?set MCP_RESOURCE_METADATA_URL}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+      MCP_REQUIRED_SCOPES: ${MCP_REQUIRED_SCOPES:-kaiten:tools}
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://kaiten-mcp-http:8000
+    depends_on:
+      kaiten-mcp-http:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

@@ -103,3 +103,29 @@ For multi-user usage, switch to HTTPS and OAuth onboarding:
 In OAuth mode, each user enters their own Kaiten company domain and API key on
 the HTTPS onboarding page. Those credentials live only in process memory until
 the session expires, so a deploy/restart requires users to reconnect.
+
+## ChatGPT smoke: temporary HTTPS tunnel
+
+ChatGPT Developer mode supports remote MCP apps over SSE or streaming HTTP with
+OAuth, No Authentication, or Mixed Authentication
+([OpenAI docs](https://developers.openai.com/api/docs/guides/developer-mode)).
+The direct `:8000` deploy is only a low-level server smoke; ChatGPT should use
+HTTPS/OAuth.
+
+Run the tunnel deploy:
+
+```bash
+ssh -l mcpadmin 158.160.37.91
+/opt/kaiten-mcp/current/deploy/chatgpt-tunnel.sh
+```
+
+The script:
+
+- replaces the public `:8000` shared-token container with an OAuth container in
+  the same compose project;
+- starts a temporary `cloudflared` quick tunnel;
+- writes OAuth public URLs to `/etc/kaiten-mcp/kaiten-mcp-chatgpt.env`;
+- prints a `https://*.trycloudflare.com/mcp` URL for ChatGPT.
+
+Use the printed URL in ChatGPT Apps settings. The tunnel URL is temporary and can
+change after container restart.
