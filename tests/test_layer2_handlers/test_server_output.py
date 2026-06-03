@@ -22,7 +22,7 @@ def _text(result: CallToolResult) -> str:
 @pytest.fixture(autouse=True)
 def _inject_client():
     """Inject a mock client so get_client() does not create a real one."""
-    with patch("kaiten_mcp.server._client", object()):
+    with patch("kaiten_mcp.runtime._client", object()):
         yield
 
 
@@ -269,7 +269,7 @@ class TestErrorResilience:
                 },
             ),
             patch(
-                "kaiten_mcp.server.get_client",
+                "kaiten_mcp.runtime.get_client",
                 side_effect=ValueError(
                     "Kaiten host configuration is required: set KAITEN_BASE_URL or "
                     "KAITEN_SUBDOMAIN (KAITEN_DOMAIN is also accepted as a deprecated fallback)"

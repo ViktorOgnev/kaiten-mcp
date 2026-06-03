@@ -1,0 +1,10 @@
+{$MCP_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy kaiten-mcp-http:8000
+
+	header {
+		Referrer-Policy no-referrer
+		X-Content-Type-Options nosniff
+	}
+}

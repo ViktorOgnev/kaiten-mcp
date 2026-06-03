@@ -12,6 +12,10 @@ venv/
 
 # Environment
 .env
+.env_stage
+.env.production
+deploy/.env.production
+kaiten-mcp.env
 
 # IDE
 .idea/

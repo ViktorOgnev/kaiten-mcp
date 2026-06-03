@@ -1,0 +1,44 @@
+services:
+  kaiten-mcp-http:
+    build:
+      context: ..
+      target: baked-http
+    image: kaiten-mcp-http:port
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 512m
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      KAITEN_SUBDOMAIN: ${KAITEN_SUBDOMAIN:-}
+      KAITEN_BASE_DOMAIN: ${KAITEN_BASE_DOMAIN:-}
+      KAITEN_BASE_URL: ${KAITEN_BASE_URL:-}
+      KAITEN_DOMAIN: ${KAITEN_DOMAIN:-}
+      KAITEN_TOKEN: ${KAITEN_TOKEN:?set KAITEN_TOKEN}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?set MCP_AUTH_TOKEN}
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: "8000"
+      MCP_HTTP_BASE_PATH: /mcp
+      MCP_HTTP_AUTH_MODE: shared
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+    ports:
+      - "${MCP_HTTP_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped

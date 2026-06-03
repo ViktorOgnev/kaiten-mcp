@@ -17,7 +17,7 @@ BASE_URL = "https://test-company.kaiten.ru/api/latest"
 def _inject_client():
     """Inject a real KaitenClient (with test credentials) into the server module."""
     client = KaitenClient(domain="test-company", token="test-token")
-    with patch("kaiten_mcp.server._client", client):
+    with patch("kaiten_mcp.runtime._client", client):
         yield client
 
 
@@ -239,16 +239,16 @@ async def test_list_tools_names_match_all_tools():
 
 def test_get_client_creates_kaiten_client():
     """get_client() creates a KaitenClient when _client is None."""
-    import kaiten_mcp.server as srv
+    import kaiten_mcp.runtime as runtime
 
-    original = srv._client
+    original = runtime._client
     try:
-        srv._client = None
+        runtime._client = None
         c = get_client()
         assert isinstance(c, KaitenClient)
         assert c is get_client()  # cached
     finally:
-        srv._client = original
+        runtime._client = original
 
 
 _PARAMETRIZED_TOOLS = [

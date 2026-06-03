@@ -8,9 +8,11 @@ version = "0.1.0"
 description = "MCP server for Kaiten project management API"
 requires-python = ">=3.11"
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.9.4,<2.0",
     "httpx>=0.27.0",
     "python-dotenv>=1.0.0",
+    "starlette>=0.37.2",
+    "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +33,7 @@ dev = [
 
 [project.scripts]
 kaiten-mcp = "kaiten_mcp.server:main"
+kaiten-mcp-http = "kaiten_mcp.http_server:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

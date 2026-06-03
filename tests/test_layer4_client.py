@@ -91,6 +91,10 @@ class TestConstructor:
         with pytest.raises(ValueError, match="KAITEN_BASE_URL"):
             KaitenClient(base_url="custom.example", token=TOKEN)
 
+    def test_invalid_base_url_query_fragment_rejected(self):
+        with pytest.raises(ValueError, match="query parameters or fragments"):
+            KaitenClient(base_url="https://custom.example?token=bad", token=TOKEN)
+
     def test_lazy_client_init(self, client):
         assert client._client is None
 
