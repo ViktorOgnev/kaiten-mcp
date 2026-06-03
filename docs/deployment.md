@@ -148,6 +148,32 @@ Create the ChatGPT app with:
 - Authentication: `OAuth`
 - OAuth client type: public client / DCR when the UI asks for it
 
+If this tunnel was previously added while `MCP_HTTP_AUTH_MODE=none`, delete or
+disconnect that old ChatGPT app first. ChatGPT can keep the draft's discovered
+auth mode; an old draft may continue to show `Authorization supported: None`
+even after the server is switched back to OAuth.
+
+Expected ChatGPT settings after creating the new app:
+
+- `Authorization supported: OAuth`
+- `Authorization used: OAuth` after the onboarding flow completes
+
+During onboarding ChatGPT opens the MCP server's `/authorize` page. The user
+enters their Kaiten company domain and Kaiten API key there. ChatGPT does not
+send the Kaiten key in tool calls; it sends only the MCP OAuth access token.
+The MCP server then looks up the session-bound Kaiten credential and calls
+Kaiten with `Authorization: Bearer <kaiten-api-token>`.
+
+Troubleshooting:
+
+- `Authorization supported: None` means the app was created against a no-auth
+  endpoint or `/readyz` still reports `auth_mode=none`; rerun the tunnel deploy
+  and recreate the ChatGPT app.
+- `KAITEN_TOKEN is required` means the request reached the legacy/no-auth
+  Kaiten client path without an OAuth session. Do not add `KAITEN_TOKEN` to the
+  public ChatGPT tunnel container; switch the MCP endpoint back to OAuth and
+  reconnect the app.
+
 To verify the same path outside the UI, run a full OAuth DCR smoke with a valid
 Kaiten API key in the environment:
 

@@ -273,6 +273,33 @@ OAuth discovery endpoints:
 Kaiten живёт только в памяти активной MCP-сессии. `/healthz` проверяет liveness
 процесса. `/readyz` проверяет готовность MCP service и не требует Kaiten token.
 
+### ChatGPT Developer mode
+
+Для ChatGPT используй HTTPS MCP URL с trailing slash, например
+`https://<host>/mcp/`. Перед подключением проверь:
+
+```bash
+curl -sS https://<host>/readyz
+```
+
+Ожидаемо: `{"status":"ready","auth_mode":"oauth"}`.
+
+Если endpoint раньше добавлялся в ChatGPT как no-auth, удали/Disconnect старый
+draft и создай новый app. Старый draft может продолжать показывать
+`Authorization supported: None`, даже если сервер уже переключён на OAuth.
+
+Ожидаемое состояние нового ChatGPT app:
+
+- `Authorization supported: OAuth`
+- `Authorization used: OAuth` после прохождения onboarding
+
+Во время onboarding ChatGPT открывает `/authorize`; пользователь вводит Kaiten
+company domain и Kaiten API key на странице MCP server. ChatGPT дальше передаёт
+только MCP OAuth access token. Если tool возвращает `KAITEN_TOKEN is required`,
+значит вызов ушёл в no-auth/legacy ветку без OAuth-сессии; для публичного
+ChatGPT tunnel надо вернуть `MCP_HTTP_AUTH_MODE=oauth` и переподключить app, а
+не добавлять `KAITEN_TOKEN` в контейнер.
+
 ---
 
 ## Частые ошибки и решения
