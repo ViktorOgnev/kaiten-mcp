@@ -81,6 +81,16 @@ def test_oauth_metadata_endpoints_describe_resource_and_auth_server():
     assert auth_server.json()["registration_endpoint"] == "https://mcp.example.com/register"
 
 
+def test_oauth_metadata_preserves_public_resource_trailing_slash():
+    env = {**_oauth_env(), "MCP_PUBLIC_URL": "https://mcp.example.com/mcp/"}
+    with patch.dict("os.environ", env, clear=False):
+        app = create_http_app(session_manager_cls=FakeSessionManager)
+        with TestClient(app) as client:
+            resource = client.get("/.well-known/oauth-protected-resource")
+
+    assert resource.json()["resource"] == "https://mcp.example.com/mcp/"
+
+
 def test_oauth_metadata_defaults_to_request_origin_and_custom_scopes():
     env = {"MCP_HTTP_AUTH_MODE": "oauth", "MCP_REQUIRED_SCOPES": "kaiten:read kaiten:write"}
     with patch.dict("os.environ", env, clear=True):

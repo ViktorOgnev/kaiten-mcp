@@ -80,10 +80,10 @@ def _issuer_url(request: Request) -> str:
 
 
 def _resource_url(request: Request) -> str:
-    value = os.environ.get("MCP_PUBLIC_URL")
+    value = os.environ.get("MCP_PUBLIC_URL", "").strip()
     if value:
         reject_unsafe_public_url(value)
-        return value.rstrip("/")
+        return value
     return f"{_request_origin(request)}{_mcp_path()}"
 
 
