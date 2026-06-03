@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-os.environ.setdefault("KAITEN_DOMAIN", "test-company")
+os.environ.setdefault("KAITEN_SUBDOMAIN", "test-company")
 os.environ.setdefault("KAITEN_TOKEN", "test-token-12345")
 
 

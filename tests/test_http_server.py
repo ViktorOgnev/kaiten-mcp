@@ -118,7 +118,7 @@ def test_http_endpoint_default_session_manager_handles_authorized_probe_without_
     with patch.dict(
         "os.environ",
         {
-            "KAITEN_DOMAIN": "sandbox",
+            "KAITEN_SUBDOMAIN": "sandbox",
             "KAITEN_TOKEN": "test-token",
             "MCP_AUTH_TOKEN": "secret",
         },

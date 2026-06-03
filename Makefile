@@ -14,7 +14,7 @@ dev-run: dev-build  ## Run MCP server with source mounted (dev mode)
 		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
 		-v $(SRC_DIR):/app/src:ro \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
 		$(IMAGE):dev
 
 # --- Baked mode (distribution, self-contained) ---
@@ -28,7 +28,7 @@ run: build  ## Run baked MCP server
 	docker run --rm -i \
 		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN \
 		$(IMAGE):latest
 
 # --- HTTP mode (remote deployment) ---
@@ -44,7 +44,7 @@ http-dev-run: http-dev-build  ## Run HTTP MCP server with source mounted (dev mo
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
 		-v $(SRC_DIR):/app/src:ro \
 		-p $${MCP_HTTP_PORT:-8000}:$${MCP_HTTP_PORT:-8000} \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
 		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
 		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
 		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \
@@ -60,7 +60,7 @@ http-run: http-build  ## Run baked HTTP MCP server
 		--read-only --tmpfs /tmp:noexec,nosuid,size=64m \
 		--security-opt=no-new-privileges:true --cap-drop=ALL \
 		-p $${MCP_HTTP_PORT:-8000}:$${MCP_HTTP_PORT:-8000} \
-		-e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
+		-e KAITEN_SUBDOMAIN -e KAITEN_BASE_DOMAIN -e KAITEN_BASE_URL -e KAITEN_DOMAIN -e KAITEN_TOKEN -e MCP_AUTH_TOKEN \
 		-e MCP_HTTP_HOST=$${MCP_HTTP_HOST:-0.0.0.0} \
 		-e MCP_HTTP_PORT=$${MCP_HTTP_PORT:-8000} \
 		-e MCP_HTTP_BASE_PATH=$${MCP_HTTP_BASE_PATH:-/mcp} \

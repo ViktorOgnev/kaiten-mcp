@@ -13,7 +13,8 @@ This file adds coverage for:
 
 Prerequisites
 -------------
-* KAITEN_DOMAIN and KAITEN_TOKEN environment variables must be set.
+* Host config (`KAITEN_SUBDOMAIN` or `KAITEN_BASE_URL`) and `KAITEN_TOKEN`
+  environment variables must be set.
 * The token must belong to a user with admin/owner permissions.
 * test_e2e_scenario.py must run FIRST (or at least the space/board/card
   setup) so that S.* IDs are available.  However, this file is designed
@@ -69,6 +70,14 @@ TS = str(int(time.time()))
 PREFIX = f"E2X-{TS}"
 
 
+def _has_host_config() -> bool:
+    return bool(
+        os.environ.get("KAITEN_BASE_URL")
+        or os.environ.get("KAITEN_SUBDOMAIN")
+        or os.environ.get("KAITEN_DOMAIN")
+    )
+
+
 def _h(tools: dict, name: str):
     """Return the handler function for tool *name*."""
     return tools[name]["handler"]
@@ -91,11 +100,10 @@ async def _safe_delete(coro):
 async def client():
     if not os.environ.get("KAITEN_E2E"):
         pytest.skip("KAITEN_E2E not set")
-    domain = os.environ.get("KAITEN_DOMAIN")
     token = os.environ.get("KAITEN_TOKEN")
-    if not domain or not token:
-        pytest.skip("KAITEN_DOMAIN / KAITEN_TOKEN not set")
-    c = KaitenClient(domain=domain, token=token)
+    if not _has_host_config() or not token:
+        pytest.skip("Host config / KAITEN_TOKEN not set")
+    c = KaitenClient(token=token)
     yield c
     await c.close()
 
@@ -136,13 +144,12 @@ def _e2e_cleanup():
         return
     import asyncio
 
-    domain = os.environ.get("KAITEN_DOMAIN", "")
     token = os.environ.get("KAITEN_TOKEN", "")
-    if not domain or not token:
+    if not _has_host_config() or not token:
         return
     loop = asyncio.new_event_loop()
     try:
-        c = KaitenClient(domain=domain, token=token)
+        c = KaitenClient(token=token)
         loop.run_until_complete(_cleanup_all(c))
         loop.run_until_complete(c.close())
     finally:

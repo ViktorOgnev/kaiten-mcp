@@ -5,15 +5,22 @@ import contextlib
 import logging
 import os
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = "latest"
+DEFAULT_BASE_DOMAIN = "kaiten.ru"
 RATE_LIMIT_DELAY = 0.22  # ~4.5 req/s to stay under 5 req/s limit
 RETRY_DELAY = 2.0
 MAX_RETRIES = 3
+
+MISSING_HOST_CONFIG_ERROR = (
+    "Kaiten host configuration is required: set KAITEN_BASE_URL or KAITEN_SUBDOMAIN "
+    "(KAITEN_DOMAIN is also accepted as a deprecated fallback)"
+)
 
 
 class KaitenApiError(Exception):
@@ -26,17 +33,91 @@ class KaitenApiError(Exception):
         super().__init__(f"HTTP {status_code}: {message}")
 
 
+def _pick_value(explicit: str | None, *env_names: str) -> str:
+    if explicit and explicit.strip():
+        return explicit.strip()
+    for name in env_names:
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value
+    return ""
+
+
+def _validate_host_component(value: str, variable_name: str) -> str:
+    cleaned = value.strip()
+    if "://" in cleaned or "/" in cleaned:
+        raise ValueError(
+            f"{variable_name} must be a bare hostname component without scheme or path; "
+            "use KAITEN_BASE_URL for full URLs"
+        )
+    return cleaned
+
+
+def normalize_api_base_url(base_url: str) -> str:
+    parsed = urlsplit(base_url.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError(
+            "KAITEN_BASE_URL must be an absolute URL like "
+            f"https://company.{DEFAULT_BASE_DOMAIN} or https://host/api/{API_VERSION}"
+        )
+    if parsed.query or parsed.fragment:
+        raise ValueError("KAITEN_BASE_URL must not contain query parameters or fragments")
+
+    path = parsed.path.rstrip("/")
+    api_path = f"/api/{API_VERSION}"
+    if path.endswith(api_path):
+        normalized_path = path
+    elif path.endswith("/api"):
+        normalized_path = f"{path}/{API_VERSION}"
+    elif not path:
+        normalized_path = api_path
+    else:
+        normalized_path = f"{path}{api_path}"
+
+    return urlunsplit((parsed.scheme, parsed.netloc, normalized_path, "", ""))
+
+
+def build_api_base_url(
+    domain: str | None = None,
+    base_domain: str | None = None,
+    base_url: str | None = None,
+) -> str:
+    explicit_base_url = _pick_value(base_url, "KAITEN_BASE_URL")
+    if explicit_base_url:
+        return normalize_api_base_url(explicit_base_url)
+
+    subdomain = _pick_value(domain, "KAITEN_SUBDOMAIN", "KAITEN_DOMAIN")
+    if not subdomain:
+        raise ValueError(MISSING_HOST_CONFIG_ERROR)
+    subdomain = _validate_host_component(subdomain, "KAITEN_SUBDOMAIN")
+
+    resolved_base_domain = _pick_value(base_domain, "KAITEN_BASE_DOMAIN") or DEFAULT_BASE_DOMAIN
+    resolved_base_domain = _validate_host_component(resolved_base_domain, "KAITEN_BASE_DOMAIN")
+
+    return f"https://{subdomain}.{resolved_base_domain}/api/{API_VERSION}"
+
+
 class KaitenClient:
     """Async HTTP client for Kaiten API with rate limiting."""
 
-    def __init__(self, domain: str | None = None, token: str | None = None):
-        self.domain = domain or os.environ.get("KAITEN_DOMAIN", "")
+    def __init__(
+        self,
+        domain: str | None = None,
+        token: str | None = None,
+        base_domain: str | None = None,
+        base_url: str | None = None,
+    ):
+        self.subdomain = _pick_value(domain, "KAITEN_SUBDOMAIN", "KAITEN_DOMAIN")
+        self.domain = self.subdomain  # Backward-compatible alias for older tests/callers.
+        self.base_domain = _pick_value(base_domain, "KAITEN_BASE_DOMAIN") or DEFAULT_BASE_DOMAIN
         self.token = token or os.environ.get("KAITEN_TOKEN", "")
-        if not self.domain:
-            raise ValueError("KAITEN_DOMAIN is required")
         if not self.token:
             raise ValueError("KAITEN_TOKEN is required")
-        self.base_url = f"https://{self.domain}.kaiten.ru/api/{API_VERSION}"
+        self.base_url = build_api_base_url(
+            domain=domain,
+            base_domain=base_domain,
+            base_url=base_url,
+        )
         self._client: httpx.AsyncClient | None = None
         self._last_request_time = 0.0
         self._rate_lock = asyncio.Lock()
