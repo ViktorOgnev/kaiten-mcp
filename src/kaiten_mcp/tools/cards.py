@@ -1,8 +1,10 @@
 """Kaiten Cards MCP tools."""
 
+import asyncio
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response, select_fields
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -572,4 +574,148 @@ _tool(
         },
     },
     _list_all_cards,
+)
+
+
+async def _batch_get_cards(client, args: dict) -> Any:
+    card_ids = args["card_ids"]
+    workers = max(1, min(int(args.get("workers") or 2), 6))
+    compact = bool(args.get("compact", False))
+    fields = args.get("fields")
+    semaphore = asyncio.Semaphore(workers)
+
+    async def fetch_one(card_id: int) -> dict[str, Any]:
+        async with semaphore:
+            try:
+                result = await client.get(f"/cards/{card_id}")
+                result = compact_response(result, compact)
+                result = select_fields(result, fields)
+                return {"card_id": card_id, "ok": True, "card": result}
+            except Exception as exc:
+                return {"card_id": card_id, "ok": False, "error": str(exc)}
+
+    items = await asyncio.gather(*(fetch_one(card_id) for card_id in card_ids))
+    return {
+        "items": [item for item in items if item["ok"]],
+        "errors": [item for item in items if not item["ok"]],
+        "meta": {"requested": len(card_ids), "workers": workers},
+    }
+
+
+_tool(
+    "kaiten_batch_get_cards",
+    "Fetch multiple cards by ID with bounded request concurrency. Returns items, errors and meta.",
+    {
+        "type": "object",
+        "properties": {
+            "card_ids": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "Card IDs to fetch.",
+            },
+            "workers": {"type": "integer", "description": "Parallel workers (default 2, max 6)."},
+            "compact": {"type": "boolean", "description": "Strip heavy nested fields."},
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated card field names to keep.",
+            },
+        },
+        "required": ["card_ids"],
+    },
+    _batch_get_cards,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_batch_update_cards",
+    description="Batch update cards matching criteria. Kaiten returns a background job.",
+    properties={
+        "board_id": {"type": "integer", "description": "Criteria board ID."},
+        "column_id": {"type": "integer", "description": "Criteria column ID."},
+        "lane_id": {"type": "integer", "description": "Criteria lane ID."},
+        "owner_id": {"type": "integer", "description": "Criteria owner user ID."},
+        "type_id": {"type": "integer", "description": "Criteria card type ID."},
+        "condition": {
+            "type": "integer",
+            "enum": [1, 2],
+            "description": "Criteria condition: 1=active, 2=archived.",
+        },
+        "attributes": {"type": "object", "description": "Attributes to change."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("attributes",),
+    method="PATCH",
+    path_template="/cards",
+    body_fields=(
+        "board_id",
+        "column_id",
+        "lane_id",
+        "owner_id",
+        "type_id",
+        "condition",
+        "attributes",
+    ),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_card_baselines",
+    description="List baselines for a card.",
+    properties={
+        "card_id": {"type": ["integer", "string"], "description": "Card ID or key."},
+    },
+    required=("card_id",),
+    method="GET",
+    path_template="/cards/{card_id}/baselines",
+    path_fields=("card_id",),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_card_allowed_users",
+    description="List users allowed to access a card.",
+    properties={
+        "card_id": {"type": ["integer", "string"], "description": "Card ID or key."},
+    },
+    required=("card_id",),
+    method="GET",
+    path_template="/cards/{card_id}/allowed-users",
+    path_fields=("card_id",),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_add_card_sd_external_recipient",
+    description="Add a Service Desk external recipient email to a card.",
+    properties={
+        "card_id": {"type": ["integer", "string"], "description": "Card ID or key."},
+        "email": {"type": "string", "description": "Recipient email address."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("card_id", "email"),
+    method="POST",
+    path_template="/cards/{card_id}/sd-external-recipients",
+    path_fields=("card_id",),
+    body_fields=("email",),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_remove_card_sd_external_recipient",
+    description="Remove a Service Desk external recipient email from a card.",
+    properties={
+        "card_id": {"type": ["integer", "string"], "description": "Card ID or key."},
+        "email": {"type": "string", "description": "Recipient email address."},
+    },
+    required=("card_id", "email"),
+    method="DELETE",
+    path_template="/cards/{card_id}/sd-external-recipients/{email}",
+    path_fields=("card_id", "email"),
 )

@@ -11,6 +11,7 @@ from kaiten_mcp.client import (
     KaitenApiError,
     KaitenClient,
     build_api_base_url,
+    build_root_base_url,
 )
 
 DOMAIN = "test-company"
@@ -116,6 +117,17 @@ class TestBaseUrlBuilder:
     def test_normalizes_absolute_base_url(self, raw, expected):
         assert build_api_base_url(base_url=raw) == expected
 
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("https://custom.example/api/latest", "https://custom.example"),
+            ("https://custom.example/api", "https://custom.example"),
+            ("https://custom.example/nested/api/latest", "https://custom.example/nested"),
+        ],
+    )
+    def test_builds_root_base_url(self, raw, expected):
+        assert build_root_base_url(raw) == expected
+
 
 # ---------------------------------------------------------------------------
 # HTTP method delegation
@@ -149,6 +161,37 @@ class TestMethodDelegation:
     async def test_delete_delegates(self, client):
         route = respx.delete(f"{BASE}/cards/1").respond(204)
         result = await client.delete("/cards/1")
+        assert result is None
+        assert route.calls.last.request.method == "DELETE"
+
+    @respx.mock
+    async def test_root_get_delegates(self, client):
+        route = respx.get(f"https://{DOMAIN}.kaiten.ru/scim/v2/Users").respond(json=[])
+        result = await client.get_root("/scim/v2/Users", params={"startIndex": 1})
+        assert result == []
+        assert route.called
+        assert "startIndex=1" in str(route.calls.last.request.url)
+
+    @respx.mock
+    async def test_root_post_delegates(self, client):
+        route = respx.post(f"https://{DOMAIN}.kaiten.ru/scim/v2/Users").respond(json={"id": "u1"})
+        result = await client.post_root("/scim/v2/Users", json={"userName": "a"})
+        assert result == {"id": "u1"}
+        assert route.calls.last.request.method == "POST"
+
+    @respx.mock
+    async def test_root_patch_delegates(self, client):
+        route = respx.patch(f"https://{DOMAIN}.kaiten.ru/scim/v2/Users/u1").respond(
+            json={"id": "u1"}
+        )
+        result = await client.patch_root("/scim/v2/Users/u1", json={"active": False})
+        assert result == {"id": "u1"}
+        assert route.calls.last.request.method == "PATCH"
+
+    @respx.mock
+    async def test_root_delete_delegates(self, client):
+        route = respx.delete(f"https://{DOMAIN}.kaiten.ru/scim/v2/Users/u1").respond(204)
+        result = await client.delete_root("/scim/v2/Users/u1")
         assert result is None
         assert route.calls.last.request.method == "DELETE"
 

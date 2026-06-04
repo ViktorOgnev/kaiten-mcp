@@ -3,6 +3,7 @@
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -152,4 +153,50 @@ _tool(
         "required": ["type_id", "replace_type_id"],
     },
     _delete_card_type,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_card_type_tree_entities",
+    description="List tree entities attached to a card type.",
+    properties={"type_id": {"type": "integer", "description": "Card type ID"}},
+    required=("type_id",),
+    method="GET",
+    path_template="/card-types/{type_id}/tree-entities",
+    path_fields=("type_id",),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_add_card_type_tree_entity",
+    description="Attach a tree entity to a card type.",
+    properties={
+        "type_id": {"type": "integer", "description": "Card type ID"},
+        "tree_entity_uid": {"type": "string", "description": "Tree entity UID"},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("type_id", "tree_entity_uid"),
+    method="POST",
+    path_template="/card-types/{type_id}/tree-entities",
+    path_fields=("type_id",),
+    body_fields=("tree_entity_uid",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_remove_card_type_tree_entity",
+    description="Remove a tree entity from a card type.",
+    properties={
+        "type_id": {"type": "integer", "description": "Card type ID"},
+        "tree_entity_uid": {"type": "string", "description": "Tree entity UID"},
+    },
+    required=("type_id", "tree_entity_uid"),
+    method="DELETE",
+    path_template="/card-types/{type_id}/tree-entities/{tree_entity_uid}",
+    path_fields=("type_id", "tree_entity_uid"),
 )

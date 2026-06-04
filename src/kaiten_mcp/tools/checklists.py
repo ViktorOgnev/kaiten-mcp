@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -27,6 +29,20 @@ _tool(
         "required": ["card_id"],
     },
     _list_checklists,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_checklist_cards",
+    description="List cards connected to a checklist.",
+    properties={
+        "checklist_id": {"type": "integer", "description": "Checklist ID."},
+    },
+    required=("checklist_id",),
+    method="GET",
+    path_template="/checklists/{checklist_id}",
+    path_fields=("checklist_id",),
 )
 
 
@@ -203,4 +219,134 @@ _tool(
         "required": ["card_id", "checklist_id", "item_id"],
     },
     _delete_checklist_item,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_space_template_checklists",
+    description="List template checklists for a space.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "limit": {"type": "integer", "description": "Max results."},
+        "offset": {"type": "integer", "description": "Pagination offset."},
+    },
+    required=("space_uid",),
+    method="GET",
+    path_template="/spaces/{space_uid}/template-checklists",
+    path_fields=("space_uid",),
+    query_fields=("limit", "offset"),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_create_space_template_checklist",
+    description="Create a template checklist for a space.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "name": {"type": "string", "description": "Template checklist name."},
+        "sort_order": {"type": "number", "description": "Sort order."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("space_uid", "name"),
+    method="POST",
+    path_template="/spaces/{space_uid}/template-checklists",
+    path_fields=("space_uid",),
+    body_fields=("name", "sort_order"),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_space_template_checklist",
+    description="Update a space template checklist.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "template_checklist_uid": {"type": "string", "description": "Template checklist UID."},
+        "name": {"type": "string", "description": "Template checklist name."},
+        "sort_order": {"type": "number", "description": "Sort order."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("space_uid", "template_checklist_uid"),
+    method="PATCH",
+    path_template="/spaces/{space_uid}/template-checklists/{template_checklist_uid}",
+    path_fields=("space_uid", "template_checklist_uid"),
+    body_fields=("name", "sort_order"),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_delete_space_template_checklist",
+    description="Delete a space template checklist.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "template_checklist_uid": {"type": "string", "description": "Template checklist UID."},
+    },
+    required=("space_uid", "template_checklist_uid"),
+    method="DELETE",
+    path_template="/spaces/{space_uid}/template-checklists/{template_checklist_uid}",
+    path_fields=("space_uid", "template_checklist_uid"),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_create_space_template_checklist_item",
+    description="Create an item in a space template checklist.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "template_checklist_uid": {"type": "string", "description": "Template checklist UID."},
+        "text": {"type": "string", "description": "Item text."},
+        "checked": {"type": "boolean", "description": "Whether the item is checked."},
+        "sort_order": {"type": "number", "description": "Sort order."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("space_uid", "template_checklist_uid", "text"),
+    method="POST",
+    path_template="/spaces/{space_uid}/template-checklists/{template_checklist_uid}/items",
+    path_fields=("space_uid", "template_checklist_uid"),
+    body_fields=("text", "checked", "sort_order"),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_space_template_checklist_item",
+    description="Update an item in a space template checklist.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "template_checklist_uid": {"type": "string", "description": "Template checklist UID."},
+        "item_uid": {"type": "string", "description": "Template checklist item UID."},
+        "text": {"type": "string", "description": "Item text."},
+        "checked": {"type": "boolean", "description": "Whether the item is checked."},
+        "sort_order": {"type": "number", "description": "Sort order."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("space_uid", "template_checklist_uid", "item_uid"),
+    method="PATCH",
+    path_template="/spaces/{space_uid}/template-checklists/{template_checklist_uid}/items/{item_uid}",
+    path_fields=("space_uid", "template_checklist_uid", "item_uid"),
+    body_fields=("text", "checked", "sort_order"),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_delete_space_template_checklist_item",
+    description="Delete an item from a space template checklist.",
+    properties={
+        "space_uid": {"type": "string", "description": "Space UID."},
+        "template_checklist_uid": {"type": "string", "description": "Template checklist UID."},
+        "item_uid": {"type": "string", "description": "Template checklist item UID."},
+    },
+    required=("space_uid", "template_checklist_uid", "item_uid"),
+    method="DELETE",
+    path_template="/spaces/{space_uid}/template-checklists/{template_checklist_uid}/items/{item_uid}",
+    path_fields=("space_uid", "template_checklist_uid", "item_uid"),
 )

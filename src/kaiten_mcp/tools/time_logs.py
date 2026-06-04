@@ -1,4 +1,8 @@
+import asyncio
 from typing import Any
+
+from kaiten_mcp.tools.compact import compact_response, select_fields
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -50,6 +54,82 @@ _tool(
         "required": ["card_id"],
     },
     handler=_list_card_time_logs,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_timesheet",
+    description="List time logs across the current user's accessible scope.",
+    properties={
+        "from_date": {"type": "string", "description": "Start date filter."},
+        "to_date": {"type": "string", "description": "End date filter."},
+        "user_id": {"type": "integer", "description": "User ID filter."},
+        "card_id": {"type": "integer", "description": "Card ID filter."},
+        "limit": {"type": "integer", "description": "Max results."},
+        "offset": {"type": "integer", "description": "Pagination offset."},
+    },
+    method="GET",
+    path_template="/time-logs",
+    query_fields=("from_date", "to_date", "user_id", "card_id", "limit", "offset"),
+)
+
+
+async def _batch_list_time_logs(client, args: dict) -> Any:
+    card_ids = args["card_ids"]
+    workers = max(1, min(int(args.get("workers") or 2), 6))
+    compact = bool(args.get("compact", False))
+    fields = args.get("fields")
+    params = {}
+    for key in ("for_date", "personal"):
+        if args.get(key) is not None:
+            params[key] = args[key]
+    semaphore = asyncio.Semaphore(workers)
+
+    async def fetch_one(card_id: int) -> dict[str, Any]:
+        async with semaphore:
+            try:
+                logs = await client.get(
+                    f"/cards/{card_id}/time-logs",
+                    params=params if params else None,
+                )
+                logs = compact_response(logs, compact)
+                logs = select_fields(logs, fields)
+                return {"card_id": card_id, "ok": True, "time_logs": logs}
+            except Exception as exc:
+                return {"card_id": card_id, "ok": False, "error": str(exc)}
+
+    items = await asyncio.gather(*(fetch_one(card_id) for card_id in card_ids))
+    return {
+        "items": [item for item in items if item["ok"]],
+        "errors": [item for item in items if not item["ok"]],
+        "meta": {"requested": len(card_ids), "workers": workers},
+    }
+
+
+_tool(
+    name="kaiten_batch_list_time_logs",
+    description="Fetch time logs for multiple cards with bounded request concurrency.",
+    schema={
+        "type": "object",
+        "properties": {
+            "card_ids": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "Card IDs to inspect.",
+            },
+            "workers": {"type": "integer", "description": "Parallel workers (default 2, max 6)."},
+            "for_date": {"type": "string", "description": "Date filter."},
+            "personal": {"type": "boolean", "description": "Personal logs flag."},
+            "compact": {"type": "boolean", "description": "Strip heavy nested fields."},
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated time log fields to keep.",
+            },
+        },
+        "required": ["card_ids"],
+    },
+    handler=_batch_list_time_logs,
 )
 
 

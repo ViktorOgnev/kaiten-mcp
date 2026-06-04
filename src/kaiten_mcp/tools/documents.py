@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -269,6 +270,17 @@ _tool(
         "required": ["document_uid"],
     },
     _get_document,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_get_document_schema",
+    description="Get a document data schema.",
+    properties={"schema_id": {"type": "integer", "description": "Document schema ID."}},
+    required=("schema_id",),
+    method="GET",
+    path_template="/document-schemas/{schema_id}",
+    path_fields=("schema_id",),
 )
 
 

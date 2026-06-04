@@ -1,6 +1,9 @@
 """Kaiten Card Relations MCP tools."""
 
+import asyncio
 from typing import Any
+
+from kaiten_mcp.tools.compact import compact_response, select_fields
 
 TOOLS: dict[str, dict] = {}
 
@@ -37,6 +40,55 @@ _tool(
         "required": ["card_id"],
     },
     handler=_list_card_children,
+)
+
+
+async def _batch_list_card_children(client, args: dict) -> Any:
+    card_ids = args["card_ids"]
+    workers = max(1, min(int(args.get("workers") or 2), 6))
+    compact = bool(args.get("compact", False))
+    fields = args.get("fields")
+    semaphore = asyncio.Semaphore(workers)
+
+    async def fetch_one(card_id: int) -> dict[str, Any]:
+        async with semaphore:
+            try:
+                children = await client.get(f"/cards/{card_id}/children")
+                children = compact_response(children, compact)
+                children = select_fields(children, fields)
+                return {"card_id": card_id, "ok": True, "children": children}
+            except Exception as exc:
+                return {"card_id": card_id, "ok": False, "error": str(exc)}
+
+    items = await asyncio.gather(*(fetch_one(card_id) for card_id in card_ids))
+    return {
+        "items": [item for item in items if item["ok"]],
+        "errors": [item for item in items if not item["ok"]],
+        "meta": {"requested": len(card_ids), "workers": workers},
+    }
+
+
+_tool(
+    name="kaiten_batch_list_card_children",
+    description="Fetch child-card relations for multiple parent cards with bounded concurrency.",
+    schema={
+        "type": "object",
+        "properties": {
+            "card_ids": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "Parent card IDs to inspect.",
+            },
+            "workers": {"type": "integer", "description": "Parallel workers (default 2, max 6)."},
+            "compact": {"type": "boolean", "description": "Strip heavy nested fields."},
+            "fields": {
+                "type": "string",
+                "description": "Comma-separated child card fields to keep.",
+            },
+        },
+        "required": ["card_ids"],
+    },
+    handler=_batch_list_card_children,
 )
 
 

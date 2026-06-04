@@ -3,11 +3,30 @@
 import asyncio
 from typing import Any
 
+from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
+
 TOOLS: dict[str, dict] = {}
 
 
 def _tool(name: str, description: str, schema: dict, handler):
     TOOLS[name] = {"description": description, "inputSchema": schema, "handler": handler}
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_tree_entities",
+    description="List tree entities from Kaiten.",
+    properties={
+        "query": {"type": "string", "description": "Search query."},
+        "limit": {"type": "integer", "description": "Max results."},
+        "offset": {"type": "integer", "description": "Pagination offset."},
+    },
+    method="GET",
+    path_template="/tree-entities",
+    query_fields=("query", "limit", "offset"),
+    query_defaults={"limit": DEFAULT_LIMIT},
+)
 
 
 async def _fetch_all_entities(client) -> list[dict]:

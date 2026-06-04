@@ -1,6 +1,6 @@
 """Layer 1 - Tool Registration & Discovery.
 
-Verify that ALL 246 MCP tools are properly registered and discoverable.
+Verify that ALL 334 MCP tools are properly registered and discoverable.
 """
 
 import asyncio
@@ -18,7 +18,7 @@ class TestToolRegistration:
             assert isinstance(mod.TOOLS, dict)
 
     def test_total_tool_count(self):
-        assert len(ALL_TOOLS) == 246
+        assert len(ALL_TOOLS) == 334
 
     def test_no_duplicate_tool_names(self):
         names = []
@@ -102,4 +102,4 @@ class TestToolRegistration:
             assert tool.inputSchema
 
     def test_modules_count(self):
-        assert len(TOOL_MODULES) == 27
+        assert len(TOOL_MODULES) == 29

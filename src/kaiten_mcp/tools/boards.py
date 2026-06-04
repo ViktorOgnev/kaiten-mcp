@@ -3,6 +3,7 @@
 from typing import Any
 
 from kaiten_mcp.tools.compact import compact_response
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -122,6 +123,31 @@ _tool(
         "required": ["space_id", "board_id"],
     },
     _update_board,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_place_existing_board",
+    description="Place an existing board in a space by updating its space-board metadata.",
+    properties={
+        "space_id": {"type": "integer", "description": "Target space ID."},
+        "board_id": {"type": "integer", "description": "Existing board ID."},
+        "top": {"type": "number", "description": "Top position in pixels."},
+        "left": {"type": "number", "description": "Left position in pixels."},
+        "sort_order": {"type": "number", "description": "Sort order in the space."},
+        "type": {
+            "type": "integer",
+            "description": "Space-board placement type. Kaiten uses 5 for linked board.",
+        },
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("space_id", "board_id"),
+    method="PATCH",
+    path_template="/spaces/{space_id}/boards/{board_id}",
+    path_fields=("space_id", "board_id"),
+    body_fields=("top", "left", "sort_order", "type"),
+    include_payload=True,
 )
 
 

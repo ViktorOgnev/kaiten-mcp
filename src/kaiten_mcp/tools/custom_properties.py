@@ -3,6 +3,7 @@
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -409,4 +410,280 @@ _tool(
         "required": ["property_id", "value_id"],
     },
     _delete_select_value,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_custom_property_tree_entities",
+    description="List tree entities attached to a custom property.",
+    properties={"property_id": {"type": "integer", "description": "Property ID"}},
+    required=("property_id",),
+    method="GET",
+    path_template="/company/custom-properties/{property_id}/tree-entities",
+    path_fields=("property_id",),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_add_custom_property_tree_entity",
+    description="Attach a tree entity to a custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "tree_entity_uid": {"type": "string", "description": "Tree entity UID"},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("property_id", "tree_entity_uid"),
+    method="POST",
+    path_template="/company/custom-properties/{property_id}/tree-entities",
+    path_fields=("property_id",),
+    body_fields=("tree_entity_uid",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_remove_custom_property_tree_entity",
+    description="Remove a tree entity from a custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "tree_entity_uid": {"type": "string", "description": "Tree entity UID"},
+    },
+    required=("property_id", "tree_entity_uid"),
+    method="DELETE",
+    path_template="/company/custom-properties/{property_id}/tree-entities/{tree_entity_uid}",
+    path_fields=("property_id", "tree_entity_uid"),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_catalog_values",
+    description="List catalog values for a catalog-typed custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "query": {"type": "string", "description": "Text search filter by catalog values"},
+        "conditions": {"type": "string", "description": "Condition filter: active or inactive"},
+        "limit": {"type": "integer", "description": "Max results"},
+        "offset": {"type": "integer", "description": "Pagination offset"},
+    },
+    required=("property_id",),
+    method="GET",
+    path_template="/company/custom-properties/{property_id}/catalog-values",
+    path_fields=("property_id",),
+    query_fields=("query", "conditions", "limit", "offset"),
+    query_defaults={"limit": DEFAULT_LIMIT},
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_get_catalog_value",
+    description="Get a catalog value for a catalog-typed custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Catalog value ID"},
+    },
+    required=("property_id", "value_id"),
+    method="GET",
+    path_template="/company/custom-properties/{property_id}/catalog-values/{value_id}",
+    path_fields=("property_id", "value_id"),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_create_catalog_value",
+    description="Create a catalog value for a catalog-typed custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "name": {"type": "string", "description": "Catalog value display name"},
+        "value": {"type": "object", "description": "Catalog value fields keyed by field UID."},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("property_id", "value"),
+    method="POST",
+    path_template="/company/custom-properties/{property_id}/catalog-values",
+    path_fields=("property_id",),
+    body_fields=("name", "value"),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_catalog_value",
+    description="Update a catalog value for a catalog-typed custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Catalog value ID"},
+        "name": {"type": "string", "description": "Catalog value display name"},
+        "value": {"type": "object", "description": "Catalog value fields keyed by field UID."},
+        "condition": {
+            "type": "string",
+            "enum": ["active", "inactive"],
+            "description": "Value condition",
+        },
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("property_id", "value_id"),
+    method="PATCH",
+    path_template="/company/custom-properties/{property_id}/catalog-values/{value_id}",
+    path_fields=("property_id", "value_id"),
+    body_fields=("name", "value", "condition"),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_delete_catalog_value",
+    description="Delete a catalog value for a catalog-typed custom property.",
+    properties={
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Catalog value ID"},
+    },
+    required=("property_id", "value_id"),
+    method="DELETE",
+    path_template="/company/custom-properties/{property_id}/catalog-values/{value_id}",
+    path_fields=("property_id", "value_id"),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_collective_score_values",
+    description="List collective score values for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+    },
+    required=("card_id", "property_id"),
+    method="GET",
+    path_template="/cards/{card_id}/custom-properties/{property_id}/collective-score-values",
+    path_fields=("card_id", "property_id"),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_create_collective_score_value",
+    description="Create a collective score value for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value": {"type": ["string", "number", "object"], "description": "Score value."},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("card_id", "property_id", "value"),
+    method="POST",
+    path_template="/cards/{card_id}/custom-properties/{property_id}/collective-score-values",
+    path_fields=("card_id", "property_id"),
+    body_fields=("value",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_collective_score_value",
+    description="Update a collective score value for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Score value ID"},
+        "value": {"type": ["string", "number", "object"], "description": "Score value."},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("card_id", "property_id", "value_id"),
+    method="PATCH",
+    path_template=(
+        "/cards/{card_id}/custom-properties/{property_id}/collective-score-values/{value_id}"
+    ),
+    path_fields=("card_id", "property_id", "value_id"),
+    body_fields=("value",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_collective_vote_values",
+    description="List collective vote values for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+    },
+    required=("card_id", "property_id"),
+    method="GET",
+    path_template="/cards/{card_id}/custom-properties/{property_id}/collective-vote-values",
+    path_fields=("card_id", "property_id"),
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_create_collective_vote_value",
+    description="Create a collective vote value for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value": {"type": ["string", "number", "object"], "description": "Vote value."},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("card_id", "property_id", "value"),
+    method="POST",
+    path_template="/cards/{card_id}/custom-properties/{property_id}/collective-vote-values",
+    path_fields=("card_id", "property_id"),
+    body_fields=("value",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_collective_vote_value",
+    description="Update a collective vote value for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Vote value ID"},
+        "value": {"type": ["string", "number", "object"], "description": "Vote value."},
+        "payload": {
+            "type": "object",
+            "description": "Extra JSON body fields from the Kaiten API docs.",
+        },
+    },
+    required=("card_id", "property_id", "value_id"),
+    method="PATCH",
+    path_template=(
+        "/cards/{card_id}/custom-properties/{property_id}/collective-vote-values/{value_id}"
+    ),
+    path_fields=("card_id", "property_id", "value_id"),
+    body_fields=("value",),
+    include_payload=True,
+)
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_delete_collective_vote_value",
+    description="Delete a collective vote value for a card custom property.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID"},
+        "property_id": {"type": "integer", "description": "Property ID"},
+        "value_id": {"type": "integer", "description": "Vote value ID"},
+    },
+    required=("card_id", "property_id", "value_id"),
+    method="DELETE",
+    path_template=(
+        "/cards/{card_id}/custom-properties/{property_id}/collective-vote-values/{value_id}"
+    ),
+    path_fields=("card_id", "property_id", "value_id"),
 )

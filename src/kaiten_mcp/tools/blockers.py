@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -191,4 +193,113 @@ _tool(
         "required": ["card_id", "blocker_id"],
     },
     handler=_delete_card_blocker,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_blocker_categories",
+    description="List blocker categories.",
+    properties={
+        "query": {"type": "string", "description": "Search filter."},
+        "limit": {"type": "integer", "description": "Max results."},
+        "offset": {"type": "integer", "description": "Pagination offset."},
+    },
+    method="GET",
+    path_template="/categories",
+    query_fields=("query", "limit", "offset"),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_add_blocker_category",
+    description="Attach a category to a blocker.",
+    properties={
+        "blocker_id": {"type": "integer", "description": "Blocker ID."},
+        "category_uuid": {"type": "string", "description": "Category UUID."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("blocker_id", "category_uuid"),
+    method="POST",
+    path_template="/blockers/{blocker_id}/categories",
+    path_fields=("blocker_id",),
+    body_fields=("category_uuid",),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_remove_blocker_category",
+    description="Remove a category from a blocker.",
+    properties={
+        "blocker_id": {"type": "integer", "description": "Blocker ID."},
+        "category_uuid": {"type": "string", "description": "Category UUID."},
+    },
+    required=("blocker_id", "category_uuid"),
+    method="DELETE",
+    path_template="/blockers/{blocker_id}/categories/{category_uuid}",
+    path_fields=("blocker_id", "category_uuid"),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_blocker_users",
+    description="List users attached to a blocker.",
+    properties={
+        "blocker_id": {"type": "integer", "description": "Blocker ID."},
+    },
+    required=("blocker_id",),
+    method="GET",
+    path_template="/blockers/{blocker_id}/users",
+    path_fields=("blocker_id",),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_add_blocker_user",
+    description="Attach a user to a blocker.",
+    properties={
+        "blocker_id": {"type": "integer", "description": "Blocker ID."},
+        "user_id": {"type": "integer", "description": "User ID."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("blocker_id", "user_id"),
+    method="POST",
+    path_template="/blockers/{blocker_id}/users",
+    path_fields=("blocker_id",),
+    body_fields=("user_id",),
+    include_payload=True,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_remove_blocker_user",
+    description="Remove a user from a blocker.",
+    properties={
+        "blocker_id": {"type": "integer", "description": "Blocker ID."},
+        "user_id": {"type": "integer", "description": "User ID."},
+    },
+    required=("blocker_id", "user_id"),
+    method="DELETE",
+    path_template="/blockers/{blocker_id}/users/{user_id}",
+    path_fields=("blocker_id", "user_id"),
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_current_user_blockers",
+    description="List blockers assigned to the current user.",
+    properties={
+        "limit": {"type": "integer", "description": "Max results."},
+        "offset": {"type": "integer", "description": "Pagination offset."},
+    },
+    method="GET",
+    path_template="/users/current/blockers",
+    query_fields=("limit", "offset"),
 )

@@ -1,6 +1,7 @@
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT, compact_response
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -111,6 +112,25 @@ _tool(
 )
 
 
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_card_member",
+    description="Update card member attributes.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID."},
+        "member_id": {"type": "integer", "description": "Card member ID."},
+        "type": {"type": "integer", "description": "Member type."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("card_id", "member_id"),
+    method="PATCH",
+    path_template="/cards/{card_id}/members/{member_id}",
+    path_fields=("card_id", "member_id"),
+    body_fields=("type",),
+    include_payload=True,
+)
+
+
 # ---------------------------------------------------------------------------
 # kaiten_list_users
 # ---------------------------------------------------------------------------
@@ -187,4 +207,24 @@ _tool(
         "properties": {},
     },
     handler=_get_current_user,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_update_user",
+    description="Update a Kaiten user profile.",
+    properties={
+        "user_id": {"type": "integer", "description": "User ID."},
+        "full_name": {"type": "string", "description": "Full user name."},
+        "email": {"type": "string", "description": "Email address."},
+        "username": {"type": "string", "description": "Username."},
+        "payload": {"type": "object", "description": "Extra JSON body fields."},
+    },
+    required=("user_id",),
+    method="PATCH",
+    path_template="/users/{user_id}",
+    path_fields=("user_id",),
+    body_fields=("full_name", "email", "username"),
+    include_payload=True,
 )

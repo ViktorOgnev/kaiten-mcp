@@ -3,6 +3,7 @@
 from typing import Any
 
 from kaiten_mcp.tools.compact import DEFAULT_LIMIT
+from kaiten_mcp.tools.entity_helpers import register_direct_tool
 
 TOOLS: dict[str, dict] = {}
 
@@ -135,6 +136,20 @@ _tool(
         "required": ["card_id", "name"],
     },
     _add_card_tag,
+)
+
+
+register_direct_tool(
+    TOOLS,
+    name="kaiten_list_card_tags",
+    description="List tags attached to a card.",
+    properties={
+        "card_id": {"type": "integer", "description": "Card ID."},
+    },
+    required=("card_id",),
+    method="GET",
+    path_template="/cards/{card_id}/tags",
+    path_fields=("card_id",),
 )
 
 

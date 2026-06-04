@@ -97,6 +97,17 @@ def build_api_base_url(
     return f"https://{subdomain}.{resolved_base_domain}/api/{API_VERSION}"
 
 
+def build_root_base_url(api_base_url: str) -> str:
+    parsed = urlsplit(api_base_url)
+    api_path = f"/api/{API_VERSION}"
+    path = parsed.path.rstrip("/")
+    if path.endswith(api_path):
+        path = path[: -len(api_path)]
+    elif path.endswith("/api"):
+        path = path[: -len("/api")]
+    return urlunsplit((parsed.scheme, parsed.netloc, path.rstrip("/"), "", ""))
+
+
 class KaitenClient:
     """Async HTTP client for Kaiten API with rate limiting."""
 
@@ -118,6 +129,7 @@ class KaitenClient:
             base_domain=base_domain,
             base_url=base_url,
         )
+        self.root_url = build_root_base_url(self.base_url)
         self._client: httpx.AsyncClient | None = None
         self._last_request_time = 0.0
         self._rate_lock = asyncio.Lock()
@@ -206,6 +218,28 @@ class KaitenClient:
 
     async def delete(self, path: str, json: dict[str, Any] | None = None) -> Any:
         return await self._request("DELETE", path, json=json)
+
+    async def _request_root(
+        self,
+        method: str,
+        path: str,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> Any:
+        suffix = path if path.startswith("/") else f"/{path}"
+        return await self._request(method, f"{self.root_url}{suffix}", params=params, json=json)
+
+    async def get_root(self, path: str, params: dict[str, Any] | None = None) -> Any:
+        return await self._request_root("GET", path, params=params)
+
+    async def post_root(self, path: str, json: dict[str, Any] | None = None) -> Any:
+        return await self._request_root("POST", path, json=json)
+
+    async def patch_root(self, path: str, json: dict[str, Any] | None = None) -> Any:
+        return await self._request_root("PATCH", path, json=json)
+
+    async def delete_root(self, path: str, json: dict[str, Any] | None = None) -> Any:
+        return await self._request_root("DELETE", path, json=json)
 
     async def close(self) -> None:
         if self._client and not self._client.is_closed:
