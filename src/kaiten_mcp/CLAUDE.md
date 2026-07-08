@@ -327,6 +327,7 @@ ChatGPT tunnel надо вернуть `MCP_HTTP_AUTH_MODE=oauth` и переп�
 | `KAITEN_DOMAIN` | Нет | Устаревший fallback вместо `KAITEN_SUBDOMAIN` |
 | `KAITEN_TOKEN` | Да* | API-токен пользователя Kaiten для локального `stdio` или legacy shared HTTP |
 | `KAITEN_MCP_OUTPUT_DIR` | Нет | Директория для сохранения больших ответов API (>200KB) |
+| `KAITEN_MCP_MODULES` | Нет | Регистрировать только перечисленные модули инструментов (через запятую, короткие имена). Пусто = все 27 модулей. Неизвестные имена игнорируются |
 | `MCP_HTTP_HOST` | Нет | Хост HTTP transport (по умолчанию `0.0.0.0`) |
 | `MCP_HTTP_PORT` | Нет | Порт HTTP transport (по умолчанию `8000`) |
 | `MCP_HTTP_BASE_PATH` | Нет | Базовый путь HTTP transport (по умолчанию `/mcp`) |
@@ -338,6 +339,15 @@ ChatGPT tunnel надо вернуть `MCP_HTTP_AUTH_MODE=oauth` и переп�
 | `MCP_REQUIRED_SCOPES` | Нет | OAuth scopes, по умолчанию `kaiten:tools` |
 | `MCP_AUTH_TOKEN` | Нет | Legacy shared bearer token для single-tenant HTTP endpoint |
 | `LOG_LEVEL` | Нет | Уровень логирования Python (по умолчанию: `INFO`) |
+
+Короткие имена модулей для `KAITEN_MCP_MODULES`:
+
+```text
+audit_and_analytics, automations, blockers, boards, card_relations,
+card_types, cards, charts, checklists, columns, comments, custom_properties,
+documents, external_links, files, lanes, members, projects, roles_and_groups,
+service_desk, spaces, subscribers, tags, time_logs, tree, utilities, webhooks
+```
 
 ## Безопасность Docker
 

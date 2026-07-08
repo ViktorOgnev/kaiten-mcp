@@ -113,10 +113,22 @@ async def close_request_client(client: KaitenClient) -> None:
         await client.close()
 
 
+def _enabled_modules() -> list:
+    """TOOL_MODULES filtered by KAITEN_MCP_MODULES (comma-separated short names).
+
+    Unset/empty -> all modules. Unknown names are ignored.
+    """
+    allow = os.environ.get("KAITEN_MCP_MODULES", "").strip()
+    if not allow:
+        return TOOL_MODULES
+    wanted = {n.strip() for n in allow.split(",") if n.strip()}
+    return [m for m in TOOL_MODULES if m.__name__.rsplit(".", 1)[-1] in wanted]
+
+
 def _collect_tools() -> dict[str, dict]:
     """Collect tool definitions from all modules."""
     tools = {}
-    for module in TOOL_MODULES:
+    for module in _enabled_modules():
         if hasattr(module, "TOOLS"):
             for name, definition in module.TOOLS.items():
                 tools[name] = definition  # noqa: PERF403 — nested conditional loop

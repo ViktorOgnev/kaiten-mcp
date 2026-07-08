@@ -103,3 +103,26 @@ class TestToolRegistration:
 
     def test_modules_count(self):
         assert len(TOOL_MODULES) == 27
+
+
+class TestModuleFilter:
+    """KAITEN_MCP_MODULES env-var allowlist over TOOL_MODULES."""
+
+    def test_unset_returns_all(self, monkeypatch):
+        from kaiten_mcp.runtime import _enabled_modules
+
+        monkeypatch.delenv("KAITEN_MCP_MODULES", raising=False)
+        assert _enabled_modules() == TOOL_MODULES
+
+    def test_blank_returns_all(self, monkeypatch):
+        from kaiten_mcp.runtime import _enabled_modules
+
+        monkeypatch.setenv("KAITEN_MCP_MODULES", "  ")
+        assert _enabled_modules() == TOOL_MODULES
+
+    def test_allowlist_filters_and_ignores_unknown(self, monkeypatch):
+        from kaiten_mcp.runtime import _enabled_modules
+
+        monkeypatch.setenv("KAITEN_MCP_MODULES", " spaces , boards ,nope")
+        names = {m.__name__.rsplit(".", 1)[-1] for m in _enabled_modules()}
+        assert names == {"spaces", "boards"}
