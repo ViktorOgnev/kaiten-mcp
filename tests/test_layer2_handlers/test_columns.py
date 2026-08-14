@@ -90,6 +90,22 @@ class TestUpdateColumn:
             "sort_order": 3.5,
         }
 
+    async def test_archive_after_days(self, client, mock_api):
+        route = mock_api.patch("/boards/10/columns/5").mock(
+            return_value=Response(200, json={"id": 5})
+        )
+        await TOOLS["kaiten_update_column"]["handler"](
+            client,
+            {
+                "board_id": 10,
+                "column_id": 5,
+                "archive_after_days": 14,
+            },
+        )
+        assert route.called
+        body = json.loads(route.calls[0].request.content)
+        assert body == {"archive_after_days": 14}
+
 
 class TestDeleteColumn:
     async def test_required_only(self, client, mock_api):

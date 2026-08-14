@@ -66,7 +66,15 @@ _tool(
 
 async def _update_column(client, args: dict) -> Any:
     body = {}
-    for key in ("title", "type", "wip_limit", "wip_limit_type", "col_count", "sort_order"):
+    for key in (
+        "title",
+        "type",
+        "wip_limit",
+        "wip_limit_type",
+        "col_count",
+        "sort_order",
+        "archive_after_days",
+    ):
         if args.get(key) is not None:
             body[key] = args[key]
     return await client.patch(f"/boards/{args['board_id']}/columns/{args['column_id']}", json=body)
@@ -89,6 +97,10 @@ _tool(
             },
             "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
+            "archive_after_days": {
+                "type": "integer",
+                "description": "Days before cards in this column are automatically archived; -1 disables auto-archive",
+            },
         },
         "required": ["board_id", "column_id"],
     },
