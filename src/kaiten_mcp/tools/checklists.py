@@ -13,7 +13,9 @@ def _tool(name: str, description: str, schema: dict, handler):
 
 
 async def _list_checklists(client, args: dict) -> Any:
-    return await client.get(f"/cards/{args['card_id']}/checklists")
+    # Kaiten answers 405 on GET /cards/:id/checklists; the card payload carries them inline.
+    card = await client.get(f"/cards/{args['card_id']}")
+    return card.get("checklists", []) if isinstance(card, dict) else []
 
 
 _tool(
@@ -104,7 +106,9 @@ _tool(
 
 
 async def _list_checklist_items(client, args: dict) -> Any:
-    return await client.get(f"/cards/{args['card_id']}/checklists/{args['checklist_id']}/items")
+    # Kaiten answers 405 on GET .../items; the single-checklist payload carries them inline.
+    checklist = await client.get(f"/cards/{args['card_id']}/checklists/{args['checklist_id']}")
+    return checklist.get("items", []) if isinstance(checklist, dict) else []
 
 
 _tool(
