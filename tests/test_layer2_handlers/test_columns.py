@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from httpx import Response
 
 from kaiten_mcp.tools.columns import TOOLS
@@ -41,7 +42,10 @@ class TestCreateColumn:
                 "title": "In Progress",
                 "type": 2,
                 "wip_limit": 5,
+                "wip_limit_type": 1,
+                "col_count": 2,
                 "sort_order": 2.0,
+                "archive_after_days": 14,
             },
         )
         assert route.called
@@ -50,7 +54,10 @@ class TestCreateColumn:
             "title": "In Progress",
             "type": 2,
             "wip_limit": 5,
+            "wip_limit_type": 1,
+            "col_count": 2,
             "sort_order": 2.0,
+            "archive_after_days": 14,
         }
 
 
@@ -78,7 +85,10 @@ class TestUpdateColumn:
                 "title": "Done",
                 "type": 3,
                 "wip_limit": 10,
+                "wip_limit_type": 2,
+                "col_count": 2,
                 "sort_order": 3.5,
+                "archive_after_days": 14,
             },
         )
         assert route.called
@@ -87,10 +97,14 @@ class TestUpdateColumn:
             "title": "Done",
             "type": 3,
             "wip_limit": 10,
+            "wip_limit_type": 2,
+            "col_count": 2,
             "sort_order": 3.5,
+            "archive_after_days": 14,
         }
 
-    async def test_archive_after_days(self, client, mock_api):
+    @pytest.mark.parametrize("archive_after_days", [-1, 0])
+    async def test_archive_after_days_edge_values(self, client, mock_api, archive_after_days):
         route = mock_api.patch("/boards/10/columns/5").mock(
             return_value=Response(200, json={"id": 5})
         )
@@ -99,12 +113,22 @@ class TestUpdateColumn:
             {
                 "board_id": 10,
                 "column_id": 5,
-                "archive_after_days": 14,
+                "archive_after_days": archive_after_days,
             },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"archive_after_days": 14}
+        assert body == {"archive_after_days": archive_after_days}
+
+
+def test_archive_after_days_schema_and_tool_descriptions():
+    for tool_name in ("kaiten_create_column", "kaiten_update_column"):
+        definition = TOOLS[tool_name]
+        archive_schema = definition["inputSchema"]["properties"]["archive_after_days"]
+        assert archive_schema["type"] == "integer"
+        assert archive_schema["minimum"] == -1
+        assert "Reducing this value may immediately archive" in archive_schema["description"]
+        assert "archive_after_days" in definition["description"]
 
 
 class TestDeleteColumn:
