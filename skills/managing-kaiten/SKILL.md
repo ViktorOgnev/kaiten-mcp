@@ -137,6 +137,9 @@ For creating 10+ cards or links, use background agents to avoid context bloat. P
 - `kaiten_list_cards` accepts `space_id` to filter by space
 - Rate limit: 4.5 req/s. The MCP server handles retries automatically
 - Card `state` is derived from column type, not set directly
+- `archive_after_days` must be at least `-1`; `-1` disables auto-archive. Lowering a
+  column's value may immediately archive cards whose time in that column already
+  exceeds the new threshold, so confirm the intended effect before updating it
 - Default limit is 50 for all list operations
 
 ## Kanban metrics
