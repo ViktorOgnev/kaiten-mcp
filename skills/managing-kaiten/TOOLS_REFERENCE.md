@@ -64,6 +64,11 @@ Supported: `list_cards`, `list_all_cards`, `get_space_activity`, `get_company_ac
 | `kaiten_update_subcolumn` | Update a subcolumn | **`column_id`**, **`subcolumn_id`** |
 | `kaiten_delete_subcolumn` | Delete a subcolumn | **`column_id`**, **`subcolumn_id`** |
 
+`kaiten_update_column` and `kaiten_update_subcolumn` require at least one supported,
+non-null field in addition to their IDs. Unknown field names are rejected by the MCP
+schema. ID-only or empty updates fail without sending a PATCH request. Zero values
+are preserved.
+
 ## Lanes (4 tools)
 
 | Tool | Description | Key params |
