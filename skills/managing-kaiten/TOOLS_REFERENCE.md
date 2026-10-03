@@ -56,8 +56,8 @@ Supported: `list_cards`, `list_all_cards`, `get_space_activity`, `get_company_ac
 | Tool | Description | Key params |
 |---|---|---|
 | `kaiten_list_columns` | List columns on a board (type: 1=queue, 2=in_progress, 3=done) | **`board_id`** |
-| `kaiten_create_column` | Create a column | **`board_id`**, **`title`**, **`type`** (1/2/3) |
-| `kaiten_update_column` | Update a column | **`board_id`**, **`column_id`** |
+| `kaiten_create_column` | Create a column, optionally with auto-archive | **`board_id`**, **`title`**, **`type`** (1/2/3), `archive_after_days` (-1 disables) |
+| `kaiten_update_column` | Update a column, including auto-archive | **`board_id`**, **`column_id`**, `archive_after_days` (-1 disables) |
 | `kaiten_delete_column` | Delete a column | **`board_id`**, **`column_id`** |
 | `kaiten_list_subcolumns` | List subcolumns of a column | **`column_id`** |
 | `kaiten_create_subcolumn` | Create a subcolumn | **`column_id`**, **`title`** |

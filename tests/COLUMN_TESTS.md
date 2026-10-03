@@ -4,7 +4,7 @@ These tests cover the shared request-body helper and validation of column/subcol
 updates. `test_body.py`, `test_layer2_handlers/test_columns.py` and
 `test_columns_mcp.py` exercise helper, handler and in-process MCP behavior.
 
-`test_columns_stdio.py` adds 24 black-box cases against an actual MCP subprocess:
+`test_columns_stdio.py` adds 30 black-box cases against an actual MCP subprocess:
 
 - Both update tools reject ID-only requests, unknown fields, mixed known/unknown
   fields, null, string and boolean WIP limits. The local HTTP recorder must receive
@@ -12,6 +12,7 @@ updates. `test_body.py`, `test_layer2_handlers/test_columns.py` and
 - All four create/update tools send the exact HTTP method, path and body for minimal
   arguments, zero WIP/sort order and all supported fields. Routing IDs stay out of
   the body.
+- Column create/update preserve `archive_after_days=-1/0` and reject `-2` before HTTP.
 
 ## Run without Docker
 
@@ -50,7 +51,7 @@ KAITEN_COLUMNS_E2E=1 KAITEN_TEST_DOCKER_IMAGE=kaiten-mcp:columns-test \
   python -m pytest tests/test_columns_live.py -v -rx --timeout=180
 ```
 
-These eight cases create their own uniquely named boards. Each case removes its
+These ten cases create their own uniquely named boards. Each case removes its
 board in `finally`, checks ownership before force deletion, then verifies absence
 from the space. Cleanup uses the API directly because the existing delete-board
 MCP tool does not expose the required `force` parameter. Existing boards and cards
@@ -64,6 +65,9 @@ KAITEN_COLUMNS_E2E=1 python -m pytest tests/test_columns_live.py -v \
 
 The live cases verify rejection without changing persisted state, successful
 rename with unrelated WIP preserved, creation with WIP 0/5, and updates 5 → 0.
+Two additional live cases create empty Done columns with `archive_after_days=-1/0`,
+reject `-2` without changing the column list, and read back updates 14 → 0 → -1.
+No cards are created, so these checks do not test archival timing.
 State is verified with separate list requests, not only mutation responses.
 
 ### Known Kaiten subcolumn WIP limitation
@@ -78,4 +82,4 @@ limitation rather than claiming persistence works. Unexpected success fails the
 run so the marker can be removed when the behavior is fixed. Assertions occur
 after cleanup; transport and cleanup exceptions are not expected failures.
 Live validation/rename tests for subcolumns run normally. The expected current
-result is **5 passed, 3 xfailed** in each runtime; xfailed is not PASS.
+result is **7 passed, 3 xfailed** in each runtime; xfailed is not PASS.

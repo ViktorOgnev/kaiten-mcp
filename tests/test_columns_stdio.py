@@ -85,7 +85,13 @@ async def test_stdio_rejects_invalid_update_without_http(http_api, tool, ids, fi
             "kaiten_create_column",
             {"board_id": 10},
             {"title": "Queue", "type": 1},
-            {"wip_limit": 5, "wip_limit_type": 2, "col_count": 2, "sort_order": 1.5},
+            {
+                "wip_limit": 5,
+                "wip_limit_type": 2,
+                "col_count": 2,
+                "sort_order": 1.5,
+                "archive_after_days": 14,
+            },
             "POST",
             "/boards/10/columns",
         ),
@@ -98,6 +104,7 @@ async def test_stdio_rejects_invalid_update_without_http(http_api, tool, ids, fi
                 "type": 3,
                 "wip_limit": 5,
                 "wip_limit_type": 2,
+                "archive_after_days": 14,
                 "col_count": 2,
                 "sort_order": 1.5,
             },
@@ -130,9 +137,48 @@ async def test_stdio_sends_exact_body(
         body = {**required, **optional}
     elif variant == "zero":
         body = {**required, "wip_limit": 0, "sort_order": 0}
+        if "archive_after_days" in optional:
+            body["archive_after_days"] = 0
     else:
         body = required or {"title": "Renamed"}
     async with column_session(env) as session:
+        if variant == "all_fields":
+            definitions = {t.name: t for t in (await session.list_tools()).tools}
+            assert set(body) == set(definitions[tool].inputSchema["properties"]) - set(ids)
         result = await session.call_tool(tool, {**ids, **body})
     assert not result.isError
     assert requests == [(method, "/api/latest" + path, body)]
+
+
+@pytest.mark.parametrize("value", [-2, -1, 0])
+@pytest.mark.parametrize(
+    "tool, ids, required, method, path",
+    [
+        (
+            "kaiten_create_column",
+            {"board_id": 10},
+            {"title": "Done", "type": 3},
+            "POST",
+            "/boards/10/columns",
+        ),
+        (
+            "kaiten_update_column",
+            {"board_id": 10, "column_id": 5},
+            {},
+            "PATCH",
+            "/boards/10/columns/5",
+        ),
+    ],
+)
+async def test_stdio_archive_boundary_values(http_api, value, tool, ids, required, method, path):
+    env, requests = http_api
+    body = {**required, "archive_after_days": value}
+    async with column_session(env) as session:
+        result = await session.call_tool(tool, {**ids, **body})
+    if value < -1:
+        assert result.isError
+        assert "minimum" in " ".join(c.text for c in result.content if c.type == "text")
+        assert requests == []
+    else:
+        assert not result.isError
+        assert requests == [(method, "/api/latest" + path, body)]

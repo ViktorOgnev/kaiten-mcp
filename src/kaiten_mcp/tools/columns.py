@@ -33,13 +33,18 @@ _tool(
 
 async def _create_column(client, args: dict) -> Any:
     body = {"title": args["title"], "type": args["type"]}
-    body.update(_body_from(args, ("wip_limit", "wip_limit_type", "col_count", "sort_order")))
+    body.update(
+        _body_from(
+            args, ("wip_limit", "wip_limit_type", "col_count", "sort_order", "archive_after_days")
+        )
+    )
     return await client.post(f"/boards/{args['board_id']}/columns", json=body)
 
 
 _tool(
     "kaiten_create_column",
-    "Create a column on a Kaiten board. Type: 1=queue, 2=in_progress, 3=done.",
+    "Create a column on a Kaiten board. Type: 1=queue, 2=in_progress, 3=done. "
+    "Supports configuring automatic card archival with archive_after_days.",
     {
         "type": "object",
         "properties": {
@@ -57,6 +62,11 @@ _tool(
             },
             "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
+            "archive_after_days": {
+                "type": "integer",
+                "minimum": -1,
+                "description": "Days before cards in this column are automatically archived; -1 disables auto-archive. Reducing this value may immediately archive cards already resident in the column when their time in the column exceeds the new threshold.",
+            },
         },
         "required": ["board_id", "title", "type"],
     },
@@ -66,7 +76,16 @@ _tool(
 
 async def _update_column(client, args: dict) -> Any:
     body = _body_from(
-        args, ("title", "type", "wip_limit", "wip_limit_type", "col_count", "sort_order")
+        args,
+        (
+            "title",
+            "type",
+            "wip_limit",
+            "wip_limit_type",
+            "col_count",
+            "sort_order",
+            "archive_after_days",
+        ),
     )
     if not body:
         raise ValueError("Provide at least one non-null column field to update.")
@@ -75,7 +94,8 @@ async def _update_column(client, args: dict) -> Any:
 
 _tool(
     "kaiten_update_column",
-    "Update a column on a Kaiten board. "
+    "Update a column on a Kaiten board, including automatic card archival via "
+    "archive_after_days. "
     "Provide at least one supported non-null field to update; unknown fields are rejected.",
     {
         "type": "object",
@@ -92,6 +112,11 @@ _tool(
             },
             "col_count": {"type": "integer", "description": "Number of sub-columns to split into"},
             "sort_order": {"type": "number", "description": "Sort order"},
+            "archive_after_days": {
+                "type": "integer",
+                "minimum": -1,
+                "description": "Days before cards in this column are automatically archived; -1 disables auto-archive. Reducing this value may immediately archive cards already resident in the column when their time in the column exceeds the new threshold.",
+            },
         },
         "required": ["board_id", "column_id"],
     },

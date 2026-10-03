@@ -134,3 +134,32 @@ async def test_live_update_wip(live_board, kind):
             current = await read_target(session, kind, ids)
             observations.append((wip, result.isError, current["wip_limit"], current["title"]))
     assert observations == [(5, False, 5, kind.capitalize()), (0, False, 0, kind.capitalize())]
+
+
+@pytest.mark.parametrize("initial", [-1, 0])
+async def test_live_archive_after_days(live_board, initial):
+    async with live_board() as (session, board_id):
+        # This fixture owns an empty board: no existing cards can be archived.
+        column = await call_json(
+            session,
+            "kaiten_create_column",
+            {"board_id": board_id, "title": "Done", "type": 3, "archive_after_days": initial},
+        )
+        ids = {"board_id": board_id, "column_id": column["id"]}
+        assert (await read_target(session, "column", ids))["archive_after_days"] == initial
+        before = await call_json(session, "kaiten_list_columns", {"board_id": board_id})
+        for tool, args in [
+            ("kaiten_create_column", {"board_id": board_id, "title": "Invalid", "type": 3}),
+            ("kaiten_update_column", ids),
+        ]:
+            result = await session.call_tool(tool, {**args, "archive_after_days": -2})
+            assert result.isError
+            assert "minimum" in " ".join(c.text for c in result.content if c.type == "text")
+            assert (
+                await call_json(session, "kaiten_list_columns", {"board_id": board_id}) == before
+            )
+        for value in (14, 0, -1):
+            await call_json(session, "kaiten_update_column", {**ids, "archive_after_days": value})
+            current = await read_target(session, "column", ids)
+            assert current["archive_after_days"] == value
+            assert current["title"] == "Done"
