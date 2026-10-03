@@ -60,18 +60,32 @@ class TestCreateColumn:
             "archive_after_days": 14,
         }
 
-
-class TestUpdateColumn:
-    async def test_required_only(self, client, mock_api):
-        route = mock_api.patch("/boards/10/columns/5").mock(
+    @pytest.mark.parametrize("archive_after_days", [-1, 0])
+    async def test_archive_after_days_edge_values(self, client, mock_api, archive_after_days):
+        route = mock_api.post("/boards/10/columns").mock(
             return_value=Response(200, json={"id": 5})
         )
-        result = await TOOLS["kaiten_update_column"]["handler"](
-            client, {"board_id": 10, "column_id": 5}
+        await TOOLS["kaiten_create_column"]["handler"](
+            client,
+            {"board_id": 10, "title": "Done", "type": 3, "archive_after_days": archive_after_days},
         )
-        assert route.called
-        body = json.loads(route.calls[0].request.content)
-        assert body == {}
+        assert route.call_count == 1
+        assert json.loads(route.calls[0].request.content) == {
+            "title": "Done",
+            "type": 3,
+            "archive_after_days": archive_after_days,
+        }
+
+
+class TestUpdateColumn:
+    @pytest.mark.parametrize("fields", [{}, {"wip_limit": None}, {"auto_archive_days": 14}])
+    async def test_rejects_empty_patch(self, client, mock_api, fields):
+        route = mock_api.patch("/boards/10/columns/5").mock(return_value=Response(200, json={}))
+        args = {"board_id": 10, "column_id": 5}
+        with pytest.raises(ValueError, match="at least one non-null"):
+            await TOOLS["kaiten_update_column"]["handler"](client, {**args, **fields})
+        assert not route.called
+        assert not mock_api.calls
 
     async def test_all_args(self, client, mock_api):
         route = mock_api.patch("/boards/10/columns/5").mock(
@@ -173,24 +187,25 @@ class TestCreateSubcolumn:
             return_value=Response(200, json={"id": 20})
         )
         result = await TOOLS["kaiten_create_subcolumn"]["handler"](
-            client, {"column_id": 10, "title": "Done", "sort_order": 3, "wip_limit": 5}
+            client,
+            {"column_id": 10, "title": "Done", "sort_order": 3, "wip_limit": 5, "col_count": 2},
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Done", "sort_order": 3, "wip_limit": 5}
+        assert body == {"title": "Done", "sort_order": 3, "wip_limit": 5, "col_count": 2}
 
 
 class TestUpdateSubcolumn:
-    async def test_required_only(self, client, mock_api):
+    @pytest.mark.parametrize("fields", [{}, {"wip_limit": None}, {"auto_archive_days": 14}])
+    async def test_rejects_empty_patch(self, client, mock_api, fields):
         route = mock_api.patch("/columns/10/subcolumns/20").mock(
-            return_value=Response(200, json={"id": 20})
+            return_value=Response(200, json={})
         )
-        result = await TOOLS["kaiten_update_subcolumn"]["handler"](
-            client, {"column_id": 10, "subcolumn_id": 20}
-        )
-        assert route.called
-        body = json.loads(route.calls[0].request.content)
-        assert body == {}
+        args = {"column_id": 10, "subcolumn_id": 20}
+        with pytest.raises(ValueError, match="at least one non-null"):
+            await TOOLS["kaiten_update_subcolumn"]["handler"](client, {**args, **fields})
+        assert not route.called
+        assert not mock_api.calls
 
     async def test_all_args(self, client, mock_api):
         route = mock_api.patch("/columns/10/subcolumns/20").mock(
@@ -204,11 +219,12 @@ class TestUpdateSubcolumn:
                 "title": "Review",
                 "sort_order": 1,
                 "wip_limit": 3,
+                "col_count": 2,
             },
         )
         assert route.called
         body = json.loads(route.calls[0].request.content)
-        assert body == {"title": "Review", "sort_order": 1, "wip_limit": 3}
+        assert body == {"title": "Review", "sort_order": 1, "wip_limit": 3, "col_count": 2}
 
 
 class TestDeleteSubcolumn:
@@ -221,3 +237,48 @@ class TestDeleteSubcolumn:
         )
         assert route.called
         assert result == {}
+
+
+@pytest.mark.parametrize(
+    "tool_name, method, path, identifiers, required_body",
+    [
+        (
+            "kaiten_create_column",
+            "POST",
+            "/boards/10/columns",
+            {"board_id": 10},
+            {"title": "Done", "type": 3},
+        ),
+        (
+            "kaiten_update_column",
+            "PATCH",
+            "/boards/10/columns/5",
+            {"board_id": 10, "column_id": 5},
+            {},
+        ),
+        (
+            "kaiten_create_subcolumn",
+            "POST",
+            "/columns/10/subcolumns",
+            {"column_id": 10},
+            {"title": "Done"},
+        ),
+        (
+            "kaiten_update_subcolumn",
+            "PATCH",
+            "/columns/10/subcolumns/20",
+            {"column_id": 10, "subcolumn_id": 20},
+            {},
+        ),
+    ],
+)
+async def test_zero_is_forwarded_and_none_is_omitted(
+    client, mock_api, tool_name, method, path, identifiers, required_body
+):
+    route = mock_api.request(method, path).mock(return_value=Response(200, json={"id": 5}))
+    args = {**identifiers, **required_body, "wip_limit": 0, "sort_order": None}
+    original = args.copy()
+    await TOOLS[tool_name]["handler"](client, args)
+    assert route.call_count == 1
+    assert json.loads(route.calls[0].request.content) == {**required_body, "wip_limit": 0}
+    assert args == original

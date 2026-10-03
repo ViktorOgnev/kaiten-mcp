@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from kaiten_mcp.tools._body import _body_from
+
 TOOLS: dict[str, dict] = {}
 
 
@@ -31,15 +33,11 @@ _tool(
 
 async def _create_column(client, args: dict) -> Any:
     body = {"title": args["title"], "type": args["type"]}
-    for key in (
-        "wip_limit",
-        "wip_limit_type",
-        "col_count",
-        "sort_order",
-        "archive_after_days",
-    ):
-        if args.get(key) is not None:
-            body[key] = args[key]
+    body.update(
+        _body_from(
+            args, ("wip_limit", "wip_limit_type", "col_count", "sort_order", "archive_after_days")
+        )
+    )
     return await client.post(f"/boards/{args['board_id']}/columns", json=body)
 
 
@@ -77,27 +75,31 @@ _tool(
 
 
 async def _update_column(client, args: dict) -> Any:
-    body = {}
-    for key in (
-        "title",
-        "type",
-        "wip_limit",
-        "wip_limit_type",
-        "col_count",
-        "sort_order",
-        "archive_after_days",
-    ):
-        if args.get(key) is not None:
-            body[key] = args[key]
+    body = _body_from(
+        args,
+        (
+            "title",
+            "type",
+            "wip_limit",
+            "wip_limit_type",
+            "col_count",
+            "sort_order",
+            "archive_after_days",
+        ),
+    )
+    if not body:
+        raise ValueError("Provide at least one non-null column field to update.")
     return await client.patch(f"/boards/{args['board_id']}/columns/{args['column_id']}", json=body)
 
 
 _tool(
     "kaiten_update_column",
     "Update a column on a Kaiten board, including automatic card archival via "
-    "archive_after_days.",
+    "archive_after_days. "
+    "Provide at least one supported non-null field to update; unknown fields are rejected.",
     {
         "type": "object",
+        "additionalProperties": False,
         "properties": {
             "board_id": {"type": "integer", "description": "Board ID"},
             "column_id": {"type": "integer", "description": "Column ID"},
@@ -166,9 +168,7 @@ _tool(
 
 async def _create_subcolumn(client, args: dict) -> Any:
     body = {"title": args["title"]}
-    for key in ("sort_order", "wip_limit", "col_count"):
-        if args.get(key) is not None:
-            body[key] = args[key]
+    body.update(_body_from(args, ("sort_order", "wip_limit", "col_count")))
     return await client.post(f"/columns/{args['column_id']}/subcolumns", json=body)
 
 
@@ -191,10 +191,9 @@ _tool(
 
 
 async def _update_subcolumn(client, args: dict) -> Any:
-    body = {}
-    for key in ("title", "sort_order", "wip_limit", "col_count"):
-        if args.get(key) is not None:
-            body[key] = args[key]
+    body = _body_from(args, ("title", "sort_order", "wip_limit", "col_count"))
+    if not body:
+        raise ValueError("Provide at least one non-null subcolumn field to update.")
     return await client.patch(
         f"/columns/{args['column_id']}/subcolumns/{args['subcolumn_id']}", json=body
     )
@@ -202,9 +201,11 @@ async def _update_subcolumn(client, args: dict) -> Any:
 
 _tool(
     "kaiten_update_subcolumn",
-    "Update a subcolumn of a Kaiten column.",
+    "Update a subcolumn of a Kaiten column. "
+    "Provide at least one supported non-null field to update; unknown fields are rejected.",
     {
         "type": "object",
+        "additionalProperties": False,
         "properties": {
             "column_id": {"type": "integer", "description": "Column ID"},
             "subcolumn_id": {"type": "integer", "description": "Subcolumn ID"},
